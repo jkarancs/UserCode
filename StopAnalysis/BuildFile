@@ -1,0 +1,21 @@
+<use name=FWCore/Framework>
+<use name=FWCore/PluginManager>
+<use name=FWCore/ParameterSet>
+<flags EDM_PLUGIN=1>
+<use name=DataFormats/PatCandidates>
+<use name=DataFormats/Common>
+<use name=SusyAnalysis/EventSelector>
+<use name=root>
+<use name=PhysicsTools/UtilAlgos>
+<use name=FWCore/ServiceRegistry>
+<export>
+   <lib name=SusyAnalysisStopAnalysis>
+   <use name=FWCore/Framework>
+   <use name=FWCore/PluginManager>
+   <use name=FWCore/ParameterSet>
+   <use name=DataFormats/PatCandidates>
+   <use name=DataFormats/Common>
+   <use name=SusyAnalysis/EventSelector>
+   <use name=PhysicsTools/UtilAlgos>
+   <use name=FWCore/ServiceRegistry>
+</export>
