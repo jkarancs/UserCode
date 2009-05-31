@@ -22,7 +22,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id$
+// $Id: ElectronData.hh,v 1.1 2009/05/30 19:38:40 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -48,15 +48,16 @@ namespace deb {
     float et;
     float eta;
     float phi;
-    float isoR03_trk;
-    float isoR03_hcal;
-    float isoR03_ecal;
-    float d0;
-    float phitrack;
-    float idtight;
-    float idloose;
-    float bcd0;
-    float reliso;
+    float isoR03_trk;   //Tracker Isolation in DeltaR<0.3 cone
+    float isoR03_hcal;  //Hadron Calorimeter Isolation in DeltaR<0.3 cone
+    float isoR03_ecal;  //Electromagn. Calorimeter Isolation in DeltaR<0.3 cone
+    float d0;           //Displacement of the track
+    float phi_trk;      //Phi in the tracker
+    float tight;        //Electron Id e.g.:"eidRobustTight"
+    float loose;        //Electron Id e.g.:"eidRobustLoose"
+    float bc_d0;        //d0 with respect to the primary vertex
+    float reliso;       //Relative isolation 
+                        //(isoR03_ecal+isoR03_hcal+isoR03_trk/et)
 
     void clear() {
       e=NOVAL_F;
@@ -72,10 +73,10 @@ namespace deb {
       isoR03_hcal=NOVAL_F;
       isoR03_ecal=NOVAL_F;
       d0=NOVAL_F;
-      phitrack=NOVAL_F;
-      idtight=NOVAL_F;
-      idloose=NOVAL_F;
-      bcd0=NOVAL_F;
+      phi_trk=NOVAL_F;
+      tight=NOVAL_F;
+      loose=NOVAL_F;
+      bc_d0=NOVAL_F;
       reliso=NOVAL_F;     
     }
 
@@ -94,10 +95,10 @@ namespace deb {
       ss << prefix << "isoR03_hcal/F:";
       ss << prefix << "isoR03_ecal/F:";
       ss << prefix << "d0/F:";
-      ss << prefix << "phitrack/F:";
-      ss << prefix << "idtight/F:";
-      ss << prefix << "idloose/F:";
-      ss << prefix << "bcd0/F:";
+      ss << prefix << "phi_trk/F:";
+      ss << prefix << "tight/F:";
+      ss << prefix << "loose/F:";
+      ss << prefix << "bc_d0/F:";
       ss << prefix << "reliso/F";
       return ss.str();
     }

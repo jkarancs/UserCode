@@ -22,7 +22,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id$
+// $Id: MuonData.hh,v 1.1 2009/05/30 19:38:48 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -48,19 +48,20 @@ namespace deb {
     float et;
     float eta;
     float phi;
-    float isoR03_trk;
-    float isoR03_hcal;
-    float isoR03_ecal;
-    float hits;
+    float isoR03_trk;  //Tracker Isolation in DeltaR<0.3 cone
+    float isoR03_hcal; //Hadron Calorimeter Isolation in DeltaR<0.3 cone
+    float isoR03_ecal; //Electromagn. Calorimeter Isolation in DeltaR<0.3 cone
+    float hits;        //Number of track hits
     float chi2;
-    float ndof;
-    float d0;
-    float phitrack;
-    float mutype;
-    float hcalisodep;
-    float ecalisodep;
-    float bcd0;
-    float reliso;
+    float ndof;        //Number of degrees of freedom
+    float d0;          //Displacement of the track
+    float phi_trk;     //Phi in the tracker
+    float tight;       //Muon Id e.g.:"GlobalMuonPromptTight"
+    float hcalisodep;  //Hadron Calorimeter Isolation Deposit
+    float ecalisodep;  //Electromagnetic Calorimeter Isolation Deposit
+    float bc_d0;       //d0 with respect to the primary vertex
+    float reliso;      //Relative isolation 
+                       //(isoR03_ecal+isoR03_hcal+isoR03_trk/pt)
 
     void clear() {
       e=NOVAL_F;
@@ -79,12 +80,12 @@ namespace deb {
       chi2=NOVAL_F;
       ndof=NOVAL_F;
       d0=NOVAL_F;
-      phitrack=NOVAL_F;
-      mutype=NOVAL_F;
+      phi_trk=NOVAL_F;
+      tight=NOVAL_F;
       hcalisodep=NOVAL_F;
       ecalisodep=NOVAL_F;
-      bcd0=NOVAL_F;
-      reliso=NOVAL_F;     
+      bc_d0=NOVAL_F;
+      reliso=NOVAL_F;  
     }
 
     std::string list(std::string prefix="") {
@@ -105,11 +106,11 @@ namespace deb {
       ss << prefix << "chi2/F:";
       ss << prefix << "ndof/F:";
       ss << prefix << "d0/F:";
-      ss << prefix << "phitrack/F:";
-      ss << prefix << "mutype/F:";
+      ss << prefix << "phi_trk/F:";
+      ss << prefix << "tight/F:";
       ss << prefix << "hcalisodep/F:";
       ss << prefix << "ecalisodep/F:";
-      ss << prefix << "bcd0/F:";
+      ss << prefix << "bc_d0/F:";
       ss << prefix << "reliso/F";
       return ss.str();
     }

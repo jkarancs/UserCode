@@ -39,7 +39,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id$
+// $Id: Jet.hh,v 1.1 2009/05/30 19:38:45 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -247,7 +247,7 @@ template<class T> int Jet<T>::passed(std::string selection,int i) {
   if(selection.compare("RA4mu")==0){
     if(jet(i).pt>=30.0&&jet(i).pt!=NOVAL_F&&
        TMath::Abs(jet(i).eta)<=2.4&&jet(i).eta!=NOVAL_F&&
-       jet(i).hadfrac>=1.0&&jet(i).hadfrac!=NOVAL_F){
+       jet(i).hadfrac>=0.1&&jet(i).hadfrac!=NOVAL_F){
       return 1;
     }     
     return 0;
