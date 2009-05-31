@@ -37,7 +37,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Electron.hh,v 1.1 2009/05/30 19:38:41 veszpv Exp $
+// $Id: Electron.hh,v 1.2 2009/05/31 17:57:01 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -179,6 +179,10 @@ void Electron<T>::calculate (Beamspot<reco::BeamSpot> & beamspot) {
   if (!isValid()) return;
 
   for (unsigned int i=0; i<max_size(); i++) {
+
+    electron(i).bc_d0=NOVAL_F;
+    electron(i).reliso=NOVAL_F;
+
     if(electron(i).d0!=NOVAL_F&&
        beamspot.beamspot(0).beamspotx!=NOVAL_F&&
        beamspot.beamspot(0).beamspoty!=NOVAL_F&&
@@ -187,9 +191,7 @@ void Electron<T>::calculate (Beamspot<reco::BeamSpot> & beamspot) {
               -beamspot.beamspot(0).beamspotx*TMath::Sin(electron(i).phi_trk)
               +beamspot.beamspot(0).beamspoty*TMath::Cos(electron(i).phi_trk);
     }
-    else{
-      electron(i).bc_d0=NOVAL_F;
-    }
+    
     if(electron(i).isoR03_ecal!=NOVAL_F&&
        electron(i).isoR03_hcal!=NOVAL_F&&
        electron(i).isoR03_trk!=NOVAL_F&&
@@ -199,9 +201,7 @@ void Electron<T>::calculate (Beamspot<reco::BeamSpot> & beamspot) {
 			  +electron(i).isoR03_trk)
 	                  /electron(i).et;
     }
-    else{
-      electron(i).reliso=NOVAL_F;
-    }
+  
     //for (i=0;i<max_size;i++){
     //  electron.pass=passed("RA4mu",i); //bitkodolt ize
     //}

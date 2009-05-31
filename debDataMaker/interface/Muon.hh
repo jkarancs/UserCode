@@ -37,7 +37,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Muon.hh,v 1.1 2009/05/30 19:38:49 veszpv Exp $
+// $Id: Muon.hh,v 1.2 2009/05/31 17:57:27 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -191,9 +191,11 @@ template<class T>
 void Muon<T>::calculate (Beamspot<reco::BeamSpot> & beamspot){ 
 
   if (!isValid()) return;
-
-
+  
   for (unsigned int i=0; i<max_size(); i++) {
+    
+    muon(i).bc_d0=NOVAL_F;
+    muon(i).reliso=NOVAL_F;
 
     if(muon(i).d0!=NOVAL_F&&
        beamspot.beamspot(0).beamspotx!=NOVAL_F&&
@@ -203,8 +205,7 @@ void Muon<T>::calculate (Beamspot<reco::BeamSpot> & beamspot){
 	  -beamspot.beamspot(0).beamspotx*TMath::Sin(muon(i).phi_trk)
 	  +beamspot.beamspot(0).beamspoty*TMath::Cos(muon(i).phi_trk);
       } 
-    muon(i).bc_d0=NOVAL_F;
-
+   
     if(muon(i).isoR03_ecal!=NOVAL_F&&
        muon(i).isoR03_hcal!=NOVAL_F&&
        muon(i).isoR03_trk!=NOVAL_F&&
@@ -214,8 +215,7 @@ void Muon<T>::calculate (Beamspot<reco::BeamSpot> & beamspot){
 			   +muon(i).isoR03_trk)
 	               /muon(i).pt;
       } 
-    muon(i).reliso=NOVAL_F;
-      
+         
     //for (i=0;i<max_size;i++){
     //  muon.pass=passed("RA4mu",i); //bitkodolt ize
     //}
