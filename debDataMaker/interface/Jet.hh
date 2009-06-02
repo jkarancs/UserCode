@@ -39,7 +39,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Jet.hh,v 1.2 2009/05/31 17:57:44 akapusi Exp $
+// $Id: Jet.hh,v 1.3 2009/06/02 11:25:33 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -108,12 +108,12 @@ template<class T> Jet<T>::Jet(const edm::ParameterSet& iConfig) :
   // Print config settings
   //
   stdMesg("  Jet<%s> configuration:", typeid(T).name());
-  stdMesg(" \tstoreNJets = %d", max_size());
-  stdMesg(" \tcorrection = (%s, %s)", 
+  stdMesg("  \tstoreNJets = %d", max_size());
+  stdMesg("  \tcorrection = (%s, %s)", 
 	  getCorrection().first.data(), getCorrection().second.data());
-  stdMesg(" \tjetTag = '%s'", tag().label().data());
-  stdMesg(" \tselectionType = %s", getSelectionType().data());
-  stdMesg(" \tsortBy = '%s' (options are: 'et', 'pt')", sortBy_.data());
+  stdMesg("  \tjetTag = '%s'", tag().label().data());
+  stdMesg("  \tselectionType = %s", getSelectionType().data());
+  stdMesg("  \tsortBy = '%s' (options are: 'et', 'pt')", sortBy_.data());
   stdMesg("  List of variables: %s", jet(0).list().data());
   stdMesg("  Object is %svalid!\n", (isValid() ? "" : "not "));
  
@@ -254,7 +254,7 @@ template<class T> int Jet<T>::passed(std::string selection,unsigned int i) {
   }
 
 
-  if(getSelectionType().compare("RefAna4JetMetElectron")==0){
+  if(selection.compare("RefAna4JetMetElectron")==0){
     if(jet(i).pt>=25.0&&jet(i).pt!=NOVAL_F&&
        TMath::Abs(jet(i).eta)<=3.0&&jet(i).eta!=NOVAL_F&&
        jet(i).emfrac<=0.9&&jet(i).emfrac!=NOVAL_F){

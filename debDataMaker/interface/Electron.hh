@@ -14,6 +14,7 @@
    List of parameters to steer the object with (passed in iConfig):
       int storeNElectrons,      : owned by Data<D>, mandatory in constructor
       InputTag electronTag,     : owned by Data<D>
+      int selectionType,   : owned by Data<D> but decided here if set
      
    iConfig is passed only through the contructor. 
 
@@ -29,14 +30,14 @@
          that calculates values that depend on other data models
 
       int passed(std::string,unsigned int i) (virtual):
-         if selectionType is set, returns the result of the selections. The
+         if selection is set, returns the result of the selections. The
          selections are implemented in this function.
 
 */
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Electron.hh,v 1.3 2009/05/31 18:59:05 akapusi Exp $
+// $Id: Electron.hh,v 1.4 2009/06/02 11:25:14 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -77,16 +78,19 @@ public:
    List of parameters to gear the object with (passed in iConfig):
       int storeNElectrons,      : owned by Data<D>, mandatory in constructor
       InputTag electronTag,     : owned by Data<D>
+      int selectionType,   : owned by Data<D>
 */
 
 template<class T> Electron<T>::Electron(const edm::ParameterSet& iConfig) : 
   Data<ElectronData>(iConfig.getParameter<int>("storeNElectrons")) {
   
   setTag(iConfig.getParameter<edm::InputTag>("electronTag"));
- 
+  setSelectionType(iConfig.getParameter<std::string>("selectionType")); 
+
   stdMesg("  Electron<%s> configuration:", typeid(T).name());
-  stdMesg("\tstoreNElectrons = %d", max_size());
-  stdMesg("\telectronTag = \"%s\"", tag().label().data());
+  stdMesg("  \tstoreNElectrons = %d", max_size());
+  stdMesg("  \telectronTag = \"%s\"", tag().label().data());
+  stdMesg("  \tselectionType = %s", getSelectionType().data());  
   stdMesg("  List of variables: %s\n", electron(0).list().data());
   stdMesg("  Object is %svalid!\n", (isValid() ? "" : "not "));
 
@@ -225,7 +229,7 @@ int Electron<T>::passed(std::string selection,unsigned int i) {
   }
 
 
-  if(getSelectionType().compare("RefAna4JetMetElectron")==0){
+  if(selection.compare("RefAna4JetMetElectron")==0){
     if(electron(i).pt>=20.0&&electron(i).pt!=NOVAL_F&&
        TMath::Abs(electron(i).eta)<=2.5&&electron(i).eta!=NOVAL_F&&
        (TMath::Abs(electron(i).eta)<1.47||

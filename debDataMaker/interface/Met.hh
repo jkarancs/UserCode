@@ -31,14 +31,14 @@
          calculates values that depend on other data models
 
       int passed(int i) (virtual,unsigned int i):
-         if selectionType is set, returns the result of the selections. The
+         if selection is set, returns the result of the selections. The
          selections are implemented in this function.
 
 */
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Met.hh,v 1.1 2009/05/30 19:38:47 veszpv Exp $
+// $Id: Met.hh,v 1.2 2009/06/02 11:25:46 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------

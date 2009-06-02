@@ -42,7 +42,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Event.hh,v 1.1 2009/05/30 19:38:43 veszpv Exp $
+// $Id: Event.hh,v 1.2 2009/06/02 11:26:01 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -98,9 +98,9 @@ Event::Event(const edm::ParameterSet& iConfig) : Data<EventData>(int(1)) {
   setSelectionType(iConfig.getParameter<std::string>("selectionType"));  
 
   stdMesg("  Event configuration:");
-  stdMesg("\teventWeight = %f", eventWeight_);
-  stdMesg("\tprocIdx = %d", procIdx_);
-  stdMesg("\tselectionType = %s", getSelectionType().data());
+  stdMesg("  \teventWeight = %f", eventWeight_);
+  stdMesg("  \tprocIdx = %d", procIdx_);
+  stdMesg("  \tselectionType = %s", getSelectionType().data());
   stdMesg("  List of variables: %s\n", event(0).list().data());
 
 }

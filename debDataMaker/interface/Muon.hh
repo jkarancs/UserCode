@@ -14,6 +14,7 @@
    List of parameters to steer the object with (passed in iConfig):
       int storeNMuons,     : owned by Data<D>, mandatory in constructor
       InputTag objectTag,  : owned by Data<D> but decided here if set
+      int selectionType,   : owned by Data<D> but decided here if set
   
    iConfig is passed only through the contructor. 
 
@@ -29,14 +30,14 @@
          that calculates values that depend on other data models
 
       int passed(std::string,unsigned int i) (virtual):
-         if selectionType is set, returns the result of the selections. The
+         if selection is set, returns the result of the selections. The
          selections are implemented in this function.
 
 */
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Muon.hh,v 1.3 2009/05/31 18:59:25 akapusi Exp $
+// $Id: Muon.hh,v 1.4 2009/06/02 11:25:27 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -76,17 +77,19 @@ template<class T> class Muon : public Data<MuonData>{
    List of parameters to gear the object with (passed in iConfig):
       int storeNMuons,     : owned by Data<D>, mandatory in constructor
       InputTag muonTag,    : owned by Data<D>
+      int selectionType,   : owned by Data<D>
 */
 
 template<class T> Muon<T>::Muon(const edm::ParameterSet& iConfig) : 
   Data<MuonData>(iConfig.getParameter<int>("storeNMuons")) {
   
   setTag(iConfig.getParameter<edm::InputTag>("muonTag"));
-  setSelectionType(iConfig.getParameter<std::string>("selectionType"));
+  setSelectionType(iConfig.getParameter<std::string>("selectionType")); 
 
   stdMesg("  Muon<%s> configuration:", typeid(T).name());
-  stdMesg("\tstoreNMuons = %d", max_size());
-  stdMesg("\tmuonTag = \"%s\"", tag().label().data());
+  stdMesg("  \tstoreNMuons = %d", max_size());
+  stdMesg("  \tmuonTag = \"%s\"", tag().label().data());
+  stdMesg("  \tselectionType = %s", getSelectionType().data());
   stdMesg("  List of variables: %s\n", muon(0).list().data());
   stdMesg("  Object is %svalid!\n", (isValid() ? "" : "not "));
 
