@@ -7,7 +7,18 @@
 // 
 /**\class Beamspot Beamspot.hh SusyAnalysis/debDataMaker/interface/Beamspot.hh
 
- Description: <one line class summary>
+ Description: 
+
+	The beam spot is the luminous region produced by the collisions of proton beams.
+
+	The algorithm used to calculated the transverse beam position is the so called d0-phi algorithm. This is a robust and fast χ2 fit which just needs 1000 good tracks to reach micron precision. Using a Log-Likelihood fit, the beam width can be extracted using 20000 good tracks. A more detail description can be found in the CMS Note 2007/021. 
+
+	Luminosity:     L = (f*n*N1*N2) / A
+
+		f : 	the revolution frequency
+		n : 	the number of bunches in one beam in the storage ring
+	   N1 & N2: 	the number of particles in each bunch
+		A : 	the cross section of the beam
 
  Implementation:
 
@@ -30,7 +41,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id$
+// $Id: Beamspot.hh,v 1.1 2009/05/30 19:38:34 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
