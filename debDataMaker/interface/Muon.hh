@@ -14,8 +14,7 @@
    List of parameters to steer the object with (passed in iConfig):
       int storeNMuons,     : owned by Data<D>, mandatory in constructor
       InputTag objectTag,  : owned by Data<D> but decided here if set
-      int selectionType,   : owned by Data<D> but decided here if set     
-
+  
    iConfig is passed only through the contructor. 
 
    !!!! See usage of inherited functions in Data.hh source code !!!!
@@ -29,7 +28,7 @@
       void calculate(Beamspot<reco::BeamSpot> & beamspot) (virtual):
          that calculates values that depend on other data models
 
-      int passed(std::string,int i) (virtual):
+      int passed(std::string,unsigned int i) (virtual):
          if selectionType is set, returns the result of the selections. The
          selections are implemented in this function.
 
@@ -37,7 +36,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Muon.hh,v 1.2 2009/05/31 17:57:27 akapusi Exp $
+// $Id: Muon.hh,v 1.3 2009/05/31 18:59:25 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -65,7 +64,7 @@ template<class T> class Muon : public Data<MuonData>{
   // Inherited functions to be overloaded
   void set(const edm::Event&);
   void calculate (Beamspot<reco::BeamSpot> & beamspot);
-  int passed(std::string,int i);
+  int passed(std::string,unsigned int i);
 
   // Introduce new variables and functions
   
@@ -77,7 +76,6 @@ template<class T> class Muon : public Data<MuonData>{
    List of parameters to gear the object with (passed in iConfig):
       int storeNMuons,     : owned by Data<D>, mandatory in constructor
       InputTag muonTag,    : owned by Data<D>
-      int selectionType,   : owned by Data<D>
 */
 
 template<class T> Muon<T>::Muon(const edm::ParameterSet& iConfig) : 
@@ -89,7 +87,6 @@ template<class T> Muon<T>::Muon(const edm::ParameterSet& iConfig) :
   stdMesg("  Muon<%s> configuration:", typeid(T).name());
   stdMesg("\tstoreNMuons = %d", max_size());
   stdMesg("\tmuonTag = \"%s\"", tag().label().data());
-  stdMesg("\tselectionType = %s", getSelectionType().data());
   stdMesg("  List of variables: %s\n", muon(0).list().data());
   stdMesg("  Object is %svalid!\n", (isValid() ? "" : "not "));
 
@@ -226,12 +223,12 @@ void Muon<T>::calculate (Beamspot<reco::BeamSpot> & beamspot){
   
 //--------------------------------- passed() ----------------------------------
 
-template<class T> int Muon<T>::passed(std::string selection,int i) { 
+template<class T> int Muon<T>::passed(std::string selection,unsigned int i) { 
 
   if (!isValid()) return NOVAL_I;
 
 
-  if(selection.compare("RA4mu")==0){
+  if(selection.compare("RefAna4JetMetMuon")==0){
     if(muon(i).tight==1.0&&muon(i).tight!=NOVAL_F&&
        muon(i).pt>=20.0&&muon(i).pt!=NOVAL_F&&
        TMath::Abs(muon(i).eta)<=2.1&&muon(i).eta!=NOVAL_F&&

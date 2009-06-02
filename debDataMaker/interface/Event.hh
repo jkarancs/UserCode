@@ -42,7 +42,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id$
+// $Id: Event.hh,v 1.1 2009/05/30 19:38:43 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -191,7 +191,7 @@ int Event::passed(std::string selection,
     pmetpass[i]=pmet.passed(selection,i);
   }
   
-  if(selection.compare("RA4mu")==0){  
+  if(selection.compare("RefAna4JetMetMuon")==0){  
     if(nummuo==1&&
        numele==0&&
        numjetpt50>=3&&
@@ -202,7 +202,7 @@ int Event::passed(std::string selection,
       return 0;
     }
   }
-  if(selection.compare("RA4el")==0){  
+  if(selection.compare("RefAna4JetMetElectron")==0){  
     if(trigger.trigger(0).hlt==1&&
        numele==1&&
        numjetpt50eta3emfrac09>=3&&

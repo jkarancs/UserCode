@@ -102,14 +102,12 @@ process.debNtupleMakerMod = cms.EDFilter(
 
     patElectronConfig = cms.PSet(
         storeNElectrons = cms.int32(4),
-        electronTag = cms.InputTag("allLayer1Electrons"),
-        selectionType = cms.string("RA4mu")
+        electronTag = cms.InputTag("allLayer1Electrons")
     ),
     
     patMuonConfig = cms.PSet(
         storeNMuons = cms.int32(4),
-        muonTag = cms.InputTag("allLayer1Muons"),
-        selectionType = cms.string("RA4mu")
+        muonTag = cms.InputTag("allLayer1Muons")
     ),
     
     EventConfig = cms.PSet(
@@ -130,7 +128,11 @@ process.debNtupleMakerMod = cms.EDFilter(
                                    # TTbar+Jet: 20
                                    # Z+Jet: 30
                                    # QCD: 40
-        selectionType = cms.string("RA4mu")
+        selectionType = cms.string("RefAna4JetMetMuon")
+       # RefAna4JetMetMuon:
+       # https://twiki.cern.ch/twiki/bin/view/CMS/SusyRA4SingleMuonProjectTable
+       # RefAna4JetMetElectron:
+       # https://twiki.cern.ch/twiki/bin/view/CMS/SusyRA4SingleElectronProjectTable   
     ),
     
     TriggerConfig = cms.PSet(

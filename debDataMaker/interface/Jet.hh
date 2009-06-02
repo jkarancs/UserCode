@@ -31,7 +31,7 @@
       void calculate(?) (virtual):
          calculates values that depend on other data models
 
-      int passed(std::string,int i) (virtual):
+      int passed(std::string,unsigned int i) (virtual):
          if selectionType is set, returns the result of the selections. The
          selections are implemented in this function.
 
@@ -39,7 +39,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Jet.hh,v 1.1 2009/05/30 19:38:45 veszpv Exp $
+// $Id: Jet.hh,v 1.2 2009/05/31 17:57:44 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -64,7 +64,7 @@ template<class T> class Jet : public Data<JetData>{ // D:=JetData
   // Inherited functions to be overloaded
   void set(const edm::Event&);
   void calculate ();
-  int passed(std::string selection,int i);
+  int passed(std::string selection,unsigned int i);
 
   // Introduce new variables and functions
  private:
@@ -239,12 +239,12 @@ template<class T> void Jet<T>::calculate () {
 
 //--------------------------------- passed() ----------------------------------
 
-template<class T> int Jet<T>::passed(std::string selection,int i) { 
+template<class T> int Jet<T>::passed(std::string selection,unsigned int i) { 
   
   if (!isValid()) return NOVAL_I;
 
 
-  if(selection.compare("RA4mu")==0){
+  if(selection.compare("RefAna4JetMetMuon")==0){
     if(jet(i).pt>=30.0&&jet(i).pt!=NOVAL_F&&
        TMath::Abs(jet(i).eta)<=2.4&&jet(i).eta!=NOVAL_F&&
        jet(i).hadfrac>=0.1&&jet(i).hadfrac!=NOVAL_F){
@@ -254,7 +254,7 @@ template<class T> int Jet<T>::passed(std::string selection,int i) {
   }
 
 
-  if(getSelectionType().compare("RA4el")==0){
+  if(getSelectionType().compare("RefAna4JetMetElectron")==0){
     if(jet(i).pt>=25.0&&jet(i).pt!=NOVAL_F&&
        TMath::Abs(jet(i).eta)<=3.0&&jet(i).eta!=NOVAL_F&&
        jet(i).emfrac<=0.9&&jet(i).emfrac!=NOVAL_F){

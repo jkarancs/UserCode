@@ -30,7 +30,7 @@
       void calculate(?) (virtual):
          calculates values that depend on other data models
 
-      int passed(int i) (virtual,int i):
+      int passed(int i) (virtual,unsigned int i):
          if selectionType is set, returns the result of the selections. The
          selections are implemented in this function.
 
@@ -38,7 +38,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id$
+// $Id: Met.hh,v 1.1 2009/05/30 19:38:47 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ template<class T> class Met : public Data<MetData>{ // D:=MetData
   // Inherited functions to be overloaded
   void set(const edm::Event&);
   void calculate ();
-  int passed(std::string,int i);
+  int passed(std::string,unsigned int i);
 
   // Introduce new variables and functions
  private:
@@ -254,12 +254,12 @@ template<class T> void Met<T>::calculate () {
 
 //--------------------------------- passed() ----------------------------------
 
-template<class T> int Met<T>::passed(std::string selection,int i) { 
+template<class T> int Met<T>::passed(std::string selection,unsigned int i) { 
 
   if (!isValid()) return NOVAL_I;
 
   
-  if(selection.compare("RA4mu")==0){  
+  if(selection.compare("RefAna4JetMetMuon")==0){  
     if(met(i).et>100.0&&met(i).et!=NOVAL_F){
       return 1;
     }      
