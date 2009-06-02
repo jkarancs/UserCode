@@ -52,12 +52,14 @@ process.debNtupleMakerMod = cms.EDFilter(
 
     patElectronConfig = cms.PSet(
         storeNElectrons = cms.int32(4),
-        electronTag = cms.InputTag("selectedLayer1Electrons")
+        electronTag = cms.InputTag("selectedLayer1Electrons"),
+        selectionType = cms.string("RefAna4JetMetMuon")
     ),
 
     patMuonConfig = cms.PSet(
         storeNMuons = cms.int32(4),
-        muonTag = cms.InputTag("selectedLayer1Muons")
+        muonTag = cms.InputTag("selectedLayer1Muons"),
+        selectionType = cms.string("RefAna4JetMetMuon")
     ),
 
     EventConfig = cms.PSet(
