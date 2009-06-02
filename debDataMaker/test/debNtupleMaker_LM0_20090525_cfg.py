@@ -49,12 +49,12 @@ process.debNtupleMakerMod = cms.EDFilter(
         selectionType = cms.string("RA4mu"),
         corrections = cms.vstring("uncorrALL", "uncorrMAXN") ## index 0
     ),
-    ElectronConfig = cms.PSet(
+    patElectronConfig = cms.PSet(
         storeNElectrons = cms.int32(4),
         electronTag = cms.InputTag("allLayer1Electrons"),
         selectionType = cms.string("RA4mu")
     ),
-    MuonConfig = cms.PSet(
+    patMuonConfig = cms.PSet(
         storeNMuons = cms.int32(4),
         muonTag = cms.InputTag("allLayer1Muons"),
         selectionType = cms.string("RA4mu")

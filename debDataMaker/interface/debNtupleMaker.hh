@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id$
+// $Id: debNtupleMaker.hh,v 1.1 2009/05/30 19:38:37 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -80,8 +80,8 @@ public:
   //Jet<reco::GenJet> gjet; // genJet
   Jet<pat::Jet> pjet;
   Met<pat::MET> pmet;
-  Electron<pat::Electron> electron;
-  Muon<pat::Muon> muon;
+  Electron<pat::Electron> pelectron;
+  Muon<pat::Muon> pmuon;
   Event event;
 
   deb::DeltaR<Jet<pat::Jet>,Met<pat::MET> > dr_pjet_pmet;

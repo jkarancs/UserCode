@@ -13,7 +13,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id$
+// $Id: debNtupleMaker.cc,v 1.1 2009/05/30 19:52:31 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -27,8 +27,8 @@ debNtupleMaker::debNtupleMaker(const edm::ParameterSet& iConfig) :
   //gjet(iConfig.getParameter<edm::ParameterSet>("genJetConfig")),
   pjet(iConfig.getParameter<edm::ParameterSet>("patJetConfig")),
   pmet(iConfig.getParameter<edm::ParameterSet>("patMetConfig")),
-  electron(iConfig.getParameter<edm::ParameterSet>("ElectronConfig")),
-  muon(iConfig.getParameter<edm::ParameterSet>("MuonConfig")),
+  pelectron(iConfig.getParameter<edm::ParameterSet>("patElectronConfig")),
+  pmuon(iConfig.getParameter<edm::ParameterSet>("patMuonConfig")),
   event(iConfig.getParameter<edm::ParameterSet>("EventConfig")),
   dr_pjet_pmet(
        pjet, iConfig.getParameter<edm::ParameterSet>("drPatJetPatMetConfig").
@@ -47,8 +47,8 @@ debNtupleMaker::debNtupleMaker(const edm::ParameterSet& iConfig) :
   //gjet.addBranch(tree, "gjet");
   pjet.addBranch(tree, "pjet");
   pmet.addBranch(tree, "pmet");
-  electron.addBranch(tree, "electron");
-  muon.addBranch(tree, "muon");
+  pelectron.addBranch(tree, "pelectron");
+  pmuon.addBranch(tree, "pmuon");
   event.addBranch(tree,"event");
   beamspot.addBranch(tree,"beamspot");
   trigger.addBranch(tree,"trigger");
@@ -83,11 +83,11 @@ bool debNtupleMaker::filter(edm::Event& iEvent, const edm::EventSetup& iSetup){
   trigger.clear();
   trigger.set(iEvent);
 
-  electron.clear();
-  electron.set(iEvent);
+  pelectron.clear();
+  pelectron.set(iEvent);
 
-  muon.clear();
-  muon.set(iEvent);
+  pmuon.clear();
+  pmuon.set(iEvent);
 
   // Calculate
   // 
@@ -97,8 +97,8 @@ bool debNtupleMaker::filter(edm::Event& iEvent, const edm::EventSetup& iSetup){
   event.calculate();
   beamspot.calculate();
   trigger.calculate();
-  electron.calculate(beamspot);
-  muon.calculate(beamspot);
+  pelectron.calculate(beamspot);
+  pmuon.calculate(beamspot);
   dr_pjet_pmet.clear();
   dr_pjet_pmet.calculate();
 
