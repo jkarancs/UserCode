@@ -8,6 +8,8 @@
     int const NOVAL_I=-9999;
     const char* const NOVAL_S="N/A";
 
+    int const PASS_VALIDITY=0;
+
     int const FROM_PAT=0;
     int const FROM_RECO=1;
     int const FROM_SIM=2;
