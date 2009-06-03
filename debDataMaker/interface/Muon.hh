@@ -26,7 +26,7 @@
       void set(const edm::Event&) (virtual):
          that implements reading variables of D from the CMSSW framework
 
-      void calculate(Beamspot<reco::BeamSpot> & beamspot) (virtual):
+      void calculate(Beamspot<reco::BeamSpot>  *beamspot) (virtual):
          that calculates values that depend on other data models
 
       int passed(std::string,unsigned int i) (virtual):
@@ -37,7 +37,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Muon.hh,v 1.5 2009/06/02 17:46:31 akapusi Exp $
+// $Id: Muon.hh,v 1.6 2009/06/03 13:17:11 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -64,7 +64,7 @@ template<class T> class Muon : public Data<MuonData>{
 
   // Inherited functions to be overloaded
   void set(const edm::Event&);
-  void calculate (Beamspot<reco::BeamSpot> & beamspot);
+  void calculate (Beamspot<reco::BeamSpot> *beamspot=NULL);
   int passed(std::string,unsigned int i);
 
   // Introduce new variables and functions
@@ -188,7 +188,7 @@ template<class T> void Muon<T>::set(const edm::Event& iEvent) {
 //-------------------------------- calculate() --------------------------------
 
 template<class T> 
-void Muon<T>::calculate (Beamspot<reco::BeamSpot> & beamspot){ 
+void Muon<T>::calculate (Beamspot<reco::BeamSpot>  *beamspot){ 
 
   if (!isValid()) return;
   
@@ -198,12 +198,12 @@ void Muon<T>::calculate (Beamspot<reco::BeamSpot> & beamspot){
     muon(i).reliso=NOVAL_F;
 
     if(muon(i).d0!=NOVAL_F&&
-       beamspot.beamspot(0).beamspotx!=NOVAL_F&&
-       beamspot.beamspot(0).beamspoty!=NOVAL_F&&
+       (*beamspot).beamspot(0).beamspotx!=NOVAL_F&&
+       (*beamspot).beamspot(0).beamspoty!=NOVAL_F&&
        muon(i).phi_trk!=NOVAL_F) {
 	muon(i).bc_d0=muon(i).d0 
-	  -beamspot.beamspot(0).beamspotx*TMath::Sin(muon(i).phi_trk)
-	  +beamspot.beamspot(0).beamspoty*TMath::Cos(muon(i).phi_trk);
+	  -(*beamspot).beamspot(0).beamspotx*TMath::Sin(muon(i).phi_trk)
+	  +(*beamspot).beamspot(0).beamspoty*TMath::Cos(muon(i).phi_trk);
       } 
    
     if(muon(i).isoR03_ecal!=NOVAL_F&&

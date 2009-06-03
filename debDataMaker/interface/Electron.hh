@@ -37,7 +37,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Electron.hh,v 1.5 2009/06/02 17:46:01 akapusi Exp $
+// $Id: Electron.hh,v 1.6 2009/06/03 13:17:02 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -65,7 +65,7 @@ public:
   
   // Inherited functions to be overloaded
   void set(const edm::Event&);
-  void calculate (Beamspot<reco::BeamSpot> & beamspot);
+  void calculate (Beamspot<reco::BeamSpot>  *beamspot=NULL);
   int passed(std::string selection,unsigned int i);
   
   // Introduce new variables and functions
@@ -174,22 +174,30 @@ template<class T> void Electron<T>::set(const edm::Event& iEvent) {
 //-------------------------------- calculate() --------------------------------
 
 template<class T> 
-void Electron<T>::calculate (Beamspot<reco::BeamSpot> & beamspot) { 
+void Electron<T>::calculate (Beamspot<reco::BeamSpot>  *beamspot) { 
 
   if (!isValid()) return;
 
+  if(beamspot==NULL){
+    for (unsigned int i=0; i<max_size(); i++) {
+      electron(i).bc_d0=NOVAL_F;
+      electron(i).reliso=NOVAL_F;
+    }
+    return;
+  }
+  
   for (unsigned int i=0; i<max_size(); i++) {
 
     electron(i).bc_d0=NOVAL_F;
     electron(i).reliso=NOVAL_F;
 
     if(electron(i).d0!=NOVAL_F&&
-       beamspot.beamspot(0).beamspotx!=NOVAL_F&&
-       beamspot.beamspot(0).beamspoty!=NOVAL_F&&
+       (*beamspot).beamspot(0).beamspotx!=NOVAL_F&&
+       (*beamspot).beamspot(0).beamspoty!=NOVAL_F&&
        electron(i).phi_trk!=NOVAL_F){
     electron(i).bc_d0=electron(i).d0
-              -beamspot.beamspot(0).beamspotx*TMath::Sin(electron(i).phi_trk)
-              +beamspot.beamspot(0).beamspoty*TMath::Cos(electron(i).phi_trk);
+            -(*beamspot).beamspot(0).beamspotx*TMath::Sin(electron(i).phi_trk)
+            +(*beamspot).beamspot(0).beamspoty*TMath::Cos(electron(i).phi_trk);
     }
     
     if(electron(i).isoR03_ecal!=NOVAL_F&&
@@ -201,10 +209,6 @@ void Electron<T>::calculate (Beamspot<reco::BeamSpot> & beamspot) {
 			  +electron(i).isoR03_trk)
 	                  /electron(i).et;
     }
-  
-    //for (i=0;i<max_size;i++){
-    //  electron.pass=passed("RA4mu",i); //bitkodolt ize
-    //}
   }
   
 }
