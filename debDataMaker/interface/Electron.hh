@@ -37,7 +37,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Electron.hh,v 1.4 2009/06/02 11:25:14 akapusi Exp $
+// $Id: Electron.hh,v 1.5 2009/06/02 17:46:01 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -218,11 +218,19 @@ int Electron<T>::passed(std::string selection,unsigned int i) {
 
   
   if(selection.compare("RefAna4JetMetMuon")==0){
-    if(electron(i).pt>=20.0&&electron(i).pt!=NOVAL_F&&
-       TMath::Abs(electron(i).eta)<=2.5&&electron(i).eta!=NOVAL_F&&
-       electron(i).tight==1.0&&electron(i).tight!=NOVAL_F&&
-       electron(i).reliso<0.1&&electron(i).reliso!=NOVAL_F&&
-       TMath::Abs(electron(i).bc_d0)<=0.2&&electron(i).bc_d0!=NOVAL_F){
+    if(electron(i).pt==NOVAL_F||
+       electron(i).eta==NOVAL_F||
+       electron(i).tight==NOVAL_F||
+       electron(i).reliso==NOVAL_F||
+       electron(i).bc_d0==NOVAL_F){
+      stdErr("Electron::passed() : NOVAL value in the cut criteria");     
+      return NOVAL_I;
+    }
+    if(electron(i).pt>=20.0&&
+       TMath::Abs(electron(i).eta)<=2.5&&
+       electron(i).tight==1.0&&
+       electron(i).reliso<0.1&&
+       TMath::Abs(electron(i).bc_d0)<=0.2){
       return 1;
     }      
     return 0;
@@ -230,13 +238,21 @@ int Electron<T>::passed(std::string selection,unsigned int i) {
 
 
   if(selection.compare("RefAna4JetMetElectron")==0){
-    if(electron(i).pt>=20.0&&electron(i).pt!=NOVAL_F&&
-       TMath::Abs(electron(i).eta)<=2.5&&electron(i).eta!=NOVAL_F&&
+    if(electron(i).pt==NOVAL_F||
+       electron(i).eta==NOVAL_F||
+       electron(i).loose==NOVAL_F||
+       electron(i).reliso==NOVAL_F||
+       electron(i).bc_d0==NOVAL_F){
+      stdErr("Electron::passed() : NOVAL value in the cut criteria");
+      return NOVAL_I;
+    }
+    if(electron(i).pt>=20.0&&
+       TMath::Abs(electron(i).eta)<=2.5&&
        (TMath::Abs(electron(i).eta)<1.47||
 	TMath::Abs(electron(i).eta)>1.567)&&
-       electron(i).loose==1.0&&electron(i).loose!=NOVAL_F&&
-       electron(i).reliso<0.1&&electron(i).reliso!=NOVAL_F&&
-       TMath::Abs(electron(i).bc_d0)<=0.2&&electron(i).bc_d0!=NOVAL_F){
+       electron(i).loose==1.0&&
+       electron(i).reliso<0.1&&
+       TMath::Abs(electron(i).bc_d0)<=0.2){
       return 1;
     }     
     return 0;

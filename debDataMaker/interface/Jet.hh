@@ -39,7 +39,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Jet.hh,v 1.3 2009/06/02 11:25:33 akapusi Exp $
+// $Id: Jet.hh,v 1.4 2009/06/02 17:46:22 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -245,9 +245,13 @@ template<class T> int Jet<T>::passed(std::string selection,unsigned int i) {
 
 
   if(selection.compare("RefAna4JetMetMuon")==0){
-    if(jet(i).pt>=30.0&&jet(i).pt!=NOVAL_F&&
-       TMath::Abs(jet(i).eta)<=2.4&&jet(i).eta!=NOVAL_F&&
-       jet(i).hadfrac>=0.1&&jet(i).hadfrac!=NOVAL_F){
+    if(jet(i).pt==NOVAL_F||jet(i).eta==NOVAL_F||jet(i).hadfrac==NOVAL_F){
+      stdErr("Jet::passed() : NOVAL value in the cut criteria");    
+      return NOVAL_I;
+    }
+    if(jet(i).pt>=30.0&&
+       TMath::Abs(jet(i).eta)<=2.4&&
+       jet(i).hadfrac>=0.1){
       return 1;
     }     
     return 0;
@@ -255,9 +259,13 @@ template<class T> int Jet<T>::passed(std::string selection,unsigned int i) {
 
 
   if(selection.compare("RefAna4JetMetElectron")==0){
-    if(jet(i).pt>=25.0&&jet(i).pt!=NOVAL_F&&
-       TMath::Abs(jet(i).eta)<=3.0&&jet(i).eta!=NOVAL_F&&
-       jet(i).emfrac<=0.9&&jet(i).emfrac!=NOVAL_F){
+    if(jet(i).pt==NOVAL_F||jet(i).eta==NOVAL_F||jet(i).emfrac==NOVAL_F){
+      stdErr("Jet::passed() : NOVAL value in the cut criteria");
+      return NOVAL_I;
+    }
+    if(jet(i).pt>=25.0&&
+       TMath::Abs(jet(i).eta)<=3.0&&
+       jet(i).emfrac<=0.9){
       return 1;
     }      
     return 0;

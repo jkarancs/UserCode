@@ -42,7 +42,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Event.hh,v 1.2 2009/06/02 11:26:01 akapusi Exp $
+// $Id: Event.hh,v 1.3 2009/06/02 17:46:11 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -176,22 +176,34 @@ int Event::passed(std::string selection,
   std::vector<int> pjetpass(pjet.max_size());
   for (unsigned int i=0;i<pjet.max_size();i++){
     pjetpass[i]=pjet.passed(selection,i);
-    if(pjetpass[i]==1&&pjet.jet(i).pt>=50.0){
-      numjetpt50++;
+    if(pjet.jet(i).pt==NOVAL_F){
+      stdErr("Event::passed() : NOVAL value in the cut criteria");
     }
-    if(pjetpass[i]==1&&
-       pjet.jet(i).pt>=50.0&&
-       TMath::Abs(pjet.jet(i).eta)<3.0&&
-       pjet.jet(i).emfrac<0.9){
-      numjetpt50eta3emfrac09++;
+    else {
+      if(pjetpass[i]==1&&pjet.jet(i).pt>=50.0){
+	numjetpt50++;
+      }
     }
-  }
-  std::vector<int> pmetpass(pmet.max_size());
-  for (unsigned int i=0;i<pmet.max_size();i++){
-    pmetpass[i]=pmet.passed(selection,i);
+    if(pjet.jet(i).pt==NOVAL_F||
+       pjet.jet(i).eta==NOVAL_F||
+       pjet.jet(i).emfrac==NOVAL_F){
+      stdErr("Event::passed() : NOVAL value in the cut criteria");
+    }
+    else {
+      if(pjetpass[i]==1&&
+	 pjet.jet(i).pt>=50.0&&
+	 TMath::Abs(pjet.jet(i).eta)<3.0&&
+	 pjet.jet(i).emfrac<0.9){
+	numjetpt50eta3emfrac09++;
+      }
+    }
   }
   
   if(selection.compare("RefAna4JetMetMuon")==0){  
+    if(pmet.met(0).et==NOVAL_F){
+      stdErr("Event::passed() : NOVAL value in the cut criteria");    
+      return NOVAL_I;    
+    }
     if(nummuo==1&&
        numele==0&&
        numjetpt50>=3&&
@@ -202,7 +214,12 @@ int Event::passed(std::string selection,
       return 0;
     }
   }
+
   if(selection.compare("RefAna4JetMetElectron")==0){  
+    if(pmet.met(0).et==NOVAL_F){
+      stdErr("Event::passed() : NOVAL value in the cut criteria");    
+      return NOVAL_I;    
+    }
     if(trigger.trigger(0).hlt==1&&
        numele==1&&
        numjetpt50eta3emfrac09>=3&&

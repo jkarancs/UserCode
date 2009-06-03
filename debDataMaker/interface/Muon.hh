@@ -37,7 +37,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Muon.hh,v 1.4 2009/06/02 11:25:27 akapusi Exp $
+// $Id: Muon.hh,v 1.5 2009/06/02 17:46:31 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -232,17 +232,29 @@ template<class T> int Muon<T>::passed(std::string selection,unsigned int i) {
 
 
   if(selection.compare("RefAna4JetMetMuon")==0){
-    if(muon(i).tight==1.0&&muon(i).tight!=NOVAL_F&&
-       muon(i).pt>=20.0&&muon(i).pt!=NOVAL_F&&
-       TMath::Abs(muon(i).eta)<=2.1&&muon(i).eta!=NOVAL_F&&
-       muon(i).reliso<0.1&&muon(i).reliso!=NOVAL_F&&
-       muon(i).ndof!=0.0&&muon(i).ndof!=NOVAL_F&&
-       muon(i).chi2!=NOVAL_F&&
+    if(muon(i).tight==NOVAL_F||
+       muon(i).pt==NOVAL_F||
+       muon(i).eta==NOVAL_F||
+       muon(i).reliso==NOVAL_F||
+       muon(i).chi2==NOVAL_F||
+       muon(i).ndof==NOVAL_F||
+       muon(i).bc_d0==NOVAL_F||
+       muon(i).hits==NOVAL_F||
+       muon(i).hcalisodep==NOVAL_F||
+       muon(i).ecalisodep==NOVAL_F){
+      stdErr("Muon::passed() : NOVAL value in the cut criteria");
+      return NOVAL_I;
+    }
+    if(muon(i).tight==1.0&&
+       muon(i).pt>=20.0&&
+       TMath::Abs(muon(i).eta)<=2.1&&
+       muon(i).reliso<0.1&&
+       muon(i).ndof!=0.0&&
        muon(i).chi2/muon(i).ndof<10.0&&
-       TMath::Abs(muon(i).bc_d0)<=0.2&&muon(i).bc_d0!=NOVAL_F&&
-       muon(i).hits>=11.0&&muon(i).hits!=NOVAL_F&&
-       muon(i).hcalisodep<6.0&&muon(i).hcalisodep!=NOVAL_F&&
-       muon(i).ecalisodep<4.0&&muon(i).ecalisodep!=NOVAL_F){
+       TMath::Abs(muon(i).bc_d0)<=0.2&&
+       muon(i).hits>=11.0&&
+       muon(i).hcalisodep<6.0&&
+       muon(i).ecalisodep<4.0){
       return 1;
     }
     return 0;
