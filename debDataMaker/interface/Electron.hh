@@ -26,7 +26,7 @@
       void set(const edm::Event&) (virtual):
          that implements reading variables of D from the CMSSW framework
 
-      void calculate(Beamspot<reco::BeamSpot> & beamspot) (virtual):
+      void calculate(Beamspot<reco::BeamSpot>  *beamspot) (virtual):
          that calculates values that depend on other data models
 
       int passed(std::string,unsigned int i) (virtual):
@@ -37,7 +37,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Electron.hh,v 1.6 2009/06/03 13:17:02 akapusi Exp $
+// $Id: Electron.hh,v 1.7 2009/06/03 14:27:46 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
