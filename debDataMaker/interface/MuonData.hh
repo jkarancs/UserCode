@@ -18,11 +18,14 @@
       std::string list(std::string prefix=""):
          makes a list of the variables for a TTree::Branch() definition
 
+      selectionTypes_:
+         is a map that translates the string of SelectionType to an integer
+
 */
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: MuonData.hh,v 1.2 2009/05/31 17:57:23 akapusi Exp $
+// $Id: MuonData.hh,v 1.3 2009/06/03 07:57:26 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -35,9 +38,6 @@ namespace deb {
 
   class MuonData {
   public:
-    MuonData() { }
-    ~MuonData() { }
-
     float e;
     float px;
     float py;
@@ -62,6 +62,20 @@ namespace deb {
     float bc_d0;       //d0 with respect to the primary vertex
     float reliso;      //Relative isolation 
                        //(isoR03_ecal+isoR03_hcal+isoR03_trk/pt)
+    int pass;
+
+    MuonData() {
+      selectionTypes_["VALID"]=VALID;
+      selectionTypes_["RefAna4JetMetMuon"]=RefAna4JetMetMuon;
+    }
+    ~MuonData() { }
+
+    enum MuonSelectionType {
+      VALID=PASS_VALIDITY,
+      RefAna4JetMetMuon
+    };
+
+    std::map<std::string, int> selectionTypes_;
 
     void clear() {
       e=NOVAL_F;
@@ -87,6 +101,7 @@ namespace deb {
       ecalisodep=NOVAL_F;
       bc_d0=NOVAL_F;
       reliso=NOVAL_F;  
+      pass=0; // set 0 to bit at PASS_VALIDITY (pass is invalid)
     }
 
     std::string list(std::string prefix="") {
@@ -113,7 +128,8 @@ namespace deb {
       ss << prefix << "hcalisodep/F:";
       ss << prefix << "ecalisodep/F:";
       ss << prefix << "bc_d0/F:";
-      ss << prefix << "reliso/F";
+      ss << prefix << "reliso/F:";
+      ss << prefix << "pass/I";
       return ss.str();
     }
 

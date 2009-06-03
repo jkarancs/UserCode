@@ -18,11 +18,14 @@
       std::string list(std::string prefix=""):
          makes a list of the variables for a TTree::Branch() definition
 
+      selectionTypes_:
+         is a map that translates the string of SelectionType to an integer
+
 */
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: ElectronData.hh,v 1.2 2009/05/31 17:57:13 akapusi Exp $
+// $Id: ElectronData.hh,v 1.3 2009/06/03 07:56:51 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -35,9 +38,6 @@ namespace deb {
 
   class ElectronData {
   public:
-    ElectronData() { }
-    ~ElectronData() { }
-
     float e;
     float px;
     float py;
@@ -58,6 +58,22 @@ namespace deb {
     float bc_d0;        //d0 with respect to the primary vertex
     float reliso;       //Relative isolation 
                         //(isoR03_ecal+isoR03_hcal+isoR03_trk/et)
+    int pass;
+
+    ElectronData() {
+      selectionTypes_["VALID"]=VALID;
+      selectionTypes_["RefAna4JetMetMuon"]=RefAna4JetMetMuon;
+      selectionTypes_["RefAna4JetMetElectron"]=RefAna4JetMetElectron;
+    }
+    ~ElectronData() { }
+
+    enum ElectronSelectionType {
+      VALID=PASS_VALIDITY,
+      RefAna4JetMetMuon,
+      RefAna4JetMetElectron
+    };
+
+    std::map<std::string, int> selectionTypes_;
 
     void clear() {
       e=NOVAL_F;
@@ -79,6 +95,7 @@ namespace deb {
       loose=NOVAL_F;
       bc_d0=NOVAL_F;
       reliso=NOVAL_F;     
+      pass=0;
     }
 
     std::string list(std::string prefix="") {
@@ -101,7 +118,8 @@ namespace deb {
       ss << prefix << "tight/F:";
       ss << prefix << "loose/F:";
       ss << prefix << "bc_d0/F:";
-      ss << prefix << "reliso/F";
+      ss << prefix << "reliso/F:";
+      ss << prefix << "pass/I";
       return ss.str();
     }
 

@@ -18,11 +18,14 @@
       std::string list(std::string prefix=""):
          makes a list of the variables for a TTree::Branch() definition
 
+      selectionTypes_:
+         is a map that translates the string of SelectionType to an integer
+
 */
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id$
+// $Id: EventData.hh,v 1.1 2009/05/30 19:38:42 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -35,9 +38,6 @@ namespace deb {
 
   class EventData {
   public:
-    EventData() { }
-    ~EventData() { }
-
     int run;
     int ev;
     int genevprocid;                      //genEvent process id
@@ -56,13 +56,30 @@ namespace deb {
                                           // Z+Jet: 30
                                           // QCD: 40
     float w;
+    int pass;
        
+    EventData() {
+      selectionTypes_["VALID"]=VALID;
+      selectionTypes_["RefAna4JetMetMuon"]=RefAna4JetMetMuon;
+      selectionTypes_["RefAna4JetMetElectron"]=RefAna4JetMetElectron;
+    }
+    ~EventData() { }
+
+    enum EventSelectionType {
+      VALID=PASS_VALIDITY,
+      RefAna4JetMetMuon,
+      RefAna4JetMetElectron
+    };
+
+    std::map<std::string, int> selectionTypes_;
+
     void clear() {
       run=NOVAL_I;
       ev=NOVAL_I;
       genevprocid=NOVAL_I;
       procidx=NOVAL_I;
       w=NOVAL_F;
+      pass=0; // set 0 to bit at PASS_VALIDITY (pass is invalid)
     }
     
     std::string list(std::string prefix="") {
@@ -71,7 +88,8 @@ namespace deb {
       ss << prefix << "ev/I:";
       ss << prefix << "genevprocid/I:";
       ss << prefix << "procidx/I:";
-      ss << prefix << "w/F";
+      ss << prefix << "w/F:";
+      ss << prefix << "pass/I";
       return ss.str();
     }
 

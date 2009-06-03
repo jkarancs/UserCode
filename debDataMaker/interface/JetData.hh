@@ -18,11 +18,14 @@
       std::string list(std::string prefix=""):
          makes a list of the variables for a TTree::Branch() definition
 
+      selectionTypes_:
+         is a map that translates the string of SelectionType to an integer
+
 */
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id$
+// $Id: JetData.hh,v 1.1 2009/05/30 19:38:44 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -35,9 +38,6 @@ namespace deb {
 
   class JetData {
   public:
-    JetData() { }
-    ~JetData() { }
-
     float e;
     float px;
     float py;
@@ -51,6 +51,22 @@ namespace deb {
     float emfrac;
     float area;
     int corr;   // correction type
+    int pass;
+
+    JetData() {
+      selectionTypes_["VALID"]=VALID;
+      selectionTypes_["RefAna4JetMetMuon"]=RefAna4JetMetMuon;
+      selectionTypes_["RefAna4JetMetElectron"]=RefAna4JetMetElectron;
+    }
+    ~JetData() { }
+
+    std::map<std::string, int> selectionTypes_;
+
+    enum JetSelectionType {
+      VALID=PASS_VALIDITY,
+      RefAna4JetMetMuon,
+      RefAna4JetMetElectron
+    };
 
     void clear() {
       e=NOVAL_F;
@@ -66,6 +82,7 @@ namespace deb {
       emfrac=NOVAL_F;
       area=NOVAL_F;
       corr=NOVAL_I;
+      pass=0; // set 0 to bit at PASS_VALIDITY (pass is invalid)
     }
 
     std::string list(std::string prefix="") {
@@ -82,7 +99,8 @@ namespace deb {
       ss << prefix << "hadfrac/F:";
       ss << prefix << "emfrac/F:";
       ss << prefix << "area/F:";
-      ss << prefix << "corr/I";
+      ss << prefix << "corr/I:";
+      ss << prefix << "pass/I";
       return ss.str();
     }
 
