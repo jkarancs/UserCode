@@ -38,7 +38,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Met.hh,v 1.2 2009/06/02 11:25:46 akapusi Exp $
+// $Id: Met.hh,v 1.3 2009/06/02 17:46:27 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -241,32 +241,12 @@ pat::MET::UncorrectionType Met<T>::getPatMetCorrType(std::string corr){
 //-------------------------------- calculate() --------------------------------
 
 template<class T> void Met<T>::calculate () { 
-
-  if (!isValid()) return;
-
-  for (unsigned int i=0; i<max_size(); i++) {
-    //for (i=0;i<max_size;i++){
-    //  met.pass=passed("RA4mu",i); //bitkodolt ize
-    //}
-  }
 }
 
 
 //--------------------------------- passed() ----------------------------------
 
 template<class T> int Met<T>::passed(std::string selection,unsigned int i) { 
-
-  if (!isValid()) return NOVAL_I;
-
-  
-  if(selection.compare("RefAna4JetMetMuon")==0){  
-    if(met(i).et>100.0&&met(i).et!=NOVAL_F){
-      return 1;
-    }      
-    return 0;
-  }
-  
-
   return NOVAL_I;
 }
 
