@@ -13,7 +13,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: debNtupleMaker.cc,v 1.2 2009/06/02 09:27:10 akapusi Exp $
+// $Id: debNtupleMaker.cc,v 1.3 2009/06/03 14:25:14 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -101,8 +101,8 @@ bool debNtupleMaker::filter(edm::Event& iEvent, const edm::EventSetup& iSetup){
   event.calculate();
   beamspot.calculate();
   trigger.calculate();
-  pelectron.calculate(beamspot);
-  pmuon.calculate(beamspot);
+  pelectron.calculate(&beamspot);
+  pmuon.calculate(&beamspot);
   dr_pjet_pmet.calculate();
   dr_pjet.calculate();
 
