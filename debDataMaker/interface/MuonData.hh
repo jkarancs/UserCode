@@ -22,7 +22,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: MuonData.hh,v 1.1 2009/05/30 19:38:48 veszpv Exp $
+// $Id: MuonData.hh,v 1.2 2009/05/31 17:57:23 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -39,11 +39,11 @@ namespace deb {
     ~MuonData() { }
 
     float e;
-    float p;
     float px;
     float py;
     float pz;
     float m;
+    float p;
     float pt;
     float et;
     float eta;
@@ -69,6 +69,7 @@ namespace deb {
       py=NOVAL_F;
       pz=NOVAL_F;
       m=NOVAL_F;
+      p=NOVAL_F;
       pt=NOVAL_F;
       et=NOVAL_F;
       eta=NOVAL_F;
@@ -95,6 +96,7 @@ namespace deb {
       ss << prefix << "py/F:";
       ss << prefix << "pz/F:";
       ss << prefix << "m/F:";
+      ss << prefix << "p/F:";
       ss << prefix << "pt/F:";
       ss << prefix << "et/F:";
       ss << prefix << "eta/F:";
