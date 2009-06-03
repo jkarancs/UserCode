@@ -13,7 +13,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: debNtupleMaker.cc,v 1.1 2009/05/30 19:52:31 veszpv Exp $
+// $Id: debNtupleMaker.cc,v 1.2 2009/06/02 09:27:10 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -89,6 +89,10 @@ bool debNtupleMaker::filter(edm::Event& iEvent, const edm::EventSetup& iSetup){
   pmuon.clear();
   pmuon.set(iEvent);
 
+  dr_pjet_pmet.clear();
+
+  dr_pjet.clear();
+
   // Calculate
   // 
 
@@ -99,11 +103,17 @@ bool debNtupleMaker::filter(edm::Event& iEvent, const edm::EventSetup& iSetup){
   trigger.calculate();
   pelectron.calculate(beamspot);
   pmuon.calculate(beamspot);
-  dr_pjet_pmet.clear();
   dr_pjet_pmet.calculate();
-
-  dr_pjet.clear();
   dr_pjet.calculate();
+
+  // Calculate pass
+  //
+
+  pelectron.calculate_pass();
+  pmuon.calculate_pass();
+  pjet.calculate_pass();
+  event.calculate_pass();
+
   // Select
   //
 
