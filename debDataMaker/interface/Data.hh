@@ -73,11 +73,19 @@
 	 the EXACT SAME ORDER.
 
       void setValid(bool):
-         sets the validity of an object
+         sets the validity (valid_) of an object
 
       bool isValid():
          returns the value of valid_
   
+      void calculate_pass():
+         sets the value of the variable 'pass' in data structure D. If the bit
+         at PASS_VALIDITY in pass is not set (1), the other bits are to be 
+	 ignored. Otherwise, the other 31-PASS_VALIDITY bits store the results
+	 of the selections listed in selectionTypes_ and implemented in 
+	 int passed(string,int)
+
+
    NEED TO BE OVERLOADED after defining the data structure D:
 
       set(const edm::Event& iEvent):
@@ -87,10 +95,9 @@
       calculate():
          calculates values in D that depend on other data models
 
-      int passed(int i) (virtual):
-         if setSelectionType() is set, returns the result of the selections for
-	 the i^th element of Data<D>. The selection itself is implemented
-         after Data<D> is specified.
+      int passed(std::string selection, unsigned int i) (virtual):
+         returns the result of selection for the i^th element of Data<D>. The 
+	 selection itself is implemented after Data<D> is specified.
 
   
       Note:      
@@ -102,7 +109,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id$
+// $Id: Data.hh,v 1.1 2009/05/30 19:38:36 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -175,7 +182,7 @@ template <class D> class Data {
 
   virtual void calculate() { }
 
-  virtual int passed(std::string) {
+  virtual int passed(std::string, unsigned int i) {
     return NOVAL_I;
   }
 
@@ -248,6 +255,34 @@ template <class D> class Data {
 
   void setValid(bool choice) { valid_=choice; }
   bool isValid() { return valid_; }
+
+  void calculate_pass() {
+    if (!isValid()) return;
+    for (unsigned int i=0; i<max_size(); i++) {
+      data(i)->pass=0;
+      std::map<std::string, int>::const_iterator it;
+      for (it=data(i)->selectionTypes_.begin();
+           it!=data(i)->selectionTypes_.end();
+           it++){
+	if (it->first.find("VALID")!=std::string::npos) {
+	  data(i)->pass|=1<<it->second;
+	  continue;
+	}
+	int result=passed(it->first, i);
+	if (result!=0 && result!=1) {
+	  stdErr("::calculate_pass(): selection %s returned value %d",
+		 it->first.data(), result);
+	  stdErr("...is it implemented? ...are all the parameters required"\
+		 " for this selection computed by the time calculate"\
+		 "_pass is called?\n");
+	  data(i)->pass=0;
+	  return;
+	}
+        data(i)->pass|=result<<it->second;
+      }
+    }
+  }
+
 };
 
 
