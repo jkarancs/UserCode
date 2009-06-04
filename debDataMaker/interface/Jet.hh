@@ -31,15 +31,15 @@
       void calculate(?) (virtual):
          calculates values that depend on other data models
 
-      int passed(std::string,unsigned int i) (virtual):
-         if selectionType is set, returns the result of the selections. The
-         selections are implemented in this function.
+      int passed(std::string selection,unsigned int i) (virtual):
+         returns the result of selection. The selections are implemented in 
+	 this function.
 
 */
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Jet.hh,v 1.4 2009/06/02 17:46:22 akapusi Exp $
+// $Id: Jet.hh,v 1.5 2009/06/03 13:17:17 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -226,14 +226,6 @@ template<> double Jet<reco::GenJet>::getCorrFactor(const reco::GenJet* jet) {
 //-------------------------------- calculate() --------------------------------
 
 template<class T> void Jet<T>::calculate () { 
-
-  if (!isValid()) return;
-
-  for (unsigned int i=0; i<max_size(); i++) {
-    //for (i=0;i<max_size;i++){
-    //  jet.pass=passed("RA4mu",i); //bitkodolt ize
-    //}
-  }
 }
 
 

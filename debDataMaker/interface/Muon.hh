@@ -29,15 +29,15 @@
       void calculate(Beamspot<reco::BeamSpot>  *beamspot) (virtual):
          that calculates values that depend on other data models
 
-      int passed(std::string,unsigned int i) (virtual):
-         if selection is set, returns the result of the selections. The
-         selections are implemented in this function.
+      int passed(std::string selection,unsigned int i) (virtual):
+         returns the result of selection. The selections are implemented in
+	 this function.
 
 */
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Muon.hh,v 1.6 2009/06/03 13:17:11 akapusi Exp $
+// $Id: Muon.hh,v 1.7 2009/06/03 14:27:53 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -192,7 +192,7 @@ void Muon<T>::calculate (Beamspot<reco::BeamSpot>  *beamspot){
 
   if (!isValid()) return;
   
-  for (unsigned int i=0; i<max_size(); i++) {
+  for (unsigned int i=0; i<size_; i++) {
     
     muon(i).bc_d0=NOVAL_F;
     muon(i).reliso=NOVAL_F;
@@ -215,10 +215,6 @@ void Muon<T>::calculate (Beamspot<reco::BeamSpot>  *beamspot){
 			   +muon(i).isoR03_trk)
 	               /muon(i).pt;
       } 
-         
-    //for (i=0;i<max_size;i++){
-    //  muon.pass=passed("RA4mu",i); //bitkodolt ize
-    //}
   }
 
 }

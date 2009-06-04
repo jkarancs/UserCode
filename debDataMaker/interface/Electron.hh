@@ -29,15 +29,15 @@
       void calculate(Beamspot<reco::BeamSpot>  *beamspot) (virtual):
          that calculates values that depend on other data models
 
-      int passed(std::string,unsigned int i) (virtual):
-         if selection is set, returns the result of the selections. The
-         selections are implemented in this function.
+      int passed(std::string selection,unsigned int i) (virtual):
+         returns the result of selection. The selections are implemented in 
+	 this function.
 
 */
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Electron.hh,v 1.7 2009/06/03 14:27:46 akapusi Exp $
+// $Id: Electron.hh,v 1.8 2009/06/03 14:33:05 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -186,7 +186,7 @@ void Electron<T>::calculate (Beamspot<reco::BeamSpot>  *beamspot) {
     return;
   }
   
-  for (unsigned int i=0; i<max_size(); i++) {
+  for (unsigned int i=0; i<size_; i++) {
 
     electron(i).bc_d0=NOVAL_F;
     electron(i).reliso=NOVAL_F;
