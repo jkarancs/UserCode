@@ -109,7 +109,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Data.hh,v 1.1 2009/05/30 19:38:36 veszpv Exp $
+// $Id: Data.hh,v 1.2 2009/06/03 13:56:53 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -258,7 +258,7 @@ template <class D> class Data {
 
   void calculate_pass() {
     if (!isValid()) return;
-    for (unsigned int i=0; i<max_size(); i++) {
+    for (unsigned int i=0; i<size_; i++) {
       data(i)->pass=0;
       std::map<std::string, int>::const_iterator it;
       for (it=data(i)->selectionTypes_.begin();
@@ -270,10 +270,10 @@ template <class D> class Data {
 	}
 	int result=passed(it->first, i);
 	if (result!=0 && result!=1) {
-	  stdErr("::calculate_pass(): selection %s returned value %d",
-		 it->first.data(), result);
-	  stdErr("...is it implemented? ...are all the parameters required"\
-		 " for this selection computed by the time calculate"\
+	  stdErr("calculate_pass(): selection %s on element %d returned value %d",
+		 it->first.data(), i, result);
+	  stdErr("...is it implemented? ...are all the parameters required" \
+		 " for this selection computed by the time calculate"	\
 		 "_pass is called?\n");
 	  data(i)->pass=0;
 	  return;
