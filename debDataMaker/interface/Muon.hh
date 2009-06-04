@@ -37,7 +37,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Muon.hh,v 1.7 2009/06/03 14:27:53 akapusi Exp $
+// $Id: Muon.hh,v 1.8 2009/06/04 07:47:33 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -135,20 +135,24 @@ template<class T> void Muon<T>::set(const edm::Event& iEvent) {
       muon(i).isoR03_hcal=muons[i].second->hcalIso();
       muon(i).isoR03_ecal=muons[i].second->ecalIso();
       if(muons[i].second->track().isNonnull()) {
+	muon(i).has_trk=1;
 	muon(i).hits=muons[i].second->track()->numberOfValidHits();
 	muon(i).d0=muons[i].second->track()->d0();
 	muon(i).phi_trk=muons[i].second->track()->phi();
       }
       else {
+	muon(i).has_trk=0;
 	muon(i).hits=NOVAL_F;
 	muon(i).d0=NOVAL_F;
 	muon(i).phi_trk=NOVAL_F;
       }
       if(muons[i].second->combinedMuon().isNonnull()) {
+	muon(i).is_combined=1;
 	muon(i).chi2=muons[i].second->combinedMuon()->chi2();
 	muon(i).ndof=muons[i].second->combinedMuon()->ndof();
       }
       else {
+	muon(i).is_combined=0;
 	muon(i).chi2=NOVAL_F;
 	muon(i).ndof=NOVAL_F;
       }
@@ -180,7 +184,9 @@ template<class T> void Muon<T>::set(const edm::Event& iEvent) {
       muon(i).hcalisodep=NOVAL_F;
       muon(i).ecalisodep=NOVAL_F;
       muon(i).bc_d0=NOVAL_F;
-      muon(i).reliso=NOVAL_F; 
+      muon(i).reliso=NOVAL_F;
+      muon(i).has_trk=NOVAL_I;
+      muon(i).is_combined=NOVAL_I; 
     }      
   }
 }
@@ -232,15 +238,33 @@ template<class T> int Muon<T>::passed(std::string selection,unsigned int i) {
        muon(i).pt==NOVAL_F||
        muon(i).eta==NOVAL_F||
        muon(i).reliso==NOVAL_F||
-       muon(i).chi2==NOVAL_F||
-       muon(i).ndof==NOVAL_F||
-       muon(i).bc_d0==NOVAL_F||
-       muon(i).hits==NOVAL_F||
        muon(i).hcalisodep==NOVAL_F||
-       muon(i).ecalisodep==NOVAL_F){
+       muon(i).ecalisodep==NOVAL_F||
+       muon(i).has_trk==NOVAL_I||
+       muon(i).is_combined==NOVAL_I){
       stdErr("Muon::passed() : NOVAL value in the cut criteria");
       return NOVAL_I;
     }
+    if((muon(i).bc_d0==NOVAL_F||muon(i).hits==NOVAL_F)&&
+       muon(i).has_trk==0){
+      return 0;
+    }
+    if((muon(i).chi2==NOVAL_F||muon(i).ndof==NOVAL_F)&&
+       muon(i).is_combined==0){
+      return 0;
+    }
+    if((muon(i).bc_d0==NOVAL_F||muon(i).hits==NOVAL_F)&&
+       muon(i).has_trk==1){
+      stdErr("Muon::passed() : NOVAL value in the cut criteria(has_trk=1)");  
+      return NOVAL_I;
+    }
+    if((muon(i).chi2==NOVAL_F||muon(i).ndof==NOVAL_F)&&
+       muon(i).is_combined==1){
+      stdErr(
+	    "Muon::passed() : NOVAL value in the cut criteria(is_combined=1)");
+      return NOVAL_I;
+    }
+
     if(muon(i).tight==1.0&&
        muon(i).pt>=20.0&&
        TMath::Abs(muon(i).eta)<=2.1&&

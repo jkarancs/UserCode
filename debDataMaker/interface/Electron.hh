@@ -37,7 +37,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Electron.hh,v 1.8 2009/06/03 14:33:05 akapusi Exp $
+// $Id: Electron.hh,v 1.9 2009/06/04 07:47:16 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -136,10 +136,12 @@ template<class T> void Electron<T>::set(const edm::Event& iEvent) {
       electron(i).isoR03_hcal=electrons[i].second->hcalIso();
       electron(i).isoR03_ecal=electrons[i].second->ecalIso();
       if(electrons[i].second->gsfTrack().isNonnull()) {
+	electron(i).has_trk=1;
 	electron(i).d0=electrons[i].second->gsfTrack()->d0();
 	electron(i).phi_trk=electrons[i].second->gsfTrack()->phi();
       }
       else {
+	electron(i).has_trk=0;
 	electron(i).d0=NOVAL_F;
 	electron(i).phi_trk=NOVAL_F;
       }
@@ -166,7 +168,8 @@ template<class T> void Electron<T>::set(const edm::Event& iEvent) {
       electron(i).tight=NOVAL_F;
       electron(i).loose=NOVAL_F;
       electron(i).bc_d0=NOVAL_F;
-      electron(i).reliso=NOVAL_F; 
+      electron(i).reliso=NOVAL_F;
+      electron(i).has_trk=NOVAL_I; 
     }      
   }
 }
@@ -226,7 +229,14 @@ int Electron<T>::passed(std::string selection,unsigned int i) {
        electron(i).eta==NOVAL_F||
        electron(i).tight==NOVAL_F||
        electron(i).reliso==NOVAL_F||
-       electron(i).bc_d0==NOVAL_F){
+       electron(i).has_trk==NOVAL_I){
+      stdErr("Electron::passed() : NOVAL value in the cut criteria");     
+      return NOVAL_I;
+    }
+    if(electron(i).bc_d0==NOVAL_F&& electron(i).has_trk==0){
+      return 0;
+    }
+    if(electron(i).bc_d0==NOVAL_F&& electron(i).has_trk==1){
       stdErr("Electron::passed() : NOVAL value in the cut criteria");     
       return NOVAL_I;
     }
@@ -246,8 +256,16 @@ int Electron<T>::passed(std::string selection,unsigned int i) {
        electron(i).eta==NOVAL_F||
        electron(i).loose==NOVAL_F||
        electron(i).reliso==NOVAL_F||
-       electron(i).bc_d0==NOVAL_F){
+       electron(i).has_trk==NOVAL_I){
       stdErr("Electron::passed() : NOVAL value in the cut criteria");
+      return NOVAL_I;
+    }
+    if(electron(i).bc_d0==NOVAL_F&& electron(i).has_trk==0){
+      return 0;
+    }
+    if(electron(i).bc_d0==NOVAL_F&& electron(i).has_trk==1){
+      stdErr(
+	    "Electron::passed() : NOVAL value in the cut criteria(has_trk=1)");
       return NOVAL_I;
     }
     if(electron(i).pt>=20.0&&

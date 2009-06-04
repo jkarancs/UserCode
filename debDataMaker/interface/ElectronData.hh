@@ -25,7 +25,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: ElectronData.hh,v 1.3 2009/06/03 07:56:51 veszpv Exp $
+// $Id: ElectronData.hh,v 1.4 2009/06/03 13:59:23 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -59,6 +59,7 @@ namespace deb {
     float reliso;       //Relative isolation 
                         //(isoR03_ecal+isoR03_hcal+isoR03_trk/et)
     int pass;
+    int has_trk;
 
     ElectronData() {
       selectionTypes_["VALID"]=VALID;
@@ -96,6 +97,7 @@ namespace deb {
       bc_d0=NOVAL_F;
       reliso=NOVAL_F;     
       pass=0;
+      has_trk=NOVAL_I;
     }
 
     std::string list(std::string prefix="") {
@@ -119,7 +121,8 @@ namespace deb {
       ss << prefix << "loose/F:";
       ss << prefix << "bc_d0/F:";
       ss << prefix << "reliso/F:";
-      ss << prefix << "pass/I";
+      ss << prefix << "pass/I:";
+      ss << prefix << "has_trk/I";
       return ss.str();
     }
 
