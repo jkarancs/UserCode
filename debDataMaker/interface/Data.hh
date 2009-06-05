@@ -62,13 +62,13 @@
       D& operator ()(unsigned int i):
          returns a reference to the i^th D element in Data<D> (UNCHECKED)
 
-      addBranches(TTree* tree, std::string name):
+      addBranch(TTree* tree, std::string name):
          creates a branch in tree for each D element in Data<D> with a 
          name in the format: 'name[i]' where 'i' is 0,1,...,max_size()
 
-      setBranches():
+      setBranch():
          should be called before filling TTree* tree, if a branch was added 
-	 to the tree with addBranches(). Since Data<D> stores every D in a 
+	 to the tree with addBranch(). Since Data<D> stores every D in a 
 	 vector, there is no guarantee that their location does not change 
 	 during event processing. SetBranches() fixes this problem. 
 
@@ -85,7 +85,7 @@
 	 each class D.
       
       std::string list(std::string prefix="") (virtual):
-         used inside addBranches(). Returns the variable string that defines 
+         used inside addBranch(). Returns the variable string that defines 
 	 the variable names in the branches of the tree. This must be 
          implemented in class D after actually declaring the variables in D 
 	 following the EXACT SAME ORDER.
@@ -133,7 +133,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Data.hh,v 1.3 2009/06/04 07:14:46 veszpv Exp $
+// $Id: Data.hh,v 1.4 2009/06/05 09:30:08 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -185,12 +185,12 @@ template <class D> class Data {
   edm::InputTag tag_;                   // objectTag
   bool valid_;                          // tells if object is valid
   unsigned int storeNObjects_;          // storeNObjects after calling select()
-  std::string branch_;                  // branch name if saved to tree
-  TTree* tree_;                         // pointer to tree if being saved there
 
  protected:
   unsigned int size_;
   //inline std::vector<D>& data() { return data_; }
+  std::string branch_;                  // branch name if saved to tree
+  TTree* tree_;                         // pointer to tree if being saved there
   void setTag(edm::InputTag tag) { tag_=tag; }
   void setSelectionType(std::string type) { selectionType_=type; }
 
@@ -239,13 +239,13 @@ template <class D> class Data {
     size_++;
   }
 
-  void addBranches(TTree* tree, std::string name) {
+  void addBranch(TTree* tree, std::string name) {
     if (!isValid()) {
-      stdErr("addBranches(): Object is not valid, cannot add it to tree\n");
+      stdErr("addBranch(): Object is not valid, cannot add it to tree\n");
       return;
     }
     if (tree_!=NULL) {
-      stdWarn("addBranches(): Object is already added to a tree.\n");
+      stdWarn("addBranch(): Object is already added to a tree.\n");
       return;
     }
     branch_=name;
@@ -257,13 +257,13 @@ template <class D> class Data {
     }
   }
 
-  void setBranches() {
+  void setBranch() {
     if (!isValid()) {
-      stdErr("setBranches(): Object is not valid, can't fill its branches.\n");
+      stdErr("setBranch(): Object is not valid, can't fill its branches.\n");
       return;
     }
     if (tree_==NULL) {
-      stdErr("setBranches(): Object hasn't been added to tree. "	\
+      stdErr("setBranch(): Object hasn't been added to tree. "	\
 	     "(Do it in the constructor!)\n");
       return;
     }
@@ -272,7 +272,7 @@ template <class D> class Data {
       ss<<branch_<<"_"<<i;
       TBranch* br=tree_->GetBranch(ss.str().data());
       if (br!=NULL) br->SetAddress(data(i));
-      else stdErr("setBranches(): Did not find branch %s in tree!!!\n", 
+      else stdErr("setBranch(): Did not find branch %s in tree!!!\n", 
 		  ss.str().data());
     }
   }
@@ -354,7 +354,7 @@ template <class D> class Data {
 	     selectionType_.data());
       return;
     }
-    for (int i=0; i<(int)size_; i++) { // erase elements not passing selection
+    for (int i=0; i<int(size_); i++) { // erase elements not passing selection
       if (passed(selectionType_, i)!=0) continue; 
       data_.erase(data_.begin()+i);
       --i;
