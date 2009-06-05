@@ -37,7 +37,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Muon.hh,v 1.8 2009/06/04 07:47:33 veszpv Exp $
+// $Id: Muon.hh,v 1.9 2009/06/04 08:40:10 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -117,77 +117,51 @@ template<class T> void Muon<T>::set(const edm::Event& iEvent) {
   std::sort(muons.begin(), muons.end(),
 	    std::greater<std::pair<float, const T* > >());
 
-  size_=0;
-  for (unsigned int i=0; i<max_size(); i++) {
-    if (muons.size()>i) {
-      size_=i+1;
-      //functions from CMSSW/ DataFormats/ Candidate/ interface/ Particle.h
-      muon(i).e = muons[i].second->energy();
-      muon(i).px= muons[i].second->px();
-      muon(i).py= muons[i].second->py();
-      muon(i).pz= muons[i].second->pz();
-      muon(i).m= muons[i].second->mass();
-      muon(i).pt=muons[i].second->pt();
-      muon(i).et=muons[i].second->et();
-      muon(i).eta=muons[i].second->eta();
-      muon(i).phi=muons[i].second->phi();
-      muon(i).isoR03_trk=muons[i].second->trackIso();
-      muon(i).isoR03_hcal=muons[i].second->hcalIso();
-      muon(i).isoR03_ecal=muons[i].second->ecalIso();
-      if(muons[i].second->track().isNonnull()) {
-	muon(i).has_trk=1;
-	muon(i).hits=muons[i].second->track()->numberOfValidHits();
-	muon(i).d0=muons[i].second->track()->d0();
-	muon(i).phi_trk=muons[i].second->track()->phi();
-      }
-      else {
-	muon(i).has_trk=0;
-	muon(i).hits=NOVAL_F;
-	muon(i).d0=NOVAL_F;
-	muon(i).phi_trk=NOVAL_F;
-      }
-      if(muons[i].second->combinedMuon().isNonnull()) {
-	muon(i).is_combined=1;
-	muon(i).chi2=muons[i].second->combinedMuon()->chi2();
-	muon(i).ndof=muons[i].second->combinedMuon()->ndof();
-      }
-      else {
-	muon(i).is_combined=0;
-	muon(i).chi2=NOVAL_F;
-	muon(i).ndof=NOVAL_F;
-      }
-      muon(i).tight=muons[i].second->isGood(reco::Muon::GlobalMuonPromptTight);
-      muon(i).hcalisodep=muons[i].second->hcalIsoDeposit()->candEnergy();
-      muon(i).ecalisodep=muons[i].second->ecalIsoDeposit()->candEnergy();
-      muon(i).bc_d0=NOVAL_F;
-      muon(i).reliso=NOVAL_F;   
-    } 
+  clear();
+  for (unsigned int i=0; i<muons.size(); i++) {
+    push_back(*(new MuonData));
+
+    //functions from CMSSW/ DataFormats/ Candidate/ interface/ Particle.h
+    muon(i).e = muons[i].second->energy();
+    muon(i).px= muons[i].second->px();
+    muon(i).py= muons[i].second->py();
+    muon(i).pz= muons[i].second->pz();
+    muon(i).m= muons[i].second->mass();
+    muon(i).pt=muons[i].second->pt();
+    muon(i).et=muons[i].second->et();
+    muon(i).eta=muons[i].second->eta();
+    muon(i).phi=muons[i].second->phi();
+    muon(i).isoR03_trk=muons[i].second->trackIso();
+    muon(i).isoR03_hcal=muons[i].second->hcalIso();
+    muon(i).isoR03_ecal=muons[i].second->ecalIso();
+    if(muons[i].second->track().isNonnull()) {
+      muon(i).has_trk=1;
+      muon(i).hits=muons[i].second->track()->numberOfValidHits();
+      muon(i).d0=muons[i].second->track()->d0();
+      muon(i).phi_trk=muons[i].second->track()->phi();
+    }
     else {
-      muon(i).e=NOVAL_F;
-      muon(i).px=NOVAL_F;
-      muon(i).py=NOVAL_F;
-      muon(i).pz=NOVAL_F;
-      muon(i).m=NOVAL_F;
-      muon(i).pt=NOVAL_F;
-      muon(i).et=NOVAL_F;
-      muon(i).eta=NOVAL_F;
-      muon(i).phi=NOVAL_F;
-      muon(i).isoR03_trk=NOVAL_F;
-      muon(i).isoR03_hcal=NOVAL_F;
-      muon(i).isoR03_ecal=NOVAL_F;
+      muon(i).has_trk=0;
       muon(i).hits=NOVAL_F;
-      muon(i).chi2=NOVAL_F;
-      muon(i).ndof=NOVAL_F;
       muon(i).d0=NOVAL_F;
       muon(i).phi_trk=NOVAL_F;
-      muon(i).tight=NOVAL_F;
-      muon(i).hcalisodep=NOVAL_F;
-      muon(i).ecalisodep=NOVAL_F;
-      muon(i).bc_d0=NOVAL_F;
-      muon(i).reliso=NOVAL_F;
-      muon(i).has_trk=NOVAL_I;
-      muon(i).is_combined=NOVAL_I; 
-    }      
+    }
+    if(muons[i].second->combinedMuon().isNonnull()) {
+      muon(i).is_combined=1;
+      muon(i).chi2=muons[i].second->combinedMuon()->chi2();
+      muon(i).ndof=muons[i].second->combinedMuon()->ndof();
+    }
+    else {
+      muon(i).is_combined=0;
+      muon(i).chi2=NOVAL_F;
+      muon(i).ndof=NOVAL_F;
+    }
+    muon(i).tight=muons[i].second->isGood(reco::Muon::GlobalMuonPromptTight);
+    muon(i).hcalisodep=muons[i].second->hcalIsoDeposit()->candEnergy();
+    muon(i).ecalisodep=muons[i].second->ecalIsoDeposit()->candEnergy();
+    muon(i).bc_d0=NOVAL_F;
+    muon(i).reliso=NOVAL_F;   
+
   }
 }
   

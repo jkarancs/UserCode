@@ -38,7 +38,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Met.hh,v 1.3 2009/06/02 17:46:27 akapusi Exp $
+// $Id: Met.hh,v 1.4 2009/06/03 08:10:41 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -185,12 +185,14 @@ template<class T> void Met<T>::set(const edm::Event& iEvent) {
 	   typeid(T).name(), metHandle->size());
   }
 
-  for (unsigned int i=0; i<max_size(); i++) {
+  clear();
+  for (unsigned int i=0; i<corrections_.size(); i++) {
+    push_back(*(new MetData));
     met(i).corr=MetCorrTypeMap[corrections_[i].data()];
-
+    
     if (met(i).hasPatCorrType()) {
       pat::MET::UncorrectionType patType=getPatMetCorrType(corrections_[i]);
-
+      
       if (corrections_[i]=="uncorrMAXN") {
 	met(i).et = metHandle->front().pt();
 	met(i).phi = metHandle->front().phi();
@@ -205,7 +207,7 @@ template<class T> void Met<T>::set(const edm::Event& iEvent) {
       }
       continue;
     }
-
+    
     if(corrections_[i]=="DEFAULT") {
       met(i).et=metHandle->front().pt();
       met(i).phi=metHandle->front().phi();
@@ -215,11 +217,6 @@ template<class T> void Met<T>::set(const edm::Event& iEvent) {
 
     stdErr("Met<%s>::set(): correction type %s not recognized (implemented)\n",
 	   corrections_[i].data());
-
-    met(i).corr=NOVAL_I;
-    met(i).et=NOVAL_F;
-    met(i).phi=NOVAL_F;
-    met(i).sumet=NOVAL_F;
   }
 
 }

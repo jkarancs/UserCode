@@ -37,7 +37,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Electron.hh,v 1.9 2009/06/04 07:47:16 veszpv Exp $
+// $Id: Electron.hh,v 1.10 2009/06/04 08:39:53 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -118,59 +118,38 @@ template<class T> void Electron<T>::set(const edm::Event& iEvent) {
   std::sort(electrons.begin(), electrons.end(),
 	    std::greater<std::pair<float, const T* > >());
 
-  size_=0;
-  for (unsigned int i=0; i<max_size(); i++) {
-    if (electrons.size()>i) {
-      size_=i+1;
-      //functions from CMSSW/ DataFormats/ Candidate/ interface/ Particle.h
-      electron(i).e = electrons[i].second->energy();
-      electron(i).px= electrons[i].second->px();
-      electron(i).py= electrons[i].second->py();
-      electron(i).pz= electrons[i].second->pz();
-      electron(i).m= electrons[i].second->mass();
-      electron(i).pt=electrons[i].second->pt();
-      electron(i).et=electrons[i].second->et();
-      electron(i).eta=electrons[i].second->eta();
-      electron(i).phi=electrons[i].second->phi();
-      electron(i).isoR03_trk=electrons[i].second->trackIso();
-      electron(i).isoR03_hcal=electrons[i].second->hcalIso();
-      electron(i).isoR03_ecal=electrons[i].second->ecalIso();
-      if(electrons[i].second->gsfTrack().isNonnull()) {
-	electron(i).has_trk=1;
-	electron(i).d0=electrons[i].second->gsfTrack()->d0();
-	electron(i).phi_trk=electrons[i].second->gsfTrack()->phi();
-      }
-      else {
-	electron(i).has_trk=0;
-	electron(i).d0=NOVAL_F;
-	electron(i).phi_trk=NOVAL_F;
-      }
-      electron(i).tight=electrons[i].second->electronID("eidRobustTight");
-      electron(i).loose=electrons[i].second->electronID("eidRobustLoose");
-      electron(i).bc_d0=NOVAL_F;
-      electron(i).reliso=NOVAL_F; 
-    } 
+  clear();
+  for (unsigned int i=0; i<electrons.size(); i++) {
+    push_back(*(new ElectronData));
+
+    //functions from CMSSW/ DataFormats/ Candidate/ interface/ Particle.h
+    electron(i).e = electrons[i].second->energy();
+    electron(i).px= electrons[i].second->px();
+    electron(i).py= electrons[i].second->py();
+    electron(i).pz= electrons[i].second->pz();
+    electron(i).m= electrons[i].second->mass();
+    electron(i).pt=electrons[i].second->pt();
+    electron(i).et=electrons[i].second->et();
+    electron(i).eta=electrons[i].second->eta();
+    electron(i).phi=electrons[i].second->phi();
+    electron(i).isoR03_trk=electrons[i].second->trackIso();
+    electron(i).isoR03_hcal=electrons[i].second->hcalIso();
+    electron(i).isoR03_ecal=electrons[i].second->ecalIso();
+    if(electrons[i].second->gsfTrack().isNonnull()) {
+      electron(i).has_trk=1;
+      electron(i).d0=electrons[i].second->gsfTrack()->d0();
+      electron(i).phi_trk=electrons[i].second->gsfTrack()->phi();
+    }
     else {
-      electron(i).e=NOVAL_F;
-      electron(i).px=NOVAL_F;
-      electron(i).py=NOVAL_F;
-      electron(i).pz=NOVAL_F;
-      electron(i).m=NOVAL_F;
-      electron(i).pt=NOVAL_F;
-      electron(i).et=NOVAL_F;
-      electron(i).eta=NOVAL_F;
-      electron(i).phi=NOVAL_F;
-      electron(i).isoR03_trk=NOVAL_F;
-      electron(i).isoR03_hcal=NOVAL_F;
-      electron(i).isoR03_ecal=NOVAL_F;
+      electron(i).has_trk=0;
       electron(i).d0=NOVAL_F;
       electron(i).phi_trk=NOVAL_F;
-      electron(i).tight=NOVAL_F;
-      electron(i).loose=NOVAL_F;
-      electron(i).bc_d0=NOVAL_F;
-      electron(i).reliso=NOVAL_F;
-      electron(i).has_trk=NOVAL_I; 
-    }      
+    }
+    electron(i).tight=electrons[i].second->electronID("eidRobustTight");
+    electron(i).loose=electrons[i].second->electronID("eidRobustLoose");
+    electron(i).bc_d0=NOVAL_F;
+    electron(i).reliso=NOVAL_F; 
+    
   }
 }
   

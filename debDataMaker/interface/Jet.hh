@@ -39,7 +39,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Jet.hh,v 1.6 2009/06/04 07:47:21 veszpv Exp $
+// $Id: Jet.hh,v 1.7 2009/06/05 09:24:17 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -158,14 +158,14 @@ template<class T> void Jet<T>::set(const edm::Event& iEvent) {
   }
   std::sort(jets.begin(), jets.end(),
 	    std::greater<std::pair<float, const T* > >());
-
-  clear(); // clear the previous event
+  
+  clear(); // clear the previous event from container
   for (unsigned int i=0; i<jets.size(); i++) {
     push_back(*(new JetData)); // size_=i+1;
-
+    
     // correct jets if correction is available      
     double corr=getCorrFactor(jets[i].second);
-
+    
     jet(i).e = jets[i].second->energy()*corr;
     jet(i).px = jets[i].second->px()*corr;
     jet(i).py = jets[i].second->py()*corr;
@@ -178,7 +178,7 @@ template<class T> void Jet<T>::set(const edm::Event& iEvent) {
     jet(i).hadfrac = jets[i].second->energyFractionHadronic();
     jet(i).emfrac = jets[i].second->emEnergyFraction();
     jet(i).area = jets[i].second->jetArea();
-
+    
   }
 
 }

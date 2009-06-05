@@ -42,7 +42,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Event.hh,v 1.3 2009/06/02 17:46:11 akapusi Exp $
+// $Id: Event.hh,v 1.4 2009/06/03 13:17:23 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -110,6 +110,9 @@ Event::Event(const edm::ParameterSet& iConfig) : Data<EventData>(int(1)) {
 void Event::set(const edm::Event& iEvent) {
 
   if (!isValid()) return;
+
+  clear();
+  push_back(*(new EventData));
 
   event(0).run   = iEvent.id().run();
   event(0).ev = iEvent.id().event();

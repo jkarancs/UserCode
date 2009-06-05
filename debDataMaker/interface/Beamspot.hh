@@ -44,7 +44,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Beamspot.hh,v 1.1 2009/05/30 19:38:34 veszpv Exp $
+// $Id: Beamspot.hh,v 1.3 2009/06/02 15:14:50 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -92,15 +92,15 @@ template<class T> void Beamspot<T>::set(const edm::Event& iEvent) {
   edm::Handle<T> beamSpotHandle;
   iEvent.getByLabel("offlineBeamSpot", beamSpotHandle);
   
-  if ( beamSpotHandle.isValid() )
-    {
-      beamspot(0).beamspotx = (*beamSpotHandle).x0();
-      beamspot(0).beamspoty = (*beamSpotHandle).y0();
-      beamspot(0).beamspotz = (*beamSpotHandle).z0();
-    } else
-    {
-      stdErr("set(): No beamspot available.\n");
-    }
+  clear();
+  push_back(*(new BeamspotData));
+  if ( beamSpotHandle.isValid() ) {
+    beamspot(0).beamspotx = (*beamSpotHandle).x0();
+    beamspot(0).beamspoty = (*beamSpotHandle).y0();
+    beamspot(0).beamspotz = (*beamSpotHandle).z0();
+  } else {
+    stdErr("set(): No beamspot available.\n");
+  }
 }
   
 //-------------------------------- calculate() --------------------------------

@@ -36,7 +36,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id$
+// $Id: Trigger.hh,v 1.1 2009/05/30 19:38:52 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -102,6 +102,9 @@ template<class T> void Trigger<T>::set(const edm::Event& iEvent) {
 
   edm::Handle<T> hltHandle;
   iEvent.getByLabel(triggerResults_, hltHandle);
+
+  clear();
+  push_back(*(new TriggerData));
   if ( hltHandle.isValid() ) {
     edm::TriggerNames trgNames;
     trgNames.init(*hltHandle);
@@ -116,8 +119,8 @@ template<class T> void Trigger<T>::set(const edm::Event& iEvent) {
   }
   else {  
     stdErr("set(): No trigger results for InputTag\n");
-    trigger(0).hlt = NOVAL_I;
   }
+
 }
   
 //-------------------------------- calculate() --------------------------------
