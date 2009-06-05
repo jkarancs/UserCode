@@ -13,7 +13,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: debNtupleMaker.cc,v 1.3 2009/06/03 14:25:14 veszpv Exp $
+// $Id: debNtupleMaker.cc,v 1.4 2009/06/03 14:33:23 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -69,29 +69,26 @@ bool debNtupleMaker::filter(edm::Event& iEvent, const edm::EventSetup& iSetup){
   //gjet.set(iEvent);
 
   pjet.clear();
-  pjet.set(iEvent);
-
   pmet.clear();
-  pmet.set(iEvent);
-
-  event.clear();
-  event.set(iEvent);
-
+  event.clear();  
   beamspot.clear();
-  beamspot.set(iEvent);
-
   trigger.clear();
-  trigger.set(iEvent);
-
   pelectron.clear();
-  pelectron.set(iEvent);
-
   pmuon.clear();
+  dr_pjet_pmet.clear();
+  dr_pjet.clear();
+
+  // Set
+  //
+
+  pjet.set(iEvent);
+  pmet.set(iEvent);
+  event.set(iEvent);
+  beamspot.set(iEvent);
+  trigger.set(iEvent);
+  pelectron.set(iEvent);
   pmuon.set(iEvent);
 
-  dr_pjet_pmet.clear();
-
-  dr_pjet.clear();
 
   // Calculate
   // 
@@ -103,8 +100,6 @@ bool debNtupleMaker::filter(edm::Event& iEvent, const edm::EventSetup& iSetup){
   trigger.calculate();
   pelectron.calculate(&beamspot);
   pmuon.calculate(&beamspot);
-  dr_pjet_pmet.calculate();
-  dr_pjet.calculate();
 
   // Calculate pass
   //
@@ -116,6 +111,26 @@ bool debNtupleMaker::filter(edm::Event& iEvent, const edm::EventSetup& iSetup){
 
   // Select
   //
+  pjet.select();
+  pmuon.select();
+  pelectron.select();
+
+  // Calculate angles between selected objects
+  //
+  dr_pjet_pmet.calculate();
+  dr_pjet.calculate();
+
+  // Set branches for filling the tree
+  //
+  pjet.setBranch();
+  pmet.setBranch();
+  pelectron.setBranch();
+  pmuon.setBranch();
+  event.setBranch();
+  beamspot.setBranch();
+  trigger.setBranch();
+  dr_pjet_pmet.setBranch();
+  dr_pjet.setBranch();
 
   tree->Fill();
   return true;
