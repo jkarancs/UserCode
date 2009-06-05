@@ -39,7 +39,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Jet.hh,v 1.5 2009/06/03 13:17:17 akapusi Exp $
+// $Id: Jet.hh,v 1.6 2009/06/04 07:47:21 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -159,42 +159,26 @@ template<class T> void Jet<T>::set(const edm::Event& iEvent) {
   std::sort(jets.begin(), jets.end(),
 	    std::greater<std::pair<float, const T* > >());
 
-  size_=0;
-  for (unsigned int i=0; i<max_size(); i++) {
-    if (jets.size()>i) {
-      size_=i+1;
+  clear(); // clear the previous event
+  for (unsigned int i=0; i<jets.size(); i++) {
+    push_back(*(new JetData)); // size_=i+1;
 
-      // correct jets if correction is available
-      double corr=getCorrFactor(jets[i].second);
+    // correct jets if correction is available      
+    double corr=getCorrFactor(jets[i].second);
 
-      jet(i).e = jets[i].second->energy()*corr;
-      jet(i).px = jets[i].second->px()*corr;
-      jet(i).py = jets[i].second->py()*corr;
-      jet(i).pz = jets[i].second->pz()*corr;
-      jet(i).m = jets[i].second->mass()*corr;
-      jet(i).et = jets[i].second->et()*corr;
-      jet(i).pt = jets[i].second->pt()*corr;
-      jet(i).phi = jets[i].second->phi();
-      jet(i).eta = jets[i].second->eta();
-      jet(i).hadfrac = jets[i].second->energyFractionHadronic();
-      jet(i).emfrac = jets[i].second->emEnergyFraction();
-      jet(i).area = jets[i].second->jetArea();
+    jet(i).e = jets[i].second->energy()*corr;
+    jet(i).px = jets[i].second->px()*corr;
+    jet(i).py = jets[i].second->py()*corr;
+    jet(i).pz = jets[i].second->pz()*corr;
+    jet(i).m = jets[i].second->mass()*corr;
+    jet(i).et = jets[i].second->et()*corr;
+    jet(i).pt = jets[i].second->pt()*corr;
+    jet(i).phi = jets[i].second->phi();
+    jet(i).eta = jets[i].second->eta();
+    jet(i).hadfrac = jets[i].second->energyFractionHadronic();
+    jet(i).emfrac = jets[i].second->emEnergyFraction();
+    jet(i).area = jets[i].second->jetArea();
 
-    } 
-    else {
-      jet(i).e=NOVAL_F;
-      jet(i).px=NOVAL_F;
-      jet(i).py=NOVAL_F;
-      jet(i).pz=NOVAL_F;
-      jet(i).m=NOVAL_F;
-      jet(i).et=NOVAL_F;
-      jet(i).pt=NOVAL_F;
-      jet(i).phi=NOVAL_F;
-      jet(i).eta=NOVAL_F;
-      jet(i).hadfrac=NOVAL_F;
-      jet(i).emfrac=NOVAL_F;
-      jet(i).area=NOVAL_F;
-    }
   }
 
 }
