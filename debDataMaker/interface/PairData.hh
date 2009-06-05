@@ -39,7 +39,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Sun Mar 24 12:15:11 CET 2009
-// $Id$
+// $Id: PairData.hh,v 1.1 2009/05/30 19:38:50 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -60,33 +60,34 @@ template<class D> class PairData : public Data<D>{
 	   std::pair<unsigned int, unsigned int>&);
 
   inline D* at(unsigned int u, unsigned int v){
-    return map_[std::pair<unsigned int, unsigned int>(u,v)];
+    return Data<D>::data(map_[std::pair<unsigned int, unsigned int>(u,v)]);
   }
 
   inline D& operator ()(unsigned int u, unsigned int v){
-    return *map_[std::pair<unsigned int, unsigned int>(u,v)];
+    return *Data<D>::data(map_[std::pair<unsigned int, unsigned int>(u,v)]);
   }
 
   inline D* at(std::pair<unsigned int,unsigned int>& uv){
-    return map_[uv];
+    return Data<D>::data(map_[uv]);
   }
 
   inline D& operator ()(std::pair<unsigned int,unsigned int>& uv){
-    return *map_[uv];
+    return *Data<D>::data(map_[uv]);
   }
 
-  std::map<std::pair<unsigned int,unsigned int>, D*>& map() { return map_; }
+  std::map<std::pair<unsigned int,unsigned int>, unsigned int>& map() { 
+    return map_; 
+  }
   std::vector<std::pair<unsigned int, unsigned int> >& ind() { return ind_; }
-
   std::pair<unsigned int,unsigned int>& ind(unsigned int i) { return ind_[i]; }
   
   void addBranch(TTree*, std::string);
-
+  void setBranch();
 
  private:
-  std::map<std::pair<unsigned int,unsigned int>, D*> map_;
-  std::vector<std::pair<unsigned int, unsigned int> > ind_;
-  std::pair<unsigned int,unsigned int> bound_;
+  std::map<std::pair<unsigned int,unsigned int>, unsigned int> map_;
+  std::vector<std::pair<unsigned int, unsigned int> > ind_; // (u,v) indices
+  std::pair<unsigned int,unsigned int> bound_; // upper boundary of u and v
   std::string type_; // "diagonal", "triangle", "full". Antisymm is not ready.
 
   unsigned int get_size_uv(unsigned int size_u,
@@ -112,7 +113,7 @@ PairData<D>::PairData(std::vector<std::pair<unsigned int, unsigned int> >& ind,
   
   type_=NOVAL_S;
 
-  ind_.clear();
+  ind_.clear(); // clear vector of index-pairs, then cache the good ones:
   std::vector<std::pair<unsigned int, unsigned int> >::const_iterator it;
   for (it=ind.begin(); it!=ind.end(); it++) {
     if (it->first>=bound_.first || it->second>=bound_.second) {
@@ -120,7 +121,7 @@ PairData<D>::PairData(std::vector<std::pair<unsigned int, unsigned int> >& ind,
 		      it->first, it->second);
       Data<D>::setValid(false);
     }
-    map_[*it]=Data<D>::data(ind_.size());
+    map_[*it]=ind_.size();
     ind_.push_back(*it);
   }
 
@@ -150,7 +151,7 @@ PairData<D>::PairData(std::vector<unsigned int> ind_u, unsigned int bound_u,
 
       if (type_=="" || type_.find("full")!=std::string::npos) {
 	map_[std::pair<unsigned int, unsigned int>(ind_u[i], ind_v[j])]=
-	  Data<D>::data(ind_.size());
+	  ind_.size();
 	ind_.push_back(
 	          std::pair<unsigned int, unsigned int>(ind_u[i], ind_v[j]));
 	continue;
@@ -159,7 +160,7 @@ PairData<D>::PairData(std::vector<unsigned int> ind_u, unsigned int bound_u,
       if (ind_u[i]==ind_v[j]) {
 	if (type_.find("diag")!=std::string::npos) {
 	  map_[std::pair<unsigned int, unsigned int>(ind_u[i], ind_u[i])]=
-	    Data<D>::data(ind_.size());
+	    ind_.size();
 	  ind_.push_back(
                std::pair<unsigned int, unsigned int>(ind_u[i], ind_v[j]));
 	}
@@ -169,7 +170,7 @@ PairData<D>::PairData(std::vector<unsigned int> ind_u, unsigned int bound_u,
       if (ind_u[i]<ind_v[j]) {
 	if (type_.find("triang")!=std::string::npos) {
 	  map_[std::pair<unsigned int, unsigned int>(ind_u[i], ind_v[j])]=
-	    Data<D>::data(ind_.size());
+	    ind_.size();
 	  ind_.push_back(
 	       std::pair<unsigned int, unsigned int>(ind_u[i], ind_v[j]));
 	}
@@ -186,15 +187,51 @@ template<class D>
 void PairData<D>::addBranch(TTree* tree, std::string name) {
 
   if (!Data<D>::isValid()) {
-    Data<D>::stdErr("Object is not valid, cannot add it to tree\n");
+    Data<D>::stdErr("addBranch(): Object isn't valid, can't add it to tree\n");
     return;
   }
 
-  for (unsigned int i=0; i<Data<D>::max_size(); i++) {
+  if (Data<D>::tree_!=NULL) {
+    Data<D>::stdWarn("addBranch(): Object is already added to a tree.\n");
+    return;
+  }
+
+  Data<D>::branch_=name;
+  Data<D>::tree_=tree;
+
+  for (unsigned int i=0; i<Data<D>::storeNObjects(); i++) {
     std::ostringstream ss;
     ss<<name<<"_"<<ind_[i].first<<"_"<<ind_[i].second;
     tree->Branch(ss.str().data(), Data<D>::data(i), 
 		 Data<D>::data(i)->list().data());
+  }
+
+}
+
+//--------------------------------- setBranch() -------------------------------
+
+template<class D>
+void PairData<D>::setBranch() {
+
+  if (!Data<D>::isValid()) {
+    Data<D>::stdErr("setBranch(): Object isn't valid,"	\
+		    " can't fill its branches.\n");
+    return;
+  }
+
+  if (Data<D>::tree_==NULL) {
+    Data<D>::stdErr("setBranch(): Object hasn't been added to tree. "	\
+		    "(Do it in the constructor!)\n");
+    return;
+  }
+
+  for (unsigned int i=0; i<Data<D>::storeNObjects(); i++) {
+    std::ostringstream ss;
+    ss<<Data<D>::branch_<<"_"<<ind_[i].first<<"_"<<ind_[i].second;
+    TBranch* br=Data<D>::tree_->GetBranch(ss.str().data());
+    if (br!=NULL) br->SetAddress(Data<D>::data(i));
+    else stdErr("setBranch(): Did not find branch %s in tree!!!\n", 
+		ss.str().data());
   }
 
 }
