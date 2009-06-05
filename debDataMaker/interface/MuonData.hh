@@ -25,7 +25,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: MuonData.hh,v 1.4 2009/06/03 14:01:14 veszpv Exp $
+// $Id: MuonData.hh,v 1.5 2009/06/04 08:40:18 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -67,6 +67,7 @@ namespace deb {
     int is_combined;
 
     MuonData() {
+      clear();
       selectionTypes_["VALID"]=VALID;
       selectionTypes_["RefAna4JetMetMuon"]=RefAna4JetMetMuon;
     }

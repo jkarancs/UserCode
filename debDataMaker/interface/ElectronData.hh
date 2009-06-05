@@ -25,7 +25,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: ElectronData.hh,v 1.4 2009/06/03 13:59:23 veszpv Exp $
+// $Id: ElectronData.hh,v 1.5 2009/06/04 08:40:02 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -62,6 +62,7 @@ namespace deb {
     int has_trk;
 
     ElectronData() {
+      clear();
       selectionTypes_["VALID"]=VALID;
       selectionTypes_["RefAna4JetMetMuon"]=RefAna4JetMetMuon;
       selectionTypes_["RefAna4JetMetElectron"]=RefAna4JetMetElectron;

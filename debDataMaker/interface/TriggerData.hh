@@ -22,7 +22,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id$
+// $Id: TriggerData.hh,v 1.1 2009/05/30 19:38:51 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -35,7 +35,7 @@ namespace deb {
 
   class TriggerData {
   public:
-    TriggerData() { }
+    TriggerData() { clear(); }
     ~TriggerData() { }
 
     int hlt;

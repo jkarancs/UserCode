@@ -25,7 +25,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: EventData.hh,v 1.1 2009/05/30 19:38:42 veszpv Exp $
+// $Id: EventData.hh,v 1.2 2009/06/03 14:00:54 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -59,6 +59,7 @@ namespace deb {
     int pass;
        
     EventData() {
+      clear();
       selectionTypes_["VALID"]=VALID;
       selectionTypes_["RefAna4JetMetMuon"]=RefAna4JetMetMuon;
       selectionTypes_["RefAna4JetMetElectron"]=RefAna4JetMetElectron;

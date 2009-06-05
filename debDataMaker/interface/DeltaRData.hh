@@ -22,7 +22,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Sun Mar 24 12:15:11 CET 2009
-// $Id$
+// $Id: DeltaRData.hh,v 1.1 2009/05/30 19:38:38 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -35,7 +35,7 @@ namespace deb {
 
   class DeltaRData {
   public:
-    DeltaRData() { }
+    DeltaRData() { clear(); }
     ~DeltaRData() { }
 
     float phi;

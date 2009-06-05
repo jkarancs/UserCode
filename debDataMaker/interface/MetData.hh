@@ -36,7 +36,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id$
+// $Id: MetData.hh,v 1.1 2009/05/30 19:38:46 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -63,7 +63,7 @@ namespace deb {
 
   class MetData {
   public:
-    MetData() { }
+    MetData() { clear(); }
     ~MetData() { }
 
     float et;
