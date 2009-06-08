@@ -109,6 +109,9 @@
 	 selection (i.e. this->pass(selectionType_==0) ). If size() falls under
 	 storeNObjects_, the difference will be padded by void objects.
 
+     void print(int verbose=0):
+         prints out the variables of Data<D> and the content of each D 
+	 depending on the level of verbosity. (verbose=0,1,2,3)
 
    NEED TO BE OVERLOADED after defining the data structure D:
 
@@ -133,7 +136,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Data.hh,v 1.4 2009/06/05 09:30:08 veszpv Exp $
+// $Id: Data.hh,v 1.5 2009/06/05 19:40:11 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -176,6 +179,7 @@ template <class D> class Data {
     tree_=NULL;
     setValid(true);
     clear();
+    vars_=getVariableMap(data(0)->list());
   }
 
  private:
@@ -185,6 +189,7 @@ template <class D> class Data {
   edm::InputTag tag_;                   // objectTag
   bool valid_;                          // tells if object is valid
   unsigned int storeNObjects_;          // storeNObjects after calling select()
+  std::map<std::string,std::pair<char,size_t> > vars_;  // vars with address
 
  protected:
   unsigned int size_;
@@ -337,6 +342,7 @@ template <class D> class Data {
 	  stdErr("...is it implemented? ...are all the parameters required" \
 		 " for this selection computed by the time calculate"	\
 		 "_pass is called?\n");
+	  print(3);
 	  data(i)->pass=0;
 	  return;
 	}
@@ -347,6 +353,7 @@ template <class D> class Data {
 
   void select() {
     if (!isValid()) return;
+    if (selectionType_==NOVAL_S) return;
     if (data(0)->selectionTypes_.find(selectionType_) ==
 	data(0)->selectionTypes_.end()) {
       stdErr("select(): selection type %s is not set correctly, call "\
@@ -364,6 +371,50 @@ template <class D> class Data {
       D d; // padding space between size_ and storeNObjects_ with void data
       d.clear();
       data_.push_back(d);
+    }
+  }
+
+  void print(int verbose=0) {
+    stdMesg("  Number of valid objects in container (size): %d", size());
+    stdMesg("  Number of objects to be stored (storeNObjects): %d", 
+	    storeNObjects());
+    stdMesg("  Container size in memory (max_size): %d", max_size());
+    stdMesg("  Selection criteria for select() function (selectionType_) : %s",
+	    selectionType_.data());
+    stdMesg("  List of variables: %s", data(0)->list().data());
+    stdMesg("  Object is %svalid!\n", (isValid() ? "" : "not "));
+    if (verbose<1) return;
+
+    if (tree_!=NULL) {
+      stdMesg("  Added to tree '%s' as branch '%s_X'", tree_->GetName(), 
+	      branch_.data());
+    }
+    stdMesg("  Container map (invalid marked as ##):");
+    unsigned int max=size();
+    if (verbose>0) max=max_size();
+    for (unsigned int i=0; i<max; i++) {
+      std::string rem="  ";
+      if (i>=size()) rem="  ## ";
+      stdMesg("%s(%d): 0x%x - 0x%x",rem.data(), i, data(i), data(i)+sizeof(D));
+      if (verbose<2) continue;
+      if (i>=size() && verbose<3) continue;
+      std::map<std::string,std::pair<char,size_t> >::const_iterator it;
+      for (it=vars_.begin(); it!=vars_.end(); it++) {
+	std::ostringstream ss;
+	ss<<rem<<"\t"<<ROOTVariableTypeMap[(*it).second.first].first;
+	ss<<" "<<(*it).first<<"=\t";
+	if ((*it).second.first=='F' || (*it).second.first=='D') ss<<"%f";
+	else if ((*it).second.first=='I'||(*it).second.first=='L') ss<<"%d";
+	else if ((*it).second.first=='i'||(*it).second.first=='l') ss<<"%u";
+	void* pv=(void *)data(i);
+	char *p=(char *)pv+(*it).second.second;
+	if ((*it).second.first=='F') stdMesg(ss.str(), *(float*)p);
+	else if((*it).second.first=='D') stdMesg(ss.str(), *(double*)p);
+	else if((*it).second.first=='I') stdMesg(ss.str(), *(int*)p);
+	else if((*it).second.first=='L') stdMesg(ss.str(), *(long*)p);
+	else if((*it).second.first=='i') stdMesg(ss.str(), *(unsigned int*)p);
+	else if((*it).second.first=='l') stdMesg(ss.str(), *(unsigned long*)p);
+      }
     }
   }
 
@@ -385,6 +436,49 @@ template<class T> std::string humanTypeId() {
   return id;
 }
 
+std::map<std::string,std::pair<char, size_t> > getVariableMap(std::string v) {
+  std::map<std::string, std::pair<char, size_t> > ret;
+  size_t beg=0;
+  size_t sep=v.find_first_of(":");
+  char type='0';
+  size_t offset=0;
+  std::string types="FIDLil";
+  while (beg<v.size()) {
+    if (sep==std::string::npos) sep=v.size();
+    std::string var=v.substr(beg, sep-beg);
+    if (var.find("/")!=std::string::npos) {
+      if (var.size()-var.find("/")==2) {
+	type=var[var.size()-1];
+	var.erase(var.size()-2);
+      } else {
+	printf("*** ERROR in getVariableMap() can only accept one-character"\
+	       "variable following a '/'. It is not so for %s in %s, "	\
+	       "assuming (F)loat", var.data(), v.data());
+	type='F';
+	var.erase(var.find("/"));
+      }
+    } else if (type=='0') {
+      printf("*** ERROR in getVariableMap(): Missing variable "
+	     "type for %s in %s, assuming (F)loat", var.data(), v.data());
+      type='F';
+    }
+    if (types.find(type)==std::string::npos) {
+      printf("*** ERROR in getVariableMap(): Invalid variable type %c for %s "\
+	     "in %s, assuming (F)loat", type, var.data(), v.data());
+      type='F';
+    }
+    ret[var]=std::make_pair(type, offset);
+    if (type=='F') offset+=sizeof(float);
+    else if (type=='D') offset+=sizeof(double);
+    else if (type=='I') offset+=sizeof(int);
+    else if (type=='i') offset+=sizeof(unsigned int);
+    else if (type=='L') offset+=sizeof(long);
+    else if (type=='l') offset+=sizeof(unsigned long);
+    beg=sep+1;
+    sep=v.find_first_of(":", beg);
+  }
+  return ret;
+}
 
 }
 #endif
