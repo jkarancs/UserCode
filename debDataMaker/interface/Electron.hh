@@ -37,7 +37,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Electron.hh,v 1.10 2009/06/04 08:39:53 akapusi Exp $
+// $Id: Electron.hh,v 1.11 2009/06/05 19:59:25 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -128,6 +128,7 @@ template<class T> void Electron<T>::set(const edm::Event& iEvent) {
     electron(i).py= electrons[i].second->py();
     electron(i).pz= electrons[i].second->pz();
     electron(i).m= electrons[i].second->mass();
+    electron(i).p=electrons[i].second->p();
     electron(i).pt=electrons[i].second->pt();
     electron(i).et=electrons[i].second->et();
     electron(i).eta=electrons[i].second->eta();
