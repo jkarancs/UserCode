@@ -38,15 +38,31 @@ process.debNtupleMakerMod = cms.EDFilter(
 
 
     patJetConfig = cms.PSet(
-        storeNJets = cms.int32(4),
+        storeNJets = cms.int32(6),
         jetTag = cms.InputTag("allLayer1Jets"),
-        selectionType = cms.string("RA4mu"),
-        correction = cms.vstring("HAD", "UDS"),
+        selectionType = cms.string("RefAna4JetMetMuon"),
+        correction = cms.vstring("HAD", "GLU"),
+        ## correction:
+        # "RAW"
+        # "OFF"
+        # "REL"
+        # "ABS"
+        # "EMF"
+        # "HAD"
+        # "UE"
+        # "PART"
+        # "ERROR"
+        ## flavour:
+        # "GLU"
+        # "UDS"
+        # "C"
+        # "B"
+        # "NONE"
         sortBy = cms.string("pt")
     ),
     patMetConfig = cms.PSet(
         metTag = cms.InputTag("allLayer1METs"),
-        selectionType = cms.string("RA4mu"),
+        selectionType = cms.string("RefAna4JetMetMuon"),
         corrections = cms.vstring("uncorrALL", "uncorrMAXN") ## index 0
     ),
     patElectronConfig = cms.PSet(
