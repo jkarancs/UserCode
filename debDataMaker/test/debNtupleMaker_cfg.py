@@ -81,7 +81,7 @@ process.debNtupleMakerMod = cms.EDFilter(
     genJetConfig = cms.PSet(
         storeNJets = cms.int32(1),
         jetTag = cms.InputTag("sisCone5GenJets"),
-        selectionType = cms.string("NONE"),
+        selectionType = cms.string("N/A"),
         correction = cms.vstring("HAD", "UDS"),
         sortBy = cms.string("et")
     ),
@@ -89,14 +89,13 @@ process.debNtupleMakerMod = cms.EDFilter(
     patJetConfig = cms.PSet(
         storeNJets = cms.int32(4),
         jetTag = cms.InputTag("allLayer1Jets"),
-        selectionType = cms.string("NONE"),
+        selectionType = cms.string("N/A"),
         correction = cms.vstring("HAD", "UDS"),
         sortBy = cms.string("et")
     ),
    
     patMetConfig = cms.PSet(
         metTag = cms.InputTag("allLayer1METs"),
-        selectionType = cms.string("NONE"),
         corrections = cms.vstring("uncorrALL", "uncorrMAXN") ## index 0
     ),
 
