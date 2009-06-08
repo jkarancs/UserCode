@@ -13,7 +13,6 @@
 
    List of parameters to steer the object with (passed through iConfig):
       InputTag objectTag,  : owned by Data<D> but decided here if set
-      int selectionType,   : owned by Data<D> but decided here if set
       pair<string,string> correction: owned by this class
       string sortBy        : owned by this class
 
@@ -38,7 +37,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Met.hh,v 1.4 2009/06/03 08:10:41 veszpv Exp $
+// $Id: Met.hh,v 1.5 2009/06/05 19:59:25 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -77,6 +76,7 @@ template<class T> class Met : public Data<MetData>{ // D:=MetData
   // Some fuctions that make configuring this object easier:
   std::map<std::string,int>& getCorrIndex() { return corrIndex_; }
 
+  // --------------------------------------------------------------------
   inline int ind(std::string corr) {
     std::map<std::string,int>::const_iterator it=corrIndex_.find(corr);
     if (it==corrIndex_.end()) {
@@ -89,6 +89,7 @@ template<class T> class Met : public Data<MetData>{ // D:=MetData
     return it->second;
   }
 
+  // --------------------------------------------------------------------
   inline std::vector<unsigned int> ind(std::vector<std::string> corrs) {
     std::vector<unsigned int> ret;
     for (unsigned int i=0; i<corrs.size(); i++) {
@@ -109,7 +110,6 @@ template<class T> class Met : public Data<MetData>{ // D:=MetData
 /*
    List of parameters to gear the object with (passed in iConfig):
       InputTag metTag,     : owned by Data<D>
-      int selectionType,   : owned by Data<D>
       vector<string> corrections: owned by this class, contains the list of
                              the MET records of various corrections. The MET
 			     records are numbered from 0 to 1,2,... accordingly
@@ -122,7 +122,6 @@ Met<T>::Met(const edm::ParameterSet& iConfig) : Data<MetData>(
   // Read tag, set defaults:
   //
   setTag(iConfig.getParameter<edm::InputTag>("metTag"));
-  setSelectionType(iConfig.getParameter<std::string>("selectionType"));
   corrections_=iConfig.getParameter<std::vector<std::string> >("corrections");
 
   // Print config settings
@@ -144,7 +143,6 @@ Met<T>::Met(const edm::ParameterSet& iConfig) : Data<MetData>(
     stdMesg("  \t\t%s", (*it).first.data());
   }
   stdMesg("  \tmetTag = '%s'", tag().label().data());
-  stdMesg("  \tselectionType = %s", getSelectionType().data());
   stdMesg("  List of variables: %s", met(0).list().data());
   stdMesg("  Object is %svalid!\n", (isValid() ? "" : "not "));
 
