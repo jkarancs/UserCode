@@ -25,7 +25,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: EventData.hh,v 1.2 2009/06/03 14:00:54 veszpv Exp $
+// $Id: EventData.hh,v 1.3 2009/06/05 19:36:38 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -56,18 +56,19 @@ namespace deb {
                                           // Z+Jet: 30
                                           // QCD: 40
     float w;
-    int pass;
-       
+    int pass; // each bit tells if event passes a selection (1) or not (0)
+    int mask; // each pass-bit is masked valid (1) or not (0)
+
     EventData() {
       clear();
-      selectionTypes_["VALID"]=VALID;
+      selectionTypes_["None"]=None; // Did not pass any of the selections:
       selectionTypes_["RefAna4JetMetMuon"]=RefAna4JetMetMuon;
       selectionTypes_["RefAna4JetMetElectron"]=RefAna4JetMetElectron;
     }
     ~EventData() { }
 
     enum EventSelectionType {
-      VALID=PASS_VALIDITY,
+      None=PASS_VALIDITY,
       RefAna4JetMetMuon,
       RefAna4JetMetElectron
     };
@@ -80,7 +81,8 @@ namespace deb {
       genevprocid=NOVAL_I;
       procidx=NOVAL_I;
       w=NOVAL_F;
-      pass=0; // set 0 to bit at PASS_VALIDITY (pass is invalid)
+      pass=0; // bit VALID is not used, set to 0
+      mask=0; // mask out everything
     }
     
     std::string list(std::string prefix="") {
@@ -90,7 +92,8 @@ namespace deb {
       ss << prefix << "genevprocid/I:";
       ss << prefix << "procidx/I:";
       ss << prefix << "w/F:";
-      ss << prefix << "pass/I";
+      ss << prefix << "pass/I:";
+      ss << prefix << "mask/I";
       return ss.str();
     }
 
