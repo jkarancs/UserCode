@@ -136,7 +136,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Data.hh,v 1.5 2009/06/05 19:40:11 veszpv Exp $
+// $Id: Data.hh,v 1.6 2009/06/08 09:44:53 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -205,8 +205,11 @@ template <class D> class Data {
   // ---------------------------------------------------------
 
   virtual void set(const edm::Event&) { }
-  virtual void calculate() { }
+  virtual void calculate() { 
+    stdWarn("calulate(): Nothing is set to be calculated in this object\n");
+  }
   virtual int passed(std::string, unsigned int i) {
+    stdErr("passed(): virtual function passed() has not been implemented\n");
     return NOVAL_I;
   }
 
@@ -255,6 +258,10 @@ template <class D> class Data {
     }
     branch_=name;
     tree_=tree;
+    if (storeNObjects_==1) {
+      tree_->Branch(branch_.data(), data(0), data(0)->list().data());
+      return;
+    }
     for (unsigned int i=0; i<storeNObjects_; i++) {
       std::ostringstream ss;
       ss<<branch_<<"_"<<i;
@@ -270,6 +277,13 @@ template <class D> class Data {
     if (tree_==NULL) {
       stdErr("setBranch(): Object hasn't been added to tree. "	\
 	     "(Do it in the constructor!)\n");
+      return;
+    }
+    if (storeNObjects_==1) {
+      TBranch* br=tree_->GetBranch(branch_.data());
+      if (br!=NULL) br->SetAddress(data(0));
+      else stdErr("setBranch(): Did not find branch %s in tree!!!\n", 
+		  branch_.data());
       return;
     }
     for (unsigned int i=0; i<storeNObjects_; i++) {
