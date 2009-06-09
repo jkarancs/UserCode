@@ -14,7 +14,6 @@
    List of parameters to steer the object with (passed in iConfig):
       double eventWeight_, : owned by this class
       int procIdx_,        : owned by this class
-      int selectionType,   : owned by Data<D>
 
    iConfig is passed only through the contructor. 
 
@@ -42,7 +41,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Event.hh,v 1.5 2009/06/05 19:59:25 veszpv Exp $
+// $Id: Event.hh,v 1.6 2009/06/08 18:41:42 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -63,29 +62,40 @@ class Event : public Data<EventData>{
  public:
   Event(const edm::ParameterSet& iConfig);
   Event() { stdErr("  Event configuration missing\n"); }
-  inline EventData& event(unsigned int i) { return *data(i); } 
+  inline EventData& event(unsigned int i=0) { return *data(i); } 
                                                           // just a short-hand
 
   // Inherited functions to be overloaded
   void set(const edm::Event&);
-  void setInput(Jet<pat::Jet> & pjet_i,
-		Met<pat::MET> & pmet_i,
-		Electron<pat::Electron> & electron_i,
-		Muon<pat::Muon> & muon_i,
-		Trigger<edm::TriggerResults> & trigger_i);
-  void calculate ();
-  int passed(std::string selection,unsigned int i);
-	
+  int passed(std::string selection,
+	     Jet<pat::Jet>* pjet,
+	     Met<pat::MET>* pmet,
+	     Electron<pat::Electron>* pele,
+	     Muon<pat::Muon>* pmuon,
+	     Trigger<edm::TriggerResults>* trigger);
+
+  void calculate_pass() {
+    stdWarn("calculate_pass(): function can't be called without parameters\n");
+  }
+
+  // calculate_pass() with all the possible parameters for all selections
+  // if a parameter does not exist we set NULL when calling this function
+  void calculate_pass(Jet<pat::Jet>* pjet,
+		      Met<pat::MET>* pmet,
+		      Electron<pat::Electron>* pele,
+		      Muon<pat::Muon>* pmuon,
+		      Trigger<edm::TriggerResults>* trigger);
+
+  void select() {
+    stdWarn("select(): How do you want to select event information for an " \
+	    "event???\n");
+  }
 
   // Introduce new variables and functions
  private:
   double eventWeight_;
   int procIdx_;
-  Jet<pat::Jet> * pjet;
-  Met<pat::MET> * pmet;
-  Electron<pat::Electron> * electron;
-  Muon<pat::Muon> * muon;
-  Trigger<edm::TriggerResults> * trigger;
+  void process_result(std::string, int);
   
 };
 
@@ -95,18 +105,15 @@ class Event : public Data<EventData>{
    List of parameters to gear the object with (passed in iConfig):
       double eventWeight_, : owned by this class
       int procIdx_,        : owned by this class
-      int selectionType,   : owned by Data<D>
 */
 
 Event::Event(const edm::ParameterSet& iConfig) : Data<EventData>(int(1)) {  
   eventWeight_= iConfig.getParameter<double>("eventWeight") ;
   procIdx_= iConfig.getParameter<int>("procIdx") ;
-  setSelectionType(iConfig.getParameter<std::string>("selectionType"));  
 
   stdMesg("  Event configuration:");
   stdMesg("  \teventWeight = %f", eventWeight_);
   stdMesg("  \tprocIdx = %d", procIdx_);
-  stdMesg("  \tselectionType = %s", getSelectionType().data());
   stdMesg("  List of variables: %s", event(0).list().data());
   stdMesg("  Object is %svalid!\n", (isValid() ? "" : "not "));
 
@@ -147,117 +154,154 @@ Event::Event(const edm::ParameterSet& iConfig) : Data<EventData>(int(1)) {
       event(0).genevprocid = NOVAL_I;
     }
 }
-  
-//-------------------------------- setInput() ---------------------------------
-
-void Event::setInput(Jet<pat::Jet> & pjet_i,
-		     Met<pat::MET> & pmet_i,
-		     Electron<pat::Electron> & electron_i,
-		     Muon<pat::Muon> & muon_i,
-		     Trigger<edm::TriggerResults> & trigger_i){
-
-  pjet=&pjet_i;
-  pmet=&pmet_i;
-  electron=&electron_i;
-  muon=&muon_i;
-  trigger=&trigger_i;
-
-}
 
 
-
-//-------------------------------- calculate() --------------------------------
-
-void Event::calculate () { 
-}
-  
 //--------------------------------- passed() ----------------------------------
 
-int Event::passed(std::string selection,unsigned int datai) {
+int Event::passed(std::string selection,
+		  Jet<pat::Jet>* pjet,
+		  Met<pat::MET>* pmet,
+		  Electron<pat::Electron>* pele,
+		  Muon<pat::Muon>* pmuon,
+		  Trigger<edm::TriggerResults>* trigger) {
 
   if (!isValid()) return NOVAL_I;
 
-  unsigned int numele=0;
-  unsigned int nummuo=0;
-  unsigned int numjetpt50=0;
-  unsigned int numjetpt50eta3emfrac09=0;
-  std::vector<int> muonpass((*muon).size());
-  for (unsigned int i=0;i<(*muon).size();i++){
-    muonpass[i]=(*muon).passed(selection,i);
-    if(muonpass[i]==1){
-      nummuo++;
+  // ---------------------- RA4 selections ----------------------------
+  // ------------------------------------------------------------------
+  if(selection.compare("RefAna4JetMetMuon")==0 ||
+     selection.compare("RefAna4JetMetElectron")==0 ) {
+
+    if (pjet==NULL||pmet==NULL||pele==NULL||pmuon==NULL||trigger==NULL) {
+      stdErr("passed(): Insufficient information to perform selection %s",
+	     selection.data());
+      stdErr("Have you called the right declaration type of passed()?\n");
+      return NOVAL_I;
     }
-  }
-  std::vector<int> electronpass((*electron).size());
-  for (unsigned int i=0;i<(*electron).size();i++){
-    electronpass[i]=(*electron).passed(selection,i);
-    if(electronpass[i]==1){
-      numele++;
-    }
-  } 
-  std::vector<int> pjetpass((*pjet).size());
-  for (unsigned int i=0;i<(*pjet).size();i++){
-    pjetpass[i]=(*pjet).passed(selection,i);
-    if((*pjet).jet(i).pt==NOVAL_F){
-      stdErr("Event::passed() : NOVAL value in the cut criteria");
-    }
-    else {
-      if(pjetpass[i]==1&&(*pjet).jet(i).pt>=50.0){
-	numjetpt50++;
+    
+    unsigned int numele=0;
+    unsigned int nummuo=0;
+    unsigned int numjetpt50=0;
+    unsigned int numjetpt50eta3emfrac09=0;
+    std::vector<int> muonpass((*pmuon).size());
+    for (unsigned int i=0;i<(*pmuon).size();i++){
+      muonpass[i]=(*pmuon).passed(selection,i);
+      if(muonpass[i]==1){
+	nummuo++;
       }
     }
-    if((*pjet).jet(i).pt==NOVAL_F||
-       (*pjet).jet(i).eta==NOVAL_F||
-       (*pjet).jet(i).emfrac==NOVAL_F){
-      stdErr("Event::passed() : NOVAL value in the cut criteria");
-    }
-    else {
-      if(pjetpass[i]==1&&
-	 (*pjet).jet(i).pt>=50.0&&
-	 TMath::Abs((*pjet).jet(i).eta)<3.0&&
-	 (*pjet).jet(i).emfrac<0.9){
-	numjetpt50eta3emfrac09++;
+    std::vector<int> electronpass((*pele).size());
+    for (unsigned int i=0;i<(*pele).size();i++){
+      electronpass[i]=(*pele).passed(selection,i);
+      if(electronpass[i]==1){
+	numele++;
+      }
+    } 
+    std::vector<int> pjetpass((*pjet).size());
+    for (unsigned int i=0;i<(*pjet).size();i++){
+      pjetpass[i]=(*pjet).passed(selection,i);
+      if((*pjet).jet(i).pt==NOVAL_F){
+	stdErr("Event::passed() : NOVAL value in the cut criteria");
+      }
+      else {
+	if(pjetpass[i]==1&&(*pjet).jet(i).pt>=50.0){
+	  numjetpt50++;
+	}
+      }
+      if((*pjet).jet(i).pt==NOVAL_F||
+	 (*pjet).jet(i).eta==NOVAL_F||
+	 (*pjet).jet(i).emfrac==NOVAL_F){
+	stdErr("Event::passed() : NOVAL value in the cut criteria");
+      }
+      else {
+	if(pjetpass[i]==1&&
+	   (*pjet).jet(i).pt>=50.0&&
+	   TMath::Abs((*pjet).jet(i).eta)<3.0&&
+	   (*pjet).jet(i).emfrac<0.9){
+	  numjetpt50eta3emfrac09++;
+	}
       }
     }
-  }
-  
-  if(selection.compare("RefAna4JetMetMuon")==0){  
-    if((*pmet).met(0).et==NOVAL_F){
-      stdErr("Event::passed() : NOVAL value in the cut criteria");    
-      return NOVAL_I;    
+    
+    if(selection.compare("RefAna4JetMetMuon")==0){  
+      if((*pmet).met(0).et==NOVAL_F){
+	stdErr("Event::passed() : NOVAL value in the cut criteria");    
+	return NOVAL_I;    
+      }
+      if(nummuo==1&&
+	 numele==0&&
+	 numjetpt50>=3&&
+	 (*pmet).met(0).et>100.0){
+	return 1;
+      }      
+      else{
+	return 0;
+      }
     }
-    if(nummuo==1&&
-       numele==0&&
-       numjetpt50>=3&&
-       (*pmet).met(0).et>100.0){
-      return 1;
-    }      
-    else{
-      return 0;
+    
+    if(selection.compare("RefAna4JetMetElectron")==0){  
+      if((*pmet).met(0).et==NOVAL_F){
+	stdErr("Event::passed() : NOVAL value in the cut criteria");    
+	return NOVAL_I;    
+      }
+      
+      if((*trigger).trigger(0).hlt==1&&
+	 numele==1&&
+	 numjetpt50eta3emfrac09>=3&&
+	 (*pmet).met(0).et>100.0){
+	return 1;
+      }
+      else{
+	return 0;
+      }
     }
-  }
+  }  
 
-  if(selection.compare("RefAna4JetMetElectron")==0){  
-    if((*pmet).met(0).et==NOVAL_F){
-      stdErr("Event::passed() : NOVAL value in the cut criteria");    
-      return NOVAL_I;    
-    }
+  // ------------------- End of RA4 selections ------------------------
+  // ------------------------------------------------------------------
 
-    if((*trigger).trigger(0).hlt==1&&
-       numele==1&&
-       numjetpt50eta3emfrac09>=3&&
-       (*pmet).met(0).et>100.0){
-      return 1;
-    }
-    else{
-      return 0;
-    }
-  }
-  stdErr("Event::passed() : bad selectionstring");
+  stdErr("passed(): Selection %s is not implemented\n", selection.data());
   return NOVAL_I;
 }
 
 
+//------------------------- calculate_pass() ----------------------------------
+// calculate_pass() with all the possible parameters for all the implemented
+// selections. If a selection is not called and one of its parameters are not
+// prerequisite to other selections, call the function with NULL
+
+void Event::calculate_pass(Jet<pat::Jet>* pjet,
+			   Met<pat::MET>* pmet,
+			   Electron<pat::Electron>* pele,
+			   Muon<pat::Muon>* pmuon,
+			   Trigger<edm::TriggerResults>* trigger) {
+  
+  if (!isValid()) return;
+
+  event().mask=0;
+  event().pass=0;
+  
+  process_result("RefAna4JetMetMuon", 
+	  passed("RefAna4JetMetMuon", pjet, pmet, pele, pmuon, trigger));
+  
+  process_result("RefAna4JetMetElectron", 
+	  passed("RefAna4JetMetElectron", pjet, pmet, pele, pmuon, trigger));
+
+}
+
+  void Event::process_result(std::string s, int result) {
+    if (result!=0 && result!=1) {
+      stdErr("calculate_pass(): selection %s returned value %d",
+	     s.data(), result);
+      stdErr("...is it implemented? ...are all the parameters required"	\
+	     " for this selection computed by the time calculate"	\
+	     "_pass is called?\n");
+      return;
+    }
+    event().mask|=1<<event().selectionTypes_[s.data()];
+    event().pass|=result<<event().selectionTypes_[s.data()];
+  }
+  
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
