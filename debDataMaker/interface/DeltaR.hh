@@ -38,7 +38,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Sun Mar 24 12:15:11 CET 2009
-// $Id: DeltaR.hh,v 1.1 2009/05/30 19:38:39 veszpv Exp $
+// $Id: DeltaR.hh,v 1.2 2009/06/05 19:59:25 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -141,7 +141,7 @@ template<class U,class V> void DeltaR<U,V>::calculate() {
 template<> void DeltaR<Jet<pat::Jet>,Met<pat::MET> >::calculate() {
   if (!isValid()) return;
   clear();
-  for (unsigned int i=0; i<max_size(); i++) {
+  for (unsigned int i=0; i<storeNObjects(); i++) {
     push_back(*(new DeltaRData));
     calculate_dphi(i);
     dr(i).eta=NOVAL_F;
