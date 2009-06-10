@@ -34,14 +34,26 @@
                  Electron<pat::Electron> & electron,
 	         Muon<pat::Muon> & muon,
 		 Trigger<edm::TriggerResults> & trigger) (virtual):
-         if selectionType is set, returns the result of the selections. The
-         selections are implemented in this function.
+         returns the result of the selection. The selections are implemented 
+	 in this function. passed() has to be declared for each selection with
+	 the exact list of parameters that are used in the selection. (i.e.
+	 there can be more than one declaration of this function.) Returns 
+	 NOVAL_I if one of the parameters (pointer) is NULL
+
+     void calculate_pass(Jet<pat::Jet>* pjet,
+                         Met<pat::MET>* pmet,
+		         Electron<pat::Electron>* pele,
+		         Muon<pat::Muon>* pmuon,
+		         Trigger<edm::TriggerResults>* trigger):
+	 calculate_pass() with all the possible parameters for all selections
+         if a parameter does not exist we set NULL when calling this function,
+	 there is only one declaration of this function
 
 */
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Event.hh,v 1.6 2009/06/08 18:41:42 akapusi Exp $
+// $Id: Event.hh,v 1.7 2009/06/09 22:26:43 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -67,12 +79,13 @@ class Event : public Data<EventData>{
 
   // Inherited functions to be overloaded
   void set(const edm::Event&);
-  int passed(std::string selection,
-	     Jet<pat::Jet>* pjet,
-	     Met<pat::MET>* pmet,
-	     Electron<pat::Electron>* pele,
-	     Muon<pat::Muon>* pmuon,
-	     Trigger<edm::TriggerResults>* trigger);
+
+  // a passed() has to be declared for each selection with the exact list of
+  // parameters that are used in the selection. Returns NOVAL_I if one of the
+  // parameters (pointer) is NULL
+  int passed(std::string selection, 
+	     Jet<pat::Jet>*, Met<pat::MET>*, Electron<pat::Electron>*,
+	     Muon<pat::Muon>*, Trigger<edm::TriggerResults>*);
 
   void calculate_pass() {
     stdWarn("calculate_pass(): function can't be called without parameters\n");
@@ -80,11 +93,8 @@ class Event : public Data<EventData>{
 
   // calculate_pass() with all the possible parameters for all selections
   // if a parameter does not exist we set NULL when calling this function
-  void calculate_pass(Jet<pat::Jet>* pjet,
-		      Met<pat::MET>* pmet,
-		      Electron<pat::Electron>* pele,
-		      Muon<pat::Muon>* pmuon,
-		      Trigger<edm::TriggerResults>* trigger);
+  void calculate_pass(Jet<pat::Jet>*, Met<pat::MET>*, Electron<pat::Electron>*,
+		      Muon<pat::Muon>*, Trigger<edm::TriggerResults>*);
 
   void select() {
     stdWarn("select(): How do you want to select event information for an " \
@@ -121,7 +131,7 @@ Event::Event(const edm::ParameterSet& iConfig) : Data<EventData>(int(1)) {
 
 //----------------------------------- set() -----------------------------------
 
-  void Event::set(const edm::Event& iEvent) {
+void Event::set(const edm::Event& iEvent) {
 
   if (!isValid()) return;
 
@@ -173,8 +183,10 @@ int Event::passed(std::string selection,
      selection.compare("RefAna4JetMetElectron")==0 ) {
 
     if (pjet==NULL||pmet==NULL||pele==NULL||pmuon==NULL||trigger==NULL) {
-      stdErr("passed(): Insufficient information to perform selection %s",
-	     selection.data());
+      stdErr("passed(std::string selection, Jet<pat::Jet>*, "		\
+	     "Met<pat::MET>*, Electron<pat::Electron>*, Muon<pat::Muon>*, " \
+	     "Trigger<edm::TriggerResults>*): Insufficient information to" \
+	     " perform selection %s", selection.data());
       stdErr("Have you called the right declaration type of passed()?\n");
       return NOVAL_I;
     }
@@ -201,7 +213,10 @@ int Event::passed(std::string selection,
     for (unsigned int i=0;i<(*pjet).size();i++){
       pjetpass[i]=(*pjet).passed(selection,i);
       if((*pjet).jet(i).pt==NOVAL_F){
-	stdErr("Event::passed() : NOVAL value in the cut criteria");
+	stdErr("passed(std::string selection, Jet<pat::Jet>*, "		\
+	       "Met<pat::MET>*, Electron<pat::Electron>*, Muon<pat::Muon>*, " \
+	       "Trigger<edm::TriggerResults>*): NOVAL value in the cut " \
+	       "criteria");    
       }
       else {
 	if(pjetpass[i]==1&&(*pjet).jet(i).pt>=50.0){
@@ -211,7 +226,10 @@ int Event::passed(std::string selection,
       if((*pjet).jet(i).pt==NOVAL_F||
 	 (*pjet).jet(i).eta==NOVAL_F||
 	 (*pjet).jet(i).emfrac==NOVAL_F){
-	stdErr("Event::passed() : NOVAL value in the cut criteria");
+	stdErr("passed(std::string selection, Jet<pat::Jet>*, "		\
+	       "Met<pat::MET>*, Electron<pat::Electron>*, Muon<pat::Muon>*, " \
+	       "Trigger<edm::TriggerResults>*): NOVAL value in the cut " \
+	       "criteria");    
       }
       else {
 	if(pjetpass[i]==1&&
@@ -225,7 +243,10 @@ int Event::passed(std::string selection,
     
     if(selection.compare("RefAna4JetMetMuon")==0){  
       if((*pmet).met(0).et==NOVAL_F){
-	stdErr("Event::passed() : NOVAL value in the cut criteria");    
+	stdErr("passed(std::string selection, Jet<pat::Jet>*, "		\
+	       "Met<pat::MET>*, Electron<pat::Electron>*, Muon<pat::Muon>*, " \
+	       "Trigger<edm::TriggerResults>*): NOVAL value in the cut " \
+	       "criteria");    
 	return NOVAL_I;    
       }
       if(nummuo==1&&
@@ -241,7 +262,10 @@ int Event::passed(std::string selection,
     
     if(selection.compare("RefAna4JetMetElectron")==0){  
       if((*pmet).met(0).et==NOVAL_F){
-	stdErr("Event::passed() : NOVAL value in the cut criteria");    
+	stdErr("passed(std::string selection, Jet<pat::Jet>*, "		\
+	       "Met<pat::MET>*, Electron<pat::Electron>*, Muon<pat::Muon>*, " \
+	       "Trigger<edm::TriggerResults>*): NOVAL value in the cut " \
+	       "criteria");    
 	return NOVAL_I;    
       }
       
@@ -255,19 +279,22 @@ int Event::passed(std::string selection,
 	return 0;
       }
     }
-  }  
+  } 
 
   // ------------------- End of RA4 selections ------------------------
   // ------------------------------------------------------------------
 
-  stdErr("passed(): Selection %s is not implemented\n", selection.data());
+  stdErr("passed(std::string selection, Jet<pat::Jet>*, Met<pat::MET>*, "\
+	 "Electron<pat::Electron>*, Muon<pat::Muon>*, "\
+	 "Trigger<edm::TriggerResults>*): Selection %s is not implemented "\
+	 "in this function\n", selection.data());
   return NOVAL_I;
 }
 
 
 //------------------------- calculate_pass() ----------------------------------
 // calculate_pass() with all the possible parameters for all the implemented
-// selections. If a selection is not called and one of its parameters are not
+// selections. If a selection is not needed and one of its parameters are not
 // prerequisite to other selections, call the function with NULL
 
 void Event::calculate_pass(Jet<pat::Jet>* pjet,
@@ -281,17 +308,23 @@ void Event::calculate_pass(Jet<pat::Jet>* pjet,
   event().mask=0;
   event().pass=0;
   
-  process_result("RefAna4JetMetMuon", 
-	  passed("RefAna4JetMetMuon", pjet, pmet, pele, pmuon, trigger));
-  
-  process_result("RefAna4JetMetElectron", 
-	  passed("RefAna4JetMetElectron", pjet, pmet, pele, pmuon, trigger));
+  if (pjet!=NULL&& pmet!=NULL&& pele!=NULL&& pmuon!=NULL&& trigger!=NULL) {
+
+    process_result("RefAna4JetMetMuon", 
+	    passed("RefAna4JetMetMuon", pjet, pmet, pele, pmuon, trigger));
+    
+    process_result("RefAna4JetMetElectron", 
+	    passed("RefAna4JetMetElectron", pjet, pmet, pele, pmuon, trigger));
+  }
 
 }
 
+
   void Event::process_result(std::string s, int result) {
     if (result!=0 && result!=1) {
-      stdErr("calculate_pass(): selection %s returned value %d",
+      stdErr("calculate_pass(Jet<pat::Jet>*, Met<pat::MET>*, "\
+	     "Electron<pat::Electron>*, Muon<pat::Muon>*, "\
+	     "Trigger<edm::TriggerResults>*): selection %s returned value %d",
 	     s.data(), result);
       stdErr("...is it implemented? ...are all the parameters required"	\
 	     " for this selection computed by the time calculate"	\
