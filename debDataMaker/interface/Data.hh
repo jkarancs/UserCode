@@ -136,7 +136,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Data.hh,v 1.7 2009/06/09 22:21:38 veszpv Exp $
+// $Id: Data.hh,v 1.8 2009/06/10 08:47:33 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -389,6 +389,13 @@ template <class D> class Data {
   }
 
   void print(int verbose=0) {
+    print(verbose, NULL);
+  }
+
+ protected:
+  void print(int verbose=0, 
+	     std::vector<std::pair<unsigned int, unsigned int> >* ind) {
+
     stdMesg("  Number of valid objects in container (size): %d", size());
     stdMesg("  Number of objects to be stored (storeNObjects): %d", 
 	    storeNObjects());
@@ -410,6 +417,8 @@ template <class D> class Data {
       std::string rem="  ";
       if (i>=size()) rem="  ## ";
       stdMesg("%s(%d): 0x%x - 0x%x",rem.data(), i, data(i), data(i)+sizeof(D));
+      if (ind!=NULL) stdMesg("%sPair-index: (%d, %d)", rem.data(), 
+			     ind->at(i).first, ind->at(i).second);
       if (verbose<2) continue;
       if (i>=size() && verbose<3) continue;
       std::map<std::string,std::pair<char,size_t> >::const_iterator it;
