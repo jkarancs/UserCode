@@ -136,7 +136,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Data.hh,v 1.6 2009/06/08 09:44:53 veszpv Exp $
+// $Id: Data.hh,v 1.7 2009/06/09 22:21:38 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -481,13 +481,28 @@ std::map<std::string,std::pair<char, size_t> > getVariableMap(std::string v) {
 	     "in %s, assuming (F)loat", type, var.data(), v.data());
       type='F';
     }
-    ret[var]=std::make_pair(type, offset);
-    if (type=='F') offset+=sizeof(float);
-    else if (type=='D') offset+=sizeof(double);
-    else if (type=='I') offset+=sizeof(int);
-    else if (type=='i') offset+=sizeof(unsigned int);
-    else if (type=='L') offset+=sizeof(long);
-    else if (type=='l') offset+=sizeof(unsigned long);
+    unsigned int n=1;
+    size_t l=0, p=var.find("[");
+    if (p!=std::string::npos) {
+      p++;
+      l=var.find("]")-p;
+      n=atoi(var.substr(p,l).data());
+    }
+    for (unsigned int i=0; i<n; i++) {
+      std::string var2=var;
+      if (p!=std::string::npos) {
+	char num[12];
+	sprintf(num, "%d", i);
+	var2.replace(p, l, num);
+      }
+      ret[var2]=std::make_pair(type, offset);
+      if (type=='F') offset+=sizeof(float);
+      else if (type=='D') offset+=sizeof(double);
+      else if (type=='I') offset+=sizeof(int);
+      else if (type=='i') offset+=sizeof(unsigned int);
+      else if (type=='L') offset+=sizeof(long);
+      else if (type=='l') offset+=sizeof(unsigned long);
+    }
     beg=sep+1;
     sep=v.find_first_of(":", beg);
   }
