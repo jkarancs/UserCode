@@ -39,7 +39,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Sun Mar 24 12:15:11 CET 2009
-// $Id: PairData.hh,v 1.1 2009/05/30 19:38:50 veszpv Exp $
+// $Id: PairData.hh,v 1.2 2009/06/05 19:46:10 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -83,6 +83,10 @@ template<class D> class PairData : public Data<D>{
   
   void addBranch(TTree*, std::string);
   void setBranch();
+
+  void print(int verbose=0) {
+    deb::Data<D>::print(verbose, &ind_);
+  }
 
  private:
   std::map<std::pair<unsigned int,unsigned int>, unsigned int> map_;
