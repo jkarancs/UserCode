@@ -8,7 +8,49 @@
 /**\class McProcess McProcess.hh 
 		SusyAnalysis/debDataMaker/interface/McProcess.hh
 
- Description: <one line class summary>
+ Description:     
+
+      
+ Usage:
+
+
+    example:               Mo
+                         /   \
+                       Da1  Da2
+                       / \    \
+                     Da3 Da4  Da5
+
+    transforms to:   Mo->Da1,Da2
+                     Da1->Da3,Da4
+                     Da2->Da5
+
+
+    in ".py" file:
+      mcProcessConfig = cms.PSet(
+      genParticles = cms.InputTag("genParticles","","HLT"),
+      processTree  = cms.vstring(
+        'Mo(pdgId),Da1(pdgId),Da2(pdgId)',
+        'Da1(pdgId),Da3(pdgId),Da4(pdgId)',
+        'Da2(pdgId),Da5(pdgId)')
+      )
+   _________________________________________________________________________
+  |                                                                         |
+  | Particles with the same pdgId have to be written one after the other!!! |
+  |        'pi0(111),e1(11),gamma(22),e2(11)'    INCORRECT                  |
+  |        'pi0(111),gamma(22),e1(11),e2(11)'    CORRECT                    |
+  |        'pi0(111),e1(11),e2(11),gamma(22)'    CORRECT (cause the same)   |
+  |_________________________________________________________________________|
+
+    in ".cc" file:
+
+      proc.clear();
+      int v;
+      v=proc.findProcess(iEvent);
+      if (v!=0){
+        proc.set(iEvent,0);
+        proc.print(3);
+      }
+
 
  Implementation:
 
