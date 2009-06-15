@@ -28,6 +28,7 @@
     in ".py" file:
       mcProcessConfig = cms.PSet(
       genParticles = cms.InputTag("genParticles","","HLT"),
+      storeNParticles = cms.int32(numberOfParticlesInTheTree),
       processTree  = cms.vstring(
         'Mo(pdgId),Da1(pdgId),Da2(pdgId)',
         'Da1(pdgId),Da3(pdgId),Da4(pdgId)',
@@ -79,7 +80,7 @@
 //
 // Original Author:  Attila ARANYI
 //         Created:  Wed Jun 03 10:28:26 CET 2009
-// $Id: McProcess.hh,v 1.1 2009/06/03 19:38:51 veszpv Exp $
+// $Id: McProcess.hh,v 1.2 2009/06/14 05:49:35 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -93,7 +94,8 @@ namespace deb {
 
 //----------------------------- Class Definition ------------------------------
 
-template<class T> class McProcess : public Data<McParticleData<> >{
+template<class T> class McProcess : 
+public Data<McParticleData<> >{
 						// D:=ParticleData
 
  public:
@@ -176,7 +178,7 @@ template<class T> class McProcess : public Data<McParticleData<> >{
 */
 
 template<class T> McProcess<T>::McProcess(const edm::ParameterSet& iConfig) : 
-  Data<McParticleData<> >(int(1)) {
+  Data<McParticleData<> >(iConfig.getParameter<int>("storeNParticles")) {
   
   genParticles_= iConfig.getParameter<edm::InputTag>("genParticles");
   processTreePara_=
