@@ -37,7 +37,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Muon.hh,v 1.9 2009/06/04 08:40:10 akapusi Exp $
+// $Id: Muon.hh,v 1.10 2009/06/05 19:59:25 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -119,7 +119,8 @@ template<class T> void Muon<T>::set(const edm::Event& iEvent) {
 
   clear();
   for (unsigned int i=0; i<muons.size(); i++) {
-    push_back(*(new MuonData));
+    MuonData new_obj;
+    push_back(new_obj);
 
     //functions from CMSSW/ DataFormats/ Candidate/ interface/ Particle.h
     muon(i).e = muons[i].second->energy();

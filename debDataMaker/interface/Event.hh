@@ -53,7 +53,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Event.hh,v 1.7 2009/06/09 22:26:43 veszpv Exp $
+// $Id: Event.hh,v 1.8 2009/06/10 07:44:18 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -136,7 +136,8 @@ void Event::set(const edm::Event& iEvent) {
   if (!isValid()) return;
 
   clear();
-  push_back(*(new EventData));
+  EventData new_obj;
+  push_back(new_obj);
 
   event(0).run   = iEvent.id().run();
   event(0).ev = iEvent.id().event();

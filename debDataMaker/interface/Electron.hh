@@ -37,7 +37,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Electron.hh,v 1.11 2009/06/05 19:59:25 veszpv Exp $
+// $Id: Electron.hh,v 1.12 2009/06/08 09:45:39 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -120,7 +120,8 @@ template<class T> void Electron<T>::set(const edm::Event& iEvent) {
 
   clear();
   for (unsigned int i=0; i<electrons.size(); i++) {
-    push_back(*(new ElectronData));
+    ElectronData new_obj;
+    push_back(new_obj);
 
     //functions from CMSSW/ DataFormats/ Candidate/ interface/ Particle.h
     electron(i).e = electrons[i].second->energy();

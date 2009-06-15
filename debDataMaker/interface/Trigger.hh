@@ -36,7 +36,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Trigger.hh,v 1.1 2009/05/30 19:38:52 veszpv Exp $
+// $Id: Trigger.hh,v 1.2 2009/06/05 19:59:25 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -104,7 +104,8 @@ template<class T> void Trigger<T>::set(const edm::Event& iEvent) {
   iEvent.getByLabel(triggerResults_, hltHandle);
 
   clear();
-  push_back(*(new TriggerData));
+  TriggerData new_obj;
+  push_back(new_obj);
   if ( hltHandle.isValid() ) {
     edm::TriggerNames trgNames;
     trgNames.init(*hltHandle);

@@ -39,7 +39,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Jet.hh,v 1.7 2009/06/05 09:24:17 veszpv Exp $
+// $Id: Jet.hh,v 1.8 2009/06/05 19:59:25 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -161,7 +161,8 @@ template<class T> void Jet<T>::set(const edm::Event& iEvent) {
   
   clear(); // clear the previous event from container
   for (unsigned int i=0; i<jets.size(); i++) {
-    push_back(*(new JetData)); // size_=i+1;
+    JetData new_obj; // size_=i+1;
+    push_back(new_obj); // size_=i+1;
     
     // correct jets if correction is available      
     double corr=getCorrFactor(jets[i].second);

@@ -80,7 +80,7 @@
 //
 // Original Author:  Attila ARANYI
 //         Created:  Wed Jun 03 10:28:26 CET 2009
-// $Id: McProcess.hh,v 1.2 2009/06/14 05:49:35 aranyi Exp $
+// $Id: McProcess.hh,v 1.4 2009/06/15 15:21:18 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -215,7 +215,8 @@ template<class T> void McProcess<T>::set(const edm::Event& iEvent,
   clear();
 
   for(unsigned int i=0;i<trees[numProc].Branch.size();i++){
-      push_back(*(new McParticleData<>));
+      McParticleData<> new_obj;
+      push_back(new_obj);
   }
 
   for(unsigned int i=0;i<trees[numProc].Branch.size();i++){

@@ -44,7 +44,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Beamspot.hh,v 1.3 2009/06/02 15:14:50 aranyi Exp $
+// $Id: Beamspot.hh,v 1.4 2009/06/05 19:59:25 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -93,7 +93,9 @@ template<class T> void Beamspot<T>::set(const edm::Event& iEvent) {
   iEvent.getByLabel("offlineBeamSpot", beamSpotHandle);
   
   clear();
-  push_back(*(new BeamspotData));
+
+  BeamspotData new_obj;
+  push_back(new_obj);
   if ( beamSpotHandle.isValid() ) {
     beamspot(0).beamspotx = (*beamSpotHandle).x0();
     beamspot(0).beamspoty = (*beamSpotHandle).y0();

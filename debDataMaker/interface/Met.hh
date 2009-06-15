@@ -37,7 +37,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Met.hh,v 1.5 2009/06/05 19:59:25 veszpv Exp $
+// $Id: Met.hh,v 1.6 2009/06/08 09:48:07 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -185,7 +185,8 @@ template<class T> void Met<T>::set(const edm::Event& iEvent) {
 
   clear();
   for (unsigned int i=0; i<corrections_.size(); i++) {
-    push_back(*(new MetData));
+    MetData new_obj;
+    push_back(new_obj);
     met(i).corr=MetCorrTypeMap[corrections_[i].data()];
     
     if (met(i).hasPatCorrType()) {
