@@ -178,7 +178,7 @@ public Data<McParticleData<> >{
 */
 
 template<class T> McProcess<T>::McProcess(const edm::ParameterSet& iConfig) : 
-  Data<McParticleData<> >(iConfig.getParameter<int>("storeNParticles")) {
+  Data<McParticleData<> >(iConfig.getParameter<int>("storeNParticles")){
   
   genParticles_= iConfig.getParameter<edm::InputTag>("genParticles");
   processTreePara_=
