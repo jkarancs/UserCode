@@ -136,7 +136,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Data.hh,v 1.8 2009/06/10 08:47:33 veszpv Exp $
+// $Id: Data.hh,v 1.9 2009/06/10 14:18:49 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -303,7 +303,8 @@ template <class D> class Data {
     vsprintf(s, mesg.data(), argList);
     va_end(argList);
     mesg=s;
-    std::string dataType=typeid(D).name();
+    char *name=abi::__cxa_demangle(typeid(D).name(), NULL, NULL, NULL);
+    std::string dataType=name;
     std::string label=tag().label();
     std::cerr<<"*** ERROR: "<<dataType<<"("<<label<<")::"<<mesg<<std::endl;
   }
@@ -315,7 +316,8 @@ template <class D> class Data {
     vsprintf(s, mesg.data(), argList);
     va_end(argList);
     mesg=s;
-    std::string dataType=typeid(D).name();
+    char *name=abi::__cxa_demangle(typeid(D).name(), NULL, NULL, NULL);
+    std::string dataType=name;
     std::string label=tag().label();
     std::cout<<"*** WARNING: "<<dataType<<"("<<label<<")::"<<mesg<<std::endl;
   }
@@ -327,7 +329,9 @@ template <class D> class Data {
     vsprintf(s, mesg.data(), argList);
     va_end(argList);
     mesg=s;
-    std::string dataType=typeid(D).name();
+    char *name=abi::__cxa_demangle(typeid(D).name(), NULL, NULL, NULL);
+    std::string dataType=name;
+    free(name);
     std::string label=tag().label();
     std::cout<<dataType<<"("<<label<<")::"<<mesg<<std::endl;
   }
@@ -454,9 +458,11 @@ template<class T> bool isContext(std::string context) {
   return false;
 }
 
-template<class T> std::string humanTypeId() {
-  std::string id = typeid(T).name();
-  return id;
+template<class T> std::string humanTypeId(T& t) {
+  char *name=abi::__cxa_demangle(typeid(t).name(), NULL, NULL, NULL);
+  std::string humanTypeId=name;
+  free(name);
+  return humanTypeId;
 }
 
 std::map<std::string,std::pair<char, size_t> > getVariableMap(std::string v) {
@@ -517,6 +523,40 @@ std::map<std::string,std::pair<char, size_t> > getVariableMap(std::string v) {
   }
   return ret;
 }
+
+
+size_t generateIndices(unsigned int N, unsigned int K, 
+		       std::vector<std::vector<unsigned int> >& result,
+		       std::vector<unsigned int>* symm=NULL, 
+		       std::vector<unsigned int>* ii=NULL) {
+  bool received_symm=true;
+  if (ii==NULL) {
+    ii=new std::vector<unsigned int>;
+    if (symm==NULL) {
+      received_symm=false;
+      symm=new std::vector<unsigned int> (K,K);
+    }
+  }
+  unsigned int k=ii->size();
+  if (k==K) {
+    result.push_back((*ii));
+    return result.size();
+  }
+  for (unsigned int i=(*symm)[k]<k ? (*ii)[(*symm)[k]]+1 : 0; i<N; i++) {
+    unsigned int j=0; 
+    for (; j<ii->size(); j++) if ((*ii)[j]==i) break;
+    if (j!=ii->size()) continue; // Dont use same index twice
+    ii->push_back(i);
+    generateIndices(N,K,result,symm,ii);
+    ii->pop_back();
+  }
+  if (ii->size()==0) {
+    delete ii;
+    if (received_symm==false) delete symm;
+  }
+  return result.size();
+}
+
 
 }
 #endif
