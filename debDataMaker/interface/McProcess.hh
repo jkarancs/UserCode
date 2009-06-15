@@ -80,7 +80,7 @@
 //
 // Original Author:  Attila ARANYI
 //         Created:  Wed Jun 03 10:28:26 CET 2009
-// $Id: McProcess.hh,v 1.4 2009/06/15 15:21:18 aranyi Exp $
+// $Id: McProcess.hh,v 1.5 2009/06/15 17:19:42 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -279,12 +279,15 @@ template<class T> int McProcess<T>::findProcess(
   stdMesg("%s \n", "  findprocess");
   int level_size=tree.Branch[tree.Branch.size()-1].level+1;
 
+  //tree.print_(3);
+
+  trees.resize(0);
+
   unsigned int axusize;
 
   findtrees(iEvent,0,0,0);
 
   if (trees.size()==0){
-    //std::cout<<"trees size= "<<trees.size()<<std::endl;
     stdMesg("  Number of processes found: %d", trees.size());
     return 0;
   }
@@ -299,7 +302,7 @@ template<class T> int McProcess<T>::findProcess(
     }
   }
 
-  //trees[0].print_(0);
+  trees[0].print_(0);
   //trees[trees.size()-1].print_(0); 
 
   //std::cout<<std::endl<<"trees size= "<<trees.size()<<std::endl;
