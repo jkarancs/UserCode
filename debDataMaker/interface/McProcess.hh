@@ -30,25 +30,26 @@
       genParticles = cms.InputTag("genParticles","","HLT"),
       storeNParticles = cms.int32(numberOfParticlesInTheTree),
       processTree  = cms.vstring(
-        'Mo(pdgId),Da1(pdgId),Da2(pdgId)',
-        'Da1(pdgId),Da3(pdgId),Da4(pdgId)',
-        'Da2(pdgId),Da5(pdgId)')
+        'Mo(pdgId,pdgId,...),Da1(pdgId,pdgId,...),Da2(pdgId,pdgId,...)',
+        'Da1(pdgId,pdgId,...),Da3(pdgId,pdgId,...),Da4(pdgId,pdgId,...)',
+        'Da2(pdgId,pdgId,...),Da5(pdgId,...,pdgId,...)')
       )
    _________________________________________________________________________
   |                                                                         |
   | Particles with the same pdgId have to be written one after the other!!! |
-  |        'pi0(111),e1(11),gamma(22),e2(11)'    INCORRECT                  |
-  |        'pi0(111),gamma(22),e1(11),e2(11)'    CORRECT                    |
-  |        'pi0(111),e1(11),e2(11),gamma(22)'    CORRECT (cause the same)   |
+  |        'pi0(111),e-(11),gamma(22),e+(-11)'   INCORRECT                  |
+  |        'pi0(111),gamma(22),e-(11),e+(-11)'   CORRECT                    |
+  |        'pi0(111),e-(11),e+(-11),gamma(22)'   CORRECT (cause the same)   |
   |_________________________________________________________________________|
 
     in ".cc" file:
 
       proc.clear();
-      int v;
-      v=proc.findProcess(iEvent);
-      if (v!=0){
-        proc.set(iEvent,0);
+      int a;                           //Number of processes found
+      int b;
+      a=proc.findProcess(iEvent);
+      if (b<=a ){
+        proc.set(iEvent,b);           //set the b. process
         proc.print(3);
       }
 
@@ -80,7 +81,7 @@
 //
 // Original Author:  Attila ARANYI
 //         Created:  Wed Jun 03 10:28:26 CET 2009
-// $Id: McProcess.hh,v 1.5 2009/06/15 17:19:42 veszpv Exp $
+// $Id: McProcess.hh,v 1.6 2009/06/15 20:29:55 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -94,8 +95,8 @@ namespace deb {
 
 //----------------------------- Class Definition ------------------------------
 
-template<class T> class McProcess : 
-public Data<McParticleData<> >{
+template<class T,int N> class McProcess : 
+public Data<McParticleData<N> >{
 						// D:=ParticleData
 
  public:
@@ -103,14 +104,15 @@ public Data<McParticleData<> >{
   McProcess(const edm::ParameterSet& iConfig);
   McProcess() { stdErr("  Process<%s> configuration missing\n", 
 		     typeid(T).name()); }
-  inline McParticleData<>& McParticle(unsigned int i) { return *data(i); }
+  inline McParticleData<N>& McParticle(unsigned int i) 
+    { return *Data<McParticleData<N> >::data(i); }
   // Inherited functions to be overloaded
   void set(const edm::Event&,unsigned int);
   void calculate ();
   int passed(std::string selection);
 
   // Introduce new variables and functions
-  int findProcess(const edm::Event&);
+  unsigned int findProcess(const edm::Event&);
 
  private:
 
@@ -120,13 +122,13 @@ public Data<McParticleData<> >{
    struct processBranch_ {
 
      std::string Mo_name;
-     int Mo_pdgId;
+     std::vector<int> Mo_pdgId;
      int Mo_idx;
      int sort_Mo_idx;
      int Mo_level;
 
      std::string name;
-     int pdgId;
+     std::vector<int> pdgId;
      int idx;
      int sort_idx;
      int level;
@@ -135,7 +137,7 @@ public Data<McParticleData<> >{
      unsigned int nDa;
      int Da_level;
      std::vector<std::string> Da_name;
-     std::vector<int> Da_pdgId;
+     std::vector<std::vector<int> > Da_pdgId;
      std::vector<int> Da_idx;
      std::vector<int> sort_Da_idx;
 
@@ -157,18 +159,20 @@ public Data<McParticleData<> >{
      
    };
 
-   //bool compareTrees_(const edm::Event&,unsigned int&,int &,
-   //  std::vector<int> &, bool & ,std::vector<processTree_> &,bool &);
-
    processTree_ tree;
    std::vector<processTree_> trees;
-   //void importGlobalIdx(const edm::Event&,processTree_ &,int &);
 
-    std::vector<int> findParticle(const edm::Event&,int,int);
+    std::vector<int> findParticle(const edm::Event&,int,std::vector<int>);
     bool accepted(const edm::Event&,int,int);
     void findtrees(const edm::Event&,int,int,int);
-    unsigned int getIncNum(processBranch_&,int);
+    unsigned int getIncNum(processBranch_&,std::vector<int>);
+    bool isEqualPdg(int,std::vector<int>);
 };
+
+//typedef McProcess<reco::Candidate,2> McProcess_b;
+
+//template <class T,int N=2> typedef McProcess<T,2> template <class T> McProcess<T>;
+
 
 //--------------------------------- Constructor -------------------------------
 /*
@@ -177,27 +181,31 @@ public Data<McParticleData<> >{
       std::vector<std::string> pathNames_, : owned by this class      
 */
 
-template<class T> McProcess<T>::McProcess(const edm::ParameterSet& iConfig) : 
-  Data<McParticleData<> >(iConfig.getParameter<int>("storeNParticles")){
+template<class T,int N> McProcess<T,N>::
+  McProcess(const edm::ParameterSet& iConfig) : 
+  Data<McParticleData<N> >(iConfig.getParameter<int>("storeNParticles")){
   
   genParticles_= iConfig.getParameter<edm::InputTag>("genParticles");
   processTreePara_=
     iConfig.getParameter< std::vector<std::string> >("processTree");
 
-  processTree_ t(processTreePara_);
+    processBranch_ Branch(processTreePara_[0]);
+    //Branch.printBranch_(3);
+   processTree_ t(processTreePara_);
    tree=t;
 }
 
 //----------------------------------- set() -----------------------------------
-template<class T> void McProcess<T>::set(const edm::Event& iEvent,
+template<class T,int N> void McProcess<T,N>::set(const edm::Event& iEvent,
   unsigned int numProc) {
 
-  if (!isValid()) return;
+  if (!Data<McParticleData<N> >::isValid()) return;
 
   edm::Handle<edm::View<T> > particleHandle;
   iEvent.getByLabel(genParticles_, particleHandle );
   if (!particleHandle.isValid()){
-    stdErr("set() : Invalid tag %s", tag().label().data());
+    stdErr("set() : Invalid tag %s", Data<McParticleData<N> >::
+      tag().label().data());
     return;
   }
 
@@ -212,10 +220,10 @@ template<class T> void McProcess<T>::set(const edm::Event& iEvent,
   int ind;
   processBranch_ lastBranch(processTreePara_[0]);
 
-  clear();
+  Data<McParticleData<N> >::clear();
 
   for(unsigned int i=0;i<trees[numProc].Branch.size();i++){
-      McParticleData<> new_obj;
+      McParticleData<N> new_obj;
       push_back(new_obj);
   }
 
@@ -227,8 +235,6 @@ template<class T> void McProcess<T>::set(const edm::Event& iEvent,
 	idx =  p - particleHandle->begin();
 
         if (idx==trees[numProc].Branch[i].matched_idx[0]){
-
-          //if (i!=0) k++;
 
           ind=trees[numProc].Branch[i].sort_idx;
 
@@ -262,21 +268,21 @@ template<class T> void McProcess<T>::set(const edm::Event& iEvent,
   
 //-------------------------------- calculate() --------------------------------
 
-template<class T> void McProcess<T>::calculate () { 
+template<class T,int N> void McProcess<T,N>::calculate () { 
 }
   
 //--------------------------------- passed() ----------------------------------
 
-template<class T> int McProcess<T>::passed(std::string selection) { 
-  return 1; 
+template<class T,int N> int McProcess<T,N>::passed(std::string selection) { 
+return 1;
 }
 
 //-----------------------------------findProcess()-----------------------------
-template<class T> int McProcess<T>::findProcess(
+template<class T,int N> unsigned int McProcess<T,N>::findProcess(
   const edm::Event& iEvent) {
   
 
-  stdMesg("%s \n", "  findprocess");
+  Data<McParticleData<N> >::stdMesg("%s \n", "  findprocess");
   int level_size=tree.Branch[tree.Branch.size()-1].level+1;
 
   //tree.print_(3);
@@ -303,9 +309,8 @@ template<class T> int McProcess<T>::findProcess(
   }
 
   trees[0].print_(0);
-  //trees[trees.size()-1].print_(0); 
-
-  //std::cout<<std::endl<<"trees size= "<<trees.size()<<std::endl;
+//  trees[trees.size()-1].print_(3); 
+  
   stdMesg("  Number of processes found: %d", trees.size());
 //   std::cout<<std::endl<<"matched idx= ";
 //   for(unsigned int i=0;i<trees.size();i++){
@@ -318,7 +323,7 @@ template<class T> int McProcess<T>::findProcess(
 }
 
 //-----------------------------------findtrees()-------------------------------
-template<class T> void McProcess<T>::findtrees(
+template<class T,int N> void McProcess<T,N>::findtrees(
   const edm::Event& iEvent,int tree_idx,int level,int Branch_idx) {
 
   std::vector<int> pidx;
@@ -362,7 +367,7 @@ template<class T> void McProcess<T>::findtrees(
 
       
       if(IncNum>1 && IncNum!=matched_pidx.size()){
-        stdErr("incorrect process declaration\n");
+        Data<McParticleData<N> >::stdErr("incorrect process declaration\n");
       }
       
 
@@ -371,8 +376,7 @@ template<class T> void McProcess<T>::findtrees(
         unsigned int first=0;
 
         for(unsigned int i=0;i<tree.Branch[Mo_idx].nDa;i++){
-          if(abs(tree.Branch[Mo_idx].Da_pdgId[i])==
-            abs(tree.Branch[Branch_idx].pdgId)){
+          if(tree.Branch[Mo_idx].Da_pdgId[i]==tree.Branch[Branch_idx].pdgId){
             first=i;
             break;
           }
@@ -412,13 +416,13 @@ template<class T> void McProcess<T>::findtrees(
 }
 //----------------------------------getIncNum()--------------------------------
 
-template<class T> unsigned int McProcess<T>::getIncNum(processBranch_& Branch,
-  int pdg){
+template<class T,int N> unsigned int McProcess<T,N>::
+  getIncNum(processBranch_& Branch,std::vector<int> pdg){
 
   unsigned int IncNum=0;
 
   for(unsigned int i=0;i<Branch.nDa;i++){
-    if(abs(Branch.Da_pdgId[i])==abs(pdg))
+    if(Branch.Da_pdgId[i]==pdg)
       IncNum++;
   }
 
@@ -426,7 +430,7 @@ template<class T> unsigned int McProcess<T>::getIncNum(processBranch_& Branch,
 }
 //-----------------------------------accepted()--------------------------------
 
-template<class T> bool McProcess<T>::accepted(
+template<class T,int N> bool McProcess<T,N>::accepted(
   const edm::Event& iEvent,int idx,int Branch_idx) {
   
   bool b=true;
@@ -439,36 +443,47 @@ template<class T> bool McProcess<T>::accepted(
 
     pidx=findParticle(iEvent,idx,tree.Branch[Branch_idx].Da_pdgId[i]);
 
-      if (tree.Branch[Branch_idx].Da_idx[i]==NOVAL_I){
-	if (pidx.size()==0){
-	  return false;
-	}
-      }else{
-	axub=false;
-	for(unsigned int j=0;j<pidx.size();j++){
-	  if(accepted(iEvent,pidx[j],tree.Branch[Branch_idx].Da_idx[i]))
-	    axub=true;
-	}
-	if (!axub)
-	  return false;
+    if (tree.Branch[Branch_idx].Da_idx[i]==NOVAL_I){
+      if (pidx.size()==0){
+	return false;
       }
+    }else{
+      axub=false;
+      for(unsigned int j=0;j<pidx.size();j++){
+	if(accepted(iEvent,pidx[j],tree.Branch[Branch_idx].Da_idx[i]))
+	  axub=true;
+      }
+      if (!axub)
+	return false;
     }
+  }
 
   return b;
 }
+//-----------------------------------isEqualPdg()------------------------------
+template<class T,int N> bool McProcess<T,N>::isEqualPdg(
+  int pdg,std::vector<int> pdgId){
+
+
+  for (unsigned int i=0;i<pdgId.size();i++){
+    if (pdg==pdgId[i]) return true;
+  }
+  return false;
+}
 
 //-----------------------------------findParticle()----------------------------
-template<class T> std::vector<int> McProcess<T>::findParticle(
-  const edm::Event& iEvent,int idx,int pdg){
+template<class T,int N> std::vector<int> McProcess<T,N>::findParticle(
+  const edm::Event& iEvent,int idx,std::vector<int> pdg){
 
   std::vector<int> pidx;
 
-  if (!isValid()) return pidx;
+  if (!Data<McParticleData<N> >::isValid()) return pidx;
 
   edm::Handle<edm::View<T> > particleHandle;
   iEvent.getByLabel(genParticles_, particleHandle );
   if (!particleHandle.isValid()){
-    stdErr("set() : Invalid tag %s", tag().label().data());
+    stdErr("set() : Invalid tag %s", Data<McParticleData<N> >::
+    tag().label().data());
     return pidx;
   }
   std::vector<const T *> Particles;
@@ -488,7 +503,7 @@ template<class T> std::vector<int> McProcess<T>::findParticle(
       
       axuidx =  p - particleHandle->begin();
 
-      if (abs(p->pdgId())==abs(pdg)){
+      if (isEqualPdg(p->pdgId(),pdg)){
         pidx.resize(pidx.size()+1);
         pidx[pidx.size()-1]=axuidx;
       }
@@ -503,7 +518,7 @@ template<class T> std::vector<int> McProcess<T>::findParticle(
         for(unsigned int i = 0; i < p->numberOfDaughters(); ++i ) {
 	  const T * da = p->daughter(i);
 
-          if (abs(da->pdgId())==abs(pdg)){
+          if (isEqualPdg(da->pdgId(),pdg)){
             found = find(Particles.begin(), Particles.end(), da);
 	    if(found != Particles.end()) 
 	      idx = found - Particles.begin();          
@@ -519,12 +534,12 @@ template<class T> std::vector<int> McProcess<T>::findParticle(
 }
 
 //----------------------- processTree_ constructor ----------------------------
-template<class T> McProcess<T>::processTree_::processTree_(){
+template<class T,int N> McProcess<T,N>::processTree_::processTree_(){
 
 }
 
 //----------------------- processTree_ constructor ----------------------------
-template<class T> McProcess<T>::processTree_::
+template<class T,int N> McProcess<T,N>::processTree_::
   processTree_(std::vector<std::string> & processTreePara_){
 
   Branch.resize(Branch.size()+processTreePara_.size());
@@ -539,13 +554,13 @@ template<class T> McProcess<T>::processTree_::
     for(unsigned int j=0;j<Branch[i].nDa;j++){
       Branch[i].Da_idx[j]=NOVAL_I;
       for(unsigned int k=i;k<processTreePara_.size();k++){
-      if (Branch[i].Da_name[j]==Branch[k].name) Branch[i].Da_idx[j]=k;
+        if (Branch[i].Da_name[j]==Branch[k].name) Branch[i].Da_idx[j]=k;
       }
     }
   }
 
   Branch[0].Mo_name="";
-  Branch[0].Mo_pdgId=NOVAL_I;
+  Branch[0].Mo_pdgId.resize(0);
   Branch[0].Mo_idx=NOVAL_I;
   Branch[0].sort_Mo_idx=NOVAL_I;
   Branch[0].Mo_level=NOVAL_I;
@@ -560,6 +575,7 @@ template<class T> McProcess<T>::processTree_::
       for(unsigned int k=0;k<Branch[j].nDa;k++){
         if (Branch[i].name==Branch[j].Da_name[k]){
           Branch[i].Mo_name=Branch[j].name;
+          Branch[i].Mo_pdgId.resize(Branch[j].pdgId.size());
           Branch[i].Mo_pdgId=Branch[j].pdgId;
           Branch[i].Mo_idx=Branch[j].idx;
         }
@@ -606,17 +622,25 @@ template<class T> McProcess<T>::processTree_::
         Branch[Branch.size()-1]=branch_;
         Branch[Branch.size()-1].clearBranch_();
 
+        Branch[Branch.size()-1].pdgId.resize(Branch[i].Da_pdgId[j].size());
+
           Branch[Branch.size()-1].Mo_name=Branch[i].name;
+          Branch[Branch.size()-1].Mo_pdgId.resize(Branch[i].pdgId.size());
           Branch[Branch.size()-1].Mo_pdgId=Branch[i].pdgId;
           Branch[Branch.size()-1].Mo_idx=Branch[i].idx;
           Branch[Branch.size()-1].sort_Mo_idx=Branch[i].sort_idx;
           Branch[Branch.size()-1].Mo_level=Branch[i].level; 
 
-          Branch[Branch.size()-1].name=Branch[i].Da_name[j];
+          Branch[Branch.size()-1].name=Branch[i].Da_name[j];          
           Branch[Branch.size()-1].pdgId=Branch[i].Da_pdgId[j];
           Branch[Branch.size()-1].idx=Branch[i].Da_idx[j];
           Branch[Branch.size()-1].sort_idx=Branch[i].sort_Da_idx[j];
           Branch[Branch.size()-1].level=Branch[i].level+1;
+
+          for(unsigned int k=0;k<Branch.size()-1;k++){  
+            
+          }
+          
       }
     }
   }
@@ -625,7 +649,7 @@ template<class T> McProcess<T>::processTree_::
 
 //-------------------------- processTree_ print() -----------------------------
 
-template<class T> void McProcess<T>::processTree_::print_(int x) const{
+template<class T,int N> void McProcess<T,N>::processTree_::print_(int x) const{
 
    for(unsigned int i=0;i<Branch.size();i++){
       std::cout<<std::endl;
@@ -639,7 +663,7 @@ template<class T> void McProcess<T>::processTree_::print_(int x) const{
 
 //-------------------------- processTree_ clearTree_() ------------------------
 
-template<class T> void McProcess<T>::processTree_::clearTree_() {
+template<class T,int N> void McProcess<T,N>::processTree_::clearTree_() {
 
    for(unsigned int i=0;i<Branch.size();i++){
       Branch[i].clearBranch_();
@@ -648,11 +672,11 @@ template<class T> void McProcess<T>::processTree_::clearTree_() {
 }
 
 //----------------------- processBranch_ constructor --------------------------
-template<class T> McProcess<T>::processBranch_::processBranch_(){
+template<class T,int N> McProcess<T,N>::processBranch_::processBranch_(){
 }
 
 //----------------------- processBranch_ constructor --------------------------
-template<class T> McProcess<T>::processBranch_::processBranch_(
+template<class T,int N> McProcess<T,N>::processBranch_::processBranch_(
   std::string & str){
 
   nDa=0;
@@ -662,19 +686,24 @@ template<class T> McProcess<T>::processBranch_::processBranch_(
   std::string::iterator it;
 
   sort_idx=NOVAL_I;
-  sort_Mo_idx=NOVAL_I;  
 
-  level=NOVAL_I;
+  Mo_name="";
+  Mo_idx=NOVAL_I;
+  sort_Mo_idx=NOVAL_I;
   Mo_level=NOVAL_I;
+
+  idx=NOVAL_I;
+  level=NOVAL_I;
   Da_level=NOVAL_I;
    
   for ( it=str.begin() ; it < str.end(); it++ )
-    if(*it==',') nDa++;
+    if(*it==')') nDa++;
+  nDa--;
 
-   Da_name.resize(Da_name.size()+nDa);
-   Da_pdgId.resize(Da_pdgId.size()+nDa);
-   Da_idx.resize(Da_idx.size()+nDa);
-   sort_Da_idx.resize(sort_Da_idx.size()+nDa);
+  Da_name.resize(Da_name.size()+nDa);
+  Da_pdgId.resize(Da_pdgId.size()+nDa);
+  Da_idx.resize(Da_idx.size()+nDa);
+  sort_Da_idx.resize(sort_Da_idx.size()+nDa);
 
   std::string ds,di;
 
@@ -685,20 +714,40 @@ template<class T> McProcess<T>::processBranch_::processBranch_(
         ds+=*it;
         it++;
     }
-      it++;
-    while (*it != ')'){ 
-        di+=*it;
-        it++;
-    }
-      it++;
+
     if (i==0){
       name=ds;
-      pdgId=string2int(di);
-    }else{
-      Da_name[i-1]=ds;
-      Da_pdgId[i-1]=string2int(di);
-      sort_Da_idx[i-1]=NOVAL_I;
+     }else{
+       Da_name[i-1]=ds;
+       sort_Da_idx[i-1]=NOVAL_I;
     }
+
+    it++;
+
+    while (*it != ')'){ 
+      if (*it != ','){
+        di+=*it;
+        it++;
+      }else{
+        it++;
+	if (i==0){
+          pdgId.resize(pdgId.size()+1);
+	  pdgId[pdgId.size()-1]=string2int(di);
+  	}else{
+           Da_pdgId[i-1].resize(Da_pdgId[i-1].size()+1);
+ 	   Da_pdgId[i-1][Da_pdgId[i-1].size()-1]=string2int(di);
+ 	}
+        di="";
+      }
+    }
+    it++;
+    if (i==0){
+      pdgId.resize(pdgId.size()+1);
+      pdgId[pdgId.size()-1]=string2int(di);
+    }else{
+      Da_pdgId[i-1].resize(Da_pdgId[i-1].size()+1);
+      Da_pdgId[i-1][Da_pdgId[i-1].size()-1]=string2int(di);
+   }
     ds="";
     di="";
     if(i!=nDa+1) it++;
@@ -706,12 +755,17 @@ template<class T> McProcess<T>::processBranch_::processBranch_(
 }
 
 //----------------------- processBranch_ print() ------------------------------
-template<class T> void McProcess<T>::processBranch_::printBranch_(int x) const{
+template<class T,int N> void McProcess<T,N>::processBranch_::
+  printBranch_(int x) const{
 
   if (x>=3){
     std::cout<<std::endl;
     std::cout<<"Mo_name="<<Mo_name<<std::endl;
-    std::cout<<"Mo_pdgId="<<Mo_pdgId<<std::endl;
+    std::cout<<"Mo_pdgId=";
+    for (unsigned int j=0;j<Mo_pdgId.size();j++){
+      std::cout<<Mo_pdgId[j]<<" ";
+    }
+    std::cout<<std::endl;
     std::cout<<"Mo_idx="<<Mo_idx<<std::endl;
     std::cout<<"sort_Mo_idx="<<sort_Mo_idx<<std::endl;
     std::cout<<"Mo_level="<<Mo_level<<std::endl;
@@ -720,7 +774,11 @@ template<class T> void McProcess<T>::processBranch_::printBranch_(int x) const{
     
     std::cout<<"name="<<name<<std::endl;
   if (x>=1){
-    std::cout<<"pdgId="<<pdgId<<std::endl;
+    std::cout<<"pdgId=";
+    for (unsigned int i=0;i<pdgId.size();i++){
+      std::cout<<pdgId[i]<<" ";
+    }
+    std::cout<<std::endl;
     std::cout<<"idx="<<idx<<std::endl;
     std::cout<<"sort_idx="<<sort_idx<<std::endl;
     std::cout<<"level="<<level<<std::endl;
@@ -737,7 +795,11 @@ template<class T> void McProcess<T>::processBranch_::printBranch_(int x) const{
     std::cout<<"Da_level="<<Da_level<<std::endl;
     for (unsigned int i=0;i<nDa;i++){
       std::cout<<"Da_name["<<i+1<<"]="<<Da_name[i]<<std::endl;
-      std::cout<<"Da_pdgId["<<i+1<<"]="<<Da_pdgId[i]<<std::endl;
+      std::cout<<"Da_pdgId["<<i+1<<"]=";
+      for (unsigned int j=0;j<Da_pdgId[i].size();j++){
+        std::cout<<Da_pdgId[i][j]<<" ";
+      }
+      std::cout<<std::endl;
       std::cout<<"Da_idx["<<i+1<<"]="<<Da_idx[i]<<std::endl;
       std::cout<<"sort_Da_idx["<<i+1<<"]="<<sort_Da_idx[i]<<std::endl;
     }
@@ -746,16 +808,20 @@ template<class T> void McProcess<T>::processBranch_::printBranch_(int x) const{
 }
 
 //----------------------- processBranch_ clearBranch() ------------------------
-template<class T> void McProcess<T>::processBranch_::clearBranch_() {
+template<class T,int N> void McProcess<T,N>::processBranch_::clearBranch_() {
 
   Mo_name="";
-  Mo_pdgId=NOVAL_I;
+  for (unsigned int i=0;i<Mo_pdgId.size();i++){
+    Mo_pdgId[i]=NOVAL_I;
+  }
   Mo_idx=NOVAL_I;
   sort_Mo_idx=NOVAL_I;
   Mo_level=NOVAL_I;
 
   name="";
-  pdgId=NOVAL_I;
+  for (unsigned int i=0;i<pdgId.size();i++){
+    pdgId[i]=NOVAL_I;
+  }
   idx=NOVAL_I;
   sort_idx=NOVAL_I;
   level=NOVAL_I;
@@ -763,10 +829,12 @@ template<class T> void McProcess<T>::processBranch_::clearBranch_() {
   matched_idx.resize(0);
 
   for (unsigned int i=0;i<nDa;i++){
-    Da_name[i]="";
-    Da_pdgId[i]=NOVAL_I;
+    Da_name[i]="";    
     Da_idx[i]=NOVAL_I;
     sort_Da_idx[i]=NOVAL_I;
+    for (unsigned int j=0;j<Da_pdgId[i].size();j++){
+      Da_pdgId[i][j]=NOVAL_I;
+    }
   }
 
 }
