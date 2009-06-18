@@ -22,7 +22,7 @@
 //
 // Original Author:  Attila ARANYI
 //         Created:  Wed Jun 03 10:28:26 CET 2009
-// $Id: ParticleData.hh,v 1.1 2009/06/03 19:38:51 veszpv Exp $
+// $Id: McParticleData.hh,v 1.1 2009/06/14 05:10:15 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -33,12 +33,12 @@
 
 namespace deb {
 
-template <int N=3>
+template <int N>
   class McParticleData {
-  public:
+  public: 
+          
     McParticleData() {clear();}
     ~McParticleData() { }
-           
 
     float e;
     float px;
@@ -55,8 +55,6 @@ template <int N=3>
     int mo2;
     int da[N];
     int pdg;
- 
-    
 
     void clear() {
       e=NOVAL_F;
@@ -77,7 +75,6 @@ template <int N=3>
         da[i]=NOVAL_I;
       }
       pdg=NOVAL_I;
-
     }
     
     std::string list(std::string prefix="") {
@@ -97,7 +94,6 @@ template <int N=3>
       ss << prefix << "mo2/I:";
       ss << prefix << "da["<<N<<"]/I:";
       ss << prefix << "pdg/I";
-
       return ss.str();
     }
 
