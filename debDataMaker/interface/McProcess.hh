@@ -81,7 +81,7 @@
 //
 // Original Author:  Attila ARANYI
 //         Created:  Wed Jun 03 10:28:26 CET 2009
-// $Id: McProcess.hh,v 1.6 2009/06/15 20:29:55 aranyi Exp $
+// $Id: McProcess.hh,v 1.7 2009/06/18 15:09:23 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -282,7 +282,7 @@ template<class T,int N> unsigned int McProcess<T,N>::findProcess(
   const edm::Event& iEvent) {
   
 
-  Data<McParticleData<N> >::stdMesg("%s \n", "  findprocess");
+  Data<McParticleData<N> >::stdMesg("%s", "  findprocess");
   int level_size=tree.Branch[tree.Branch.size()-1].level+1;
 
   //tree.print_(3);
@@ -293,25 +293,34 @@ template<class T,int N> unsigned int McProcess<T,N>::findProcess(
 
   findtrees(iEvent,0,0,0);
 
+
+
   if (trees.size()==0){
-    stdMesg("  Number of processes found: %d", trees.size());
+    stdMesg("  Number of processes found: %d \n", trees.size());
     return 0;
-  }
+  }	    
 
   for(int j=1;j<level_size;j++){
     for(unsigned int k=0;k<tree.Branch.size();k++){
-      axusize=trees.size();
-      for(unsigned int i=0;i<axusize;i++){
-        if (tree.Branch[k].level==j)
-          findtrees(iEvent,i,j,k);
+      if (tree.Branch[k].level==j){
+	axusize=trees.size();
+	for(unsigned int i=0;i<axusize;i++){        
+	  findtrees(iEvent,i,j,k);  
+	}
       }
     }
   }
 
-  trees[0].print_(0);
+
 //  trees[trees.size()-1].print_(3); 
   
-  stdMesg("  Number of processes found: %d", trees.size());
+  stdMesg("  Number of processes found: %d", trees.size());  
+
+  for(unsigned int i=0;i<trees.size();i++){
+    trees[i].print_(0);
+  }
+
+  //tree.print_(3);
 //   std::cout<<std::endl<<"matched idx= ";
 //   for(unsigned int i=0;i<trees.size();i++){
 //     std::cout<<trees[i].Branch[0].matched_idx[0]<<" ";
@@ -356,12 +365,25 @@ template<class T,int N> void McProcess<T,N>::findtrees(
       pidx=findParticle(iEvent,trees[tree_idx].Branch[Mo_idx].matched_idx[0],
 	tree.Branch[Branch_idx].pdgId);
 
+//       std::cout<<std::endl;
+//       std::cout<<"pidx= ";
+//       for(unsigned int i=0;i<pidx.size();i++){
+//         std::cout<<pidx[i]<<" ";
+//       }
+//       std::cout<<std::endl;
+
       for (unsigned int j=0;j<pidx.size();j++){
 	if(accepted(iEvent,pidx[j],Branch_idx)){
 	  matched_pidx.resize(matched_pidx.size()+1);
 	  matched_pidx[matched_pidx.size()-1]=pidx[j];
 	}
       }
+
+//       std::cout<<"matched_pidx= ";
+//       for(unsigned int i=0;i<matched_pidx.size();i++){
+//         std::cout<<matched_pidx[i]<<" ";
+//       }
+//       std::cout<<std::endl;
 
       IncNum=getIncNum(tree.Branch[Mo_idx],tree.Branch[Branch_idx].pdgId);
 
@@ -515,6 +537,7 @@ template<class T,int N> std::vector<int> McProcess<T,N>::findParticle(
       axuidx =  p - particleHandle->begin();
 
       if (idx==axuidx){
+
         for(unsigned int i = 0; i < p->numberOfDaughters(); ++i ) {
 	  const T * da = p->daughter(i);
 
@@ -524,9 +547,11 @@ template<class T,int N> std::vector<int> McProcess<T,N>::findParticle(
 	      idx = found - Particles.begin();          
             pidx.resize(pidx.size()+1);
             pidx[pidx.size()-1]=idx;
-          } 
+          }           
         }
+        return pidx;
       }
+      
     }
   }
 
