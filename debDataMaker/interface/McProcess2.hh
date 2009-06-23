@@ -59,6 +59,7 @@ template<class T,int N> class McProcess2 : public Data<McParticleData<N> >{
 
   void addBranch(TTree*, std::string);
   void setBranch();
+  void print(int);
 
   unsigned int findProcess(const edm::Event&);
 
@@ -69,23 +70,28 @@ template<class T,int N> class McProcess2 : public Data<McParticleData<N> >{
     std::vector<DecayVertex*> da;
     const reco::Candidate* p;
     void print() {
-      printf("%s (", name.data());
+      printf("%s (0x%x) ( ", name.data(), size_t(this));
       for (size_t j=0; j<pdg.size(); ++j) printf("%d ", pdg[j]); printf(")");
       if (da.size()>0) printf(" -> ");
-      for (size_t j=0; j<da.size(); ++j) printf("%s ", da[j]->name.data());
+      for (size_t j=0; j<da.size(); ++j) printf(" %s (0x%x)", 
+					  da[j]->name.data(), size_t(da[j]));
+      printf(" // reco::Candidate: 0x%x", size_t(p));
+      if (p!=0) printf(" -> %d", p->pdgId());
       printf("\n");
     }
   };
 
   std::vector<const reco::Candidate *> genParticles_;
   std::vector<DecayVertex> vertices_;
-  std::vector<std::vector<DecayVertex> > processes_; // IMPORTANT!!!: in
-  // processes_ the da-pointers are not set correctly at this point
 
   bool findVertex(std::vector<const reco::Candidate *>&,
 		  DecayVertex*,
 		  DecayVertex*,
 		  std::vector<DecayVertex>*);
+ public:
+  std::vector<std::vector<DecayVertex> > processes_; // IMPORTANT!!!: in
+  // processes_ the da-pointers are not set correctly at this point
+
 
 };
 
@@ -134,6 +140,7 @@ McProcess2<T,N>::McProcess2(const edm::ParameterSet& iConfig) :
       coma=v.find_first_of(",", par);
     }
     vertex.pdg.push_back(atoi(v.substr(par, v.find(")")-par).data()));
+    vertex.p=NULL;
     vertices_.push_back(vertex);
     daughters.push_back(da_list);
   } // for i
@@ -185,6 +192,7 @@ unsigned int McProcess2<T,N>::findProcess(const edm::Event& iEvent) {
     return 0;
   }
 
+  genParticles_.clear();
   for(reco::CandidateView::const_iterator iPart=genPartHandle->begin();
       iPart!=genPartHandle->end(); ++iPart) {
     genParticles_.push_back(&*iPart); 
@@ -254,6 +262,7 @@ bool McProcess2<T,N>::findVertex(std::vector<const reco::Candidate *>& genp,
 	v.p=genp[i];
 	proc=new std::vector<DecayVertex>;
 	proc->push_back(v);
+	v.print();
 	// Treat here is the whole process is just one particle
 	size_t k;
 	for (k=0; k<v.da.size(); k++) {
@@ -268,10 +277,11 @@ bool McProcess2<T,N>::findVertex(std::vector<const reco::Candidate *>& genp,
   }
 
   DecayVertex v=*particle;
-
+  v.print();
   std::vector<const reco::Candidate *>::const_iterator mo;
   mo=find(genp.begin(), genp.end(), mother->p);
-  for (size_t i=mo-genp.begin()+1; i<genp.size(); i++) {
+  printf("at %d, mother 0x%x\n", mo-genp.begin(), size_t(mother->p));
+  for (size_t i= mo!=genp.end() ? mo-genp.begin()+1 : 0; i<genp.size(); i++) {
   //for (size_t i=0; i<genp.size(); i++) {
     size_t j;
     for (j=0; j<v.pdg.size(); j++) {
@@ -279,7 +289,7 @@ bool McProcess2<T,N>::findVertex(std::vector<const reco::Candidate *>& genp,
 	mo = find(genp.begin(), genp.end(), genp[i]->mother(0));
 	if(mo!=genp.end()) if (genp[mo-genp.begin()]==mother->p) break;
 	mo = find(genp.begin(), genp.end(), 
-		  genp[i]->mother(genp[i]->numberOfMothers())-1);
+		  genp[i]->mother(genp[i]->numberOfMothers()-1));
 	if(mo!=genp.end()) if (genp[mo-genp.begin()]==mother->p) break;
       }
     }
@@ -346,6 +356,12 @@ template<class T,int N> void McProcess2<T,N>::setBranch() {
 
 }
 
+
+//--------------------------------- print() -----------------------------------
+
+template<class T,int N> void McProcess2<T,N>::print(int verbose=0) {
+  
+}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
