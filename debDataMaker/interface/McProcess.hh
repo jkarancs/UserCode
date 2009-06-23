@@ -81,7 +81,7 @@
 //
 // Original Author:  Attila ARANYI
 //         Created:  Wed Jun 03 10:28:26 CET 2009
-// $Id: McProcess.hh,v 1.7 2009/06/18 15:09:23 aranyi Exp $
+// $Id: McProcess.hh,v 1.8 2009/06/22 16:13:25 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -117,7 +117,6 @@ public Data<McParticleData<N> >{
  private:
 
    std::vector<std::string> processTreePara_;
-   edm::InputTag genParticles_;
 
    struct processBranch_ {
 
@@ -185,7 +184,8 @@ template<class T,int N> McProcess<T,N>::
   McProcess(const edm::ParameterSet& iConfig) : 
   Data<McParticleData<N> >(iConfig.getParameter<int>("storeNParticles")){
   
-  genParticles_= iConfig.getParameter<edm::InputTag>("genParticles");
+  Data<McParticleData<N> >::setTag(
+    iConfig.getParameter<edm::InputTag>("mcProcessTag"));
   processTreePara_=
     iConfig.getParameter< std::vector<std::string> >("processTree");
 
@@ -202,12 +202,13 @@ template<class T,int N> void McProcess<T,N>::set(const edm::Event& iEvent,
   if (!Data<McParticleData<N> >::isValid()) return;
 
   edm::Handle<edm::View<T> > particleHandle;
-  iEvent.getByLabel(genParticles_, particleHandle );
+  iEvent.getByLabel(Data<McParticleData<N> >::tag(), particleHandle );
   if (!particleHandle.isValid()){
     stdErr("set() : Invalid tag %s", Data<McParticleData<N> >::
       tag().label().data());
     return;
   }
+
 
   std::vector<const T *> Particles;
 
@@ -502,7 +503,7 @@ template<class T,int N> std::vector<int> McProcess<T,N>::findParticle(
   if (!Data<McParticleData<N> >::isValid()) return pidx;
 
   edm::Handle<edm::View<T> > particleHandle;
-  iEvent.getByLabel(genParticles_, particleHandle );
+  iEvent.getByLabel(Data<McParticleData<N> >::tag(), particleHandle );
   if (!particleHandle.isValid()){
     stdErr("set() : Invalid tag %s", Data<McParticleData<N> >::
     tag().label().data());
