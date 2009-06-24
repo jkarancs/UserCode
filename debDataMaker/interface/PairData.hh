@@ -39,7 +39,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Sun Mar 24 12:15:11 CET 2009
-// $Id: PairData.hh,v 1.2 2009/06/05 19:46:10 veszpv Exp $
+// $Id: PairData.hh,v 1.3 2009/06/10 14:26:28 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -57,7 +57,7 @@ template<class D> class PairData : public Data<D>{
   PairData(std::vector<unsigned int>, unsigned int, 
 	   std::vector<unsigned int>, unsigned int, std::string);
   PairData(std::vector<std::pair<unsigned int, unsigned int> >&, 
-	   std::pair<unsigned int, unsigned int>&);
+	   std::pair<unsigned int, unsigned int>);
 
   inline D* at(unsigned int u, unsigned int v){
     return Data<D>::data(map_[std::pair<unsigned int, unsigned int>(u,v)]);
@@ -112,7 +112,7 @@ template<class D> class PairData : public Data<D>{
 
 template<class D> 
 PairData<D>::PairData(std::vector<std::pair<unsigned int, unsigned int> >& ind,
-		      std::pair<unsigned int,unsigned int>& bound) : 
+		      std::pair<unsigned int,unsigned int> bound) : 
   Data<D>(ind.size()), bound_(bound) {
   
   type_=NOVAL_S;
@@ -125,6 +125,11 @@ PairData<D>::PairData(std::vector<std::pair<unsigned int, unsigned int> >& ind,
 		      it->first, it->second);
       Data<D>::setValid(false);
     }
+    unsigned int i;
+    for (i=0; i<ind_.size(); i++) {
+      if (ind_[i].first==(*it).first && ind_[i].second==(*it).second) break; 
+    }
+    if (i!=ind_.size()) continue;
     map_[*it]=ind_.size();
     ind_.push_back(*it);
   }
