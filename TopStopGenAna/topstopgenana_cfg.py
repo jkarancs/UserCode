@@ -11,9 +11,11 @@ process.source = cms.Source("PoolSource",
    
   ## "file:/home/veszpv/CMSSW_2_2_3/data/ZJets-88809B2F-77E4-DD11-AFF9-003048673F12.root"	     
 		       
- ##   "file:/home/veszpv/CMSSW_2_2_3/data/LM1-F441C2B4-1ACC-DD11-9C41-00E08178C06F.root"
-     
-"file:/home/veszpv/CMSSW_2_2_9/data/LM1/patLayer1_11.root"
+  ##  "file:/home/veszpv/CMSSW_2_2_3/data/LM1-F441C2B4-1ACC-DD11-9C41-00E08178C06F.root"
+      
+##"file:/home/veszpv/CMSSW_2_2_9/data/TTbar/patLayer1_100.root"     
+    
+##"file:/home/veszpv/CMSSW_2_2_9/data/LM1/patLayer1_11.root"
 ##"file:/home/veszpv/CMSSW_2_2_9/data/LM1/patLayer1_6.root",
 ##"file:/home/veszpv/CMSSW_2_2_9/data/LM1/patLayer1_15.root",
 ##"file:/home/veszpv/CMSSW_2_2_9/data/LM1/patLayer1_17.root",
@@ -37,7 +39,7 @@ process.source = cms.Source("PoolSource",
 ##"file:/home/veszpv/CMSSW_2_2_9/data/LM1/patLayer1_4.root"
         
    
-       ##"file:/home/veszpv/CMSSW_2_2_3/data/LM1/00211808-75CE-DD11-A5C6-0013D3DE2633.root"
+       "file:/home/veszpv/CMSSW_2_2_3/data/LM1/00211808-75CE-DD11-A5C6-0013D3DE2633.root"
    ##"file:/home/veszpv/CMSSW_2_2_3/data/LM1/007339CA-F0CC-DD11-AD95-00E08178C107.root",
    ##"file:/home/veszpv/CMSSW_2_2_3/data/LM1/0263F495-71CE-DD11-A8CC-00E08179181F.root",
    ##"file:/home/veszpv/CMSSW_2_2_3/data/LM1/04209804-F7CC-DD11-94EC-00E08178C093.root",
@@ -57,7 +59,7 @@ process.source = cms.Source("PoolSource",
    ##"file:/home/veszpv/CMSSW_2_2_3/data/LM1/628FC9F0-CECD-DD11-96C3-00E0817918BB.root",
    ##"file:/home/veszpv/CMSSW_2_2_3/data/LM1/6EE42A8F-C3CD-DD11-B988-001A64789DD0.root",
    ##"file:/home/veszpv/CMSSW_2_2_3/data/LM1/72E9CD2E-67CF-DD11-B8CF-00E08178C0F9.root",
-   ##"file:/home/veszpv/CMSSW_2_2_3/data/LM1/7C42C282-F0CC-DD11-99F4-00E0817917FB.root",
+   ##"file:/home/veszTopStopGenAnapv/CMSSW_2_2_3/data/LM1/7C42C282-F0CC-DD11-99F4-00E0817917FB.root",
    ##"file:/home/veszpv/CMSSW_2_2_3/data/LM1/7CEEDD41-EBCD-DD11-8300-001A64789508.root",
    ##"file:/home/veszpv/CMSSW_2_2_3/data/LM1/866EEF02-D6CC-DD11-A51D-00E081791853.root",
    ##"file:/home/veszpv/CMSSW_2_2_3/data/LM1/8812264E-B2CD-DD11-9ADB-001A64789D28.root",
@@ -98,11 +100,10 @@ process.TopStopGenAnaMod = cms.EDFilter(
     "TopStopGenAna",
 
     mcProcessConfig = cms.PSet(
-      genParticles = cms.InputTag("genParticles","","HLT"),
-      maxNDaughters = cms.int32(2),
-      storeNParticles = cms.int32(13),
+      mcProcessTag = cms.InputTag("genParticles","","HLT"),
         
       processTree  = cms.vstring(
+		  
 	'~g(1000021),~t_1(1000006,-1000006),t(6,-6)',
         '~t_1(1000006,-1000006),~chi_1(1000024,-1000024),b1(5,-5)',
 	't(6,-6),W(24,-24),b2(5,-5)',
