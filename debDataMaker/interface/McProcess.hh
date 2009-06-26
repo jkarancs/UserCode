@@ -27,12 +27,12 @@
 
     in ".py" file:
       mcProcessConfig = cms.PSet(
-      genParticles = cms.InputTag("genParticles","","HLT"),
-      storeNParticles = cms.int32(numberOfParticlesInTheTree),
-      processTree  = cms.vstring(
-        'Mo(pdgId,pdgId,...),Da1(pdgId,pdgId,...),Da2(pdgId,pdgId,...)',
-        'Da1(pdgId,pdgId,...),Da3(pdgId,pdgId,...),Da4(pdgId,pdgId,...)',
-        'Da2(pdgId,pdgId,...),Da5(pdgId,...,pdgId,...)')
+	mcProcessTag = cms.InputTag("genParticles","","HLT"),
+	processTree  = cms.vstring(
+	  'Mo(pdgId,pdgId,...),Da1(pdgId,pdgId,...),Da2(pdgId,pdgId,...)',
+	  'Da1(pdgId,pdgId,...),Da3(pdgId,pdgId,...),Da4(pdgId,pdgId,...)',
+	  'Da2(pdgId,pdgId,...),Da5(pdgId,...,pdgId,...)'
+        )
       )
    _________________________________________________________________________
   |                                                                         |
@@ -81,7 +81,7 @@
 //
 // Original Author:  Attila ARANYI
 //         Created:  Wed Jun 03 10:28:26 CET 2009
-// $Id: McProcess.hh,v 1.8 2009/06/22 16:13:25 aranyi Exp $
+// $Id: McProcess.hh,v 1.9 2009/06/23 12:44:10 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -166,6 +166,7 @@ public Data<McParticleData<N> >{
     void findtrees(const edm::Event&,int,int,int);
     unsigned int getIncNum(processBranch_&,std::vector<int>);
     bool isEqualPdg(int,std::vector<int>);
+    int getStoreNParticles(const edm::ParameterSet& iConfig);
 };
 
 //typedef McProcess<reco::Candidate,2> McProcess_b;
@@ -182,7 +183,7 @@ public Data<McParticleData<N> >{
 
 template<class T,int N> McProcess<T,N>::
   McProcess(const edm::ParameterSet& iConfig) : 
-  Data<McParticleData<N> >(iConfig.getParameter<int>("storeNParticles")){
+  Data<McParticleData<N> >(getStoreNParticles(iConfig)){
   
   Data<McParticleData<N> >::setTag(
     iConfig.getParameter<edm::InputTag>("mcProcessTag"));
@@ -193,6 +194,26 @@ template<class T,int N> McProcess<T,N>::
     //Branch.printBranch_(3);
    processTree_ t(processTreePara_);
    tree=t;
+}
+
+//-----------------------------getStoreNParticles()----------------------------
+
+template<class T,int N> int McProcess<T,N>::
+  getStoreNParticles(const edm::ParameterSet& iConfig) { 
+
+std::vector<std::string> brr;
+  brr=
+    iConfig.getParameter< std::vector<std::string> >("processTree");
+
+  processTree_ tre(brr);
+
+  int StoreNParticles=1;
+  for(unsigned int i=0;i<tre.Branch.size();i++){
+    for(unsigned int j=0;j<tre.Branch[i].nDa;j++){
+      StoreNParticles++;
+    }
+  }
+  return StoreNParticles;
 }
 
 //----------------------------------- set() -----------------------------------
