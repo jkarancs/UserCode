@@ -53,7 +53,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Event.hh,v 1.8 2009/06/10 07:44:18 veszpv Exp $
+// $Id: Event.hh,v 1.9 2009/06/15 17:19:42 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -103,7 +103,9 @@ class Event : public Data<EventData>{
 
   // Introduce new variables and functions
  private:
-  double eventWeight_;
+  double eventNumber_;
+  double eventCrossSec_;
+  double luminosity_;
   int procIdx_;
   void process_result(std::string, int);
   
@@ -118,11 +120,15 @@ class Event : public Data<EventData>{
 */
 
 Event::Event(const edm::ParameterSet& iConfig) : Data<EventData>(int(1)) {  
-  eventWeight_= iConfig.getParameter<double>("eventWeight") ;
+  eventNumber_= iConfig.getParameter<double>("eventNumber") ;
+  eventCrossSec_= iConfig.getParameter<double>("eventCrossSec") ;
+  luminosity_= iConfig.getParameter<double>("luminosity") ;
   procIdx_= iConfig.getParameter<int>("procIdx") ;
 
   stdMesg("  Event configuration:");
-  stdMesg("  \teventWeight = %f", eventWeight_);
+  stdMesg("  \teventNumber = %f", eventNumber_);
+  stdMesg("  \teventCrossSec = %f", eventCrossSec_);
+  stdMesg("  \tluminosity = %f", luminosity_);
   stdMesg("  \tprocIdx = %d", procIdx_);
   stdMesg("  List of variables: %s", event(0).list().data());
   stdMesg("  Object is %svalid!\n", (isValid() ? "" : "not "));
@@ -141,7 +147,12 @@ void Event::set(const edm::Event& iEvent) {
 
   event(0).run   = iEvent.id().run();
   event(0).ev = iEvent.id().event();
-  event(0).w = eventWeight_; // from config
+  if(eventCrossSec_!=0&&(eventNumber_/eventCrossSec_)!=0){
+    event(0).w = luminosity_/(eventNumber_/eventCrossSec_);
+  }
+  else{
+    event(0).w = NOVAL_F;
+  }
   event(0).procidx=procIdx_; // from config
   
   if ( procIdx_>=0) 
