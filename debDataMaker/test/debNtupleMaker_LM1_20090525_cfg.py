@@ -63,9 +63,11 @@ process.debNtupleMakerMod = cms.EDFilter(
     ),
 
     EventConfig = cms.PSet(
-        eventWeight = cms.double(0.0066917),
-        #100.0/(202686.0/110.0)
-        procIdx = cms.int32(0),    # genEventProcID invalid: <0
+        eventNumber = cms.double(104800.0),
+        eventCrossSec = cms.double(16.06),
+        luminosity = cms.double(100.0),
+        #w=0.0153
+        procIdx = cms.int32(1),    # genEventProcID invalid: <0
                                    # LM0: 0
                                    # LM1: 1
                                    # LM2: 2

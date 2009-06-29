@@ -76,8 +76,10 @@ process.debNtupleMakerMod = cms.EDFilter(
         selectionType = cms.string("RefAna4JetMetMuon")
     ),
     EventConfig = cms.PSet(
-        eventWeight = cms.double(0.05427),
-        #100.0/(202686.0/110.0)
+        eventNumber = cms.double(202686.0),
+        eventCrossSec = cms.double(110.0),
+        luminosity = cms.double(100.0),
+        #w=0.05427
         procIdx = cms.int32(0),    # genEventProcID invalid: <0
                                    # LM0: 0
                                    # LM1: 1
