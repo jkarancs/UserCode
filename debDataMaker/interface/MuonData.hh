@@ -25,7 +25,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: MuonData.hh,v 1.5 2009/06/04 08:40:18 akapusi Exp $
+// $Id: MuonData.hh,v 1.6 2009/06/05 19:36:38 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -56,7 +56,7 @@ namespace deb {
     float ndof;        //Number of degrees of freedom
     float d0;          //Displacement of the track
     float phi_trk;     //Phi in the tracker
-    float tight;       //Muon Id e.g.:"GlobalMuonPromptTight"
+    int tight;       //Muon Id e.g.:"GlobalMuonPromptTight"
     float hcalisodep;  //Hadron Calorimeter Isolation Deposit
     float ecalisodep;  //Electromagnetic Calorimeter Isolation Deposit
     float bc_d0;       //d0 with respect to the primary vertex
@@ -99,7 +99,7 @@ namespace deb {
       ndof=NOVAL_F;
       d0=NOVAL_F;
       phi_trk=NOVAL_F;
-      tight=NOVAL_F;
+      tight=NOVAL_I;
       hcalisodep=NOVAL_F;
       ecalisodep=NOVAL_F;
       bc_d0=NOVAL_F;
@@ -129,7 +129,7 @@ namespace deb {
       ss << prefix << "ndof/F:";
       ss << prefix << "d0/F:";
       ss << prefix << "phi_trk/F:";
-      ss << prefix << "tight/F:";
+      ss << prefix << "tight/I:";
       ss << prefix << "hcalisodep/F:";
       ss << prefix << "ecalisodep/F:";
       ss << prefix << "bc_d0/F:";

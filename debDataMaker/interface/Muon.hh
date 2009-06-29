@@ -37,7 +37,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Muon.hh,v 1.10 2009/06/05 19:59:25 veszpv Exp $
+// $Id: Muon.hh,v 1.11 2009/06/15 17:19:42 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -209,7 +209,7 @@ template<class T> int Muon<T>::passed(std::string selection,unsigned int i) {
 
 
   if(selection.compare("RefAna4JetMetMuon")==0){
-    if(muon(i).tight==NOVAL_F||
+    if(muon(i).tight==NOVAL_I||
        muon(i).pt==NOVAL_F||
        muon(i).eta==NOVAL_F||
        muon(i).reliso==NOVAL_F||
@@ -240,7 +240,7 @@ template<class T> int Muon<T>::passed(std::string selection,unsigned int i) {
       return NOVAL_I;
     }
 
-    if(muon(i).tight==1.0&&
+    if(muon(i).tight==1&&
        muon(i).pt>=20.0&&
        TMath::Abs(muon(i).eta)<=2.1&&
        muon(i).reliso<0.1&&
