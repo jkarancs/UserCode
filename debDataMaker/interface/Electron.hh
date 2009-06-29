@@ -37,7 +37,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Electron.hh,v 1.12 2009/06/08 09:45:39 veszpv Exp $
+// $Id: Electron.hh,v 1.13 2009/06/15 17:19:42 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -225,7 +225,7 @@ int Electron<T>::passed(std::string selection,unsigned int i) {
        TMath::Abs(electron(i).eta)<=2.5&&
        electron(i).tight==1.0&&
        electron(i).reliso<0.1&&
-       TMath::Abs(electron(i).bc_d0)<=0.2){
+       TMath::Abs(electron(i).bc_d0)<0.2){
       return 1;
     }      
     return 0;
