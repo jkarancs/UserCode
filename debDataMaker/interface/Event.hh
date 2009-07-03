@@ -12,8 +12,10 @@
  Implementation:
 
    List of parameters to steer the object with (passed in iConfig):
-      double eventWeight_, : owned by this class
-      int procIdx_,        : owned by this class
+      double eventNumber_,   : owned by this class
+      double eventCrossSec_, : owned by this class
+      double luminosity_,    : owned by this class
+      int procIdx_,          : owned by this class
 
    iConfig is passed only through the contructor. 
 
@@ -53,7 +55,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Event.hh,v 1.9 2009/06/15 17:19:42 veszpv Exp $
+// $Id: Event.hh,v 1.10 2009/06/29 17:39:14 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
