@@ -39,7 +39,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Jet.hh,v 1.8 2009/06/05 19:59:25 veszpv Exp $
+// $Id: Jet.hh,v 1.9 2009/06/15 17:19:42 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -75,6 +75,8 @@ template<class T> class Jet : public Data<JetData>{ // D:=JetData
   std::pair<std::string, std::string>& getCorrection() { return correction_; }
   std::string sortedBy_() { return sortBy_; }
   double getCorrFactor(const T*);
+  float getHadronicFraction(const T*);
+  float getEmFraction(const T*);
 
 };
 
@@ -176,8 +178,8 @@ template<class T> void Jet<T>::set(const edm::Event& iEvent) {
     jet(i).pt = jets[i].second->pt()*corr;
     jet(i).phi = jets[i].second->phi();
     jet(i).eta = jets[i].second->eta();
-    jet(i).hadfrac = jets[i].second->energyFractionHadronic();
-    jet(i).emfrac = jets[i].second->emEnergyFraction();
+    jet(i).hadfrac = getHadronicFraction(jets[i].second);
+    jet(i).emfrac = getEmFraction(jets[i].second);
     jet(i).area = jets[i].second->jetArea();
     
   }
@@ -205,6 +207,48 @@ template<> double Jet<reco::CaloJet>::getCorrFactor(const reco::CaloJet* jet) {
 
 template<> double Jet<reco::GenJet>::getCorrFactor(const reco::GenJet* jet) {
   return 1.0;
+}
+
+
+//------------------------------- getHadronicFraction() -----------------------
+
+template<> float Jet<pat::Jet>::getHadronicFraction(const pat::Jet* jet) {
+  return jet->energyFractionHadronic();
+}
+
+template<> float Jet<reco::Jet>::getHadronicFraction(const reco::Jet* jet) {
+  return NOVAL_F;
+}
+
+template<> 
+float Jet<reco::CaloJet>::getHadronicFraction(const reco::CaloJet* jet) {
+  return NOVAL_F;
+}
+
+template<> 
+float Jet<reco::GenJet>::getHadronicFraction(const reco::GenJet* jet) {
+  return NOVAL_F;
+}
+
+
+//------------------------------- getEmFraction() -----------------------------
+
+template<> float Jet<pat::Jet>::getEmFraction(const pat::Jet* jet) {
+  return jet->emEnergyFraction();
+}
+
+template<> float Jet<reco::Jet>::getEmFraction(const reco::Jet* jet) {
+  return NOVAL_F;
+}
+
+template<> 
+float Jet<reco::CaloJet>::getEmFraction(const reco::CaloJet* jet) {
+  return NOVAL_F;
+}
+
+template<> 
+float Jet<reco::GenJet>::getEmFraction(const reco::GenJet* jet) {
+  return NOVAL_F;
 }
 
 
@@ -243,6 +287,20 @@ template<class T> int Jet<T>::passed(std::string selection,unsigned int i) {
     if(jet(i).pt>=25.0&&
        TMath::Abs(jet(i).eta)<=3.0&&
        jet(i).emfrac<=0.9){
+      return 1;
+    }      
+    return 0;
+  }
+
+  
+  if(selection.compare("TopJetSelection")==0){
+    if(jet(i).pt==NOVAL_F||jet(i).eta==NOVAL_F||jet(i).emfrac==NOVAL_F){
+      stdErr("Jet::passed() : NOVAL value in the cut criteria");
+      return NOVAL_I;
+    }
+    if(jet(i).pt>=20.0&&
+       TMath::Abs(jet(i).eta)<=2.7){//&&
+       //jet(i).emfrac<=0.9) {
       return 1;
     }      
     return 0;
