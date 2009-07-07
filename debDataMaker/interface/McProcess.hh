@@ -222,6 +222,11 @@ template<class T,int N> void McProcess<T,N>::set(const edm::Event& iEvent,
 
   if (!Data<McParticleData<N> >::isValid()) return;
 
+  if (trees.size()==0){
+    Data<McParticleData<N> >::stdErr("  No process found! \n");
+    return;
+  }
+
   edm::Handle<edm::View<T> > particleHandle;
   iEvent.getByLabel(Data<McParticleData<N> >::tag(), particleHandle );
   if (!particleHandle.isValid()){
@@ -304,18 +309,17 @@ template<class T,int N> unsigned int McProcess<T,N>::findProcess(
   const edm::Event& iEvent) {
   
 
-  Data<McParticleData<N> >::stdMesg("%s", "  findprocess");
+  //Data<McParticleData<N> >::stdMesg("%s", "  findprocess");
   int level_size=tree.Branch[tree.Branch.size()-1].level+1;
 
   //tree.print_(3);
+  Data<McParticleData<N> >::stdMesg("%s", "  findprocess");
 
   trees.resize(0);
 
   unsigned int axusize;
 
   findtrees(iEvent,0,0,0);
-
-
 
   if (trees.size()==0){
     stdMesg("  Number of processes found: %d \n", trees.size());
@@ -341,6 +345,8 @@ template<class T,int N> unsigned int McProcess<T,N>::findProcess(
   for(unsigned int i=0;i<trees.size();i++){
     trees[i].print_(0);
   }
+
+
 
   //tree.print_(3);
 //   std::cout<<std::endl<<"matched idx= ";
@@ -805,6 +811,9 @@ template<class T,int N> McProcess<T,N>::processBranch_::processBranch_(
 template<class T,int N> void McProcess<T,N>::processBranch_::
   printBranch_(int x) const{
 
+  Data<McParticleData<N> > cout_(1);
+
+
   if (x>=3){
     std::cout<<std::endl;
     std::cout<<"Mo_name="<<Mo_name<<std::endl;
@@ -818,8 +827,11 @@ template<class T,int N> void McProcess<T,N>::processBranch_::
     std::cout<<"Mo_level="<<Mo_level<<std::endl;
     std::cout<<std::endl;
   }
+
+    //std::cout<<"name="<<name<<std::endl;
+
+    cout_.stdMesg("  name= %s", name.data());
     
-    std::cout<<"name="<<name<<std::endl;
   if (x>=1){
     std::cout<<"pdgId=";
     for (unsigned int i=0;i<pdgId.size();i++){
@@ -831,12 +843,17 @@ template<class T,int N> void McProcess<T,N>::processBranch_::
     std::cout<<"level="<<level<<std::endl;
     std::cout<<std::endl;
   }
-    std::cout<<"matched_idx=";
-    if (matched_idx.size()==0)
-      std::cout<<NOVAL_I;
-    for (unsigned int i=0;i<matched_idx.size();i++){      
-      std::cout<<matched_idx[i]<<" ";
-    }
+
+  //std::cout<<"matched_idx=";
+  cout_.stdMesg("  matched_idx= %d", matched_idx[0]);
+//   if (matched_idx.size()==0)
+//     std::cout<<NOVAL_I;
+//   for (unsigned int i=0;i<matched_idx.size();i++){      
+//     std::cout<<matched_idx[i]<<" ";
+//   }
+
+  
+
   if(x>=2){
     std::cout<<std::endl;
     std::cout<<"Da_level="<<Da_level<<std::endl;
@@ -852,6 +869,8 @@ template<class T,int N> void McProcess<T,N>::processBranch_::
     }
     std::cout<<std::endl;
   }
+
+ cout_.clear();
 }
 
 //----------------------- processBranch_ clearBranch() ------------------------
