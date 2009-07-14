@@ -81,7 +81,7 @@
 //
 // Original Author:  Attila ARANYI
 //         Created:  Wed Jun 03 10:28:26 CET 2009
-// $Id: McProcess.hh,v 1.9 2009/06/23 12:44:10 aranyi Exp $
+// $Id: McProcess.hh,v 1.11 2009/07/07 09:02:34 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -194,6 +194,7 @@ template<class T,int N> McProcess<T,N>::
     //Branch.printBranch_(3);
    processTree_ t(processTreePara_);
    tree=t;
+   //tree.print_(3);
 }
 
 //-----------------------------getStoreNParticles()----------------------------
@@ -237,6 +238,7 @@ template<class T,int N> void McProcess<T,N>::set(const edm::Event& iEvent,
 
 
   std::vector<const T *> Particles;
+  typename std::vector<const T *>::const_iterator found;
 
       for(typename edm::View<T>::const_iterator p = particleHandle->begin();
 	p != particleHandle->end(); ++ p ) {
@@ -244,6 +246,7 @@ template<class T,int N> void McProcess<T,N>::set(const edm::Event& iEvent,
       }
 
   int idx;
+  int moidx=-1;
   int ind;
   processBranch_ lastBranch(processTreePara_[0]);
 
@@ -276,17 +279,37 @@ template<class T,int N> void McProcess<T,N>::set(const edm::Event& iEvent,
 	  McParticle(ind).phi = p->phi();
 	  McParticle(ind).eta = p->eta();
 
-	  McParticle(ind).mo1 =trees[numProc].Branch[i].sort_Mo_idx;
+
+          McParticle(ind).idx=idx;
+
+          if (i==0){
+
+	     const T * mo = p->mother(0);
+
+            found = find(Particles.begin(), Particles.end(), mo);
+	    if(found != Particles.end()) 
+	      moidx = found - Particles.begin();                   
+            
+	    McParticle(ind).mo1 = moidx;
+          }else{
+            McParticle(ind).mo1 = trees[numProc].Branch[
+              trees[numProc].Branch[i].Mo_idx].matched_idx[0];
+          }
 	  //McParticle(i).mo2 =trees[numProc].Branch[i].sort_Mo_idx;
 
           for (unsigned int l=0;l<trees[numProc].Branch[i].Da_idx.size();l++){
 
-            McParticle(ind).da[l]=trees[numProc].Branch[i].sort_Da_idx[l];
-
+            if (trees[numProc].Branch[i].Da_idx[l]!=NOVAL_I){
+              McParticle(ind).da[l]=trees[numProc].Branch[
+                trees[numProc].Branch[i].Da_idx[l]].matched_idx[0];
+            }else{
+              McParticle(ind).da[l]=NOVAL_I;
+            }
+              
           }
           
           McParticle(ind).pdg=p->pdgId();
-
+          McParticle(ind).stat = p->status();
         } 
 
       }
@@ -516,7 +539,7 @@ template<class T,int N> bool McProcess<T,N>::isEqualPdg(
 
 
   for (unsigned int i=0;i<pdgId.size();i++){
-    if (pdg==pdgId[i]) return true;
+    if (pdg==pdgId[i] || pdg==0 || pdgId[i]==0) return true;
   }
   return false;
 }
@@ -690,10 +713,19 @@ template<class T,int N> McProcess<T,N>::processTree_::
           Branch[Branch.size()-1].sort_idx=Branch[i].sort_Da_idx[j];
           Branch[Branch.size()-1].level=Branch[i].level+1;
 
-          for(unsigned int k=0;k<Branch.size()-1;k++){  
+          //for(unsigned int k=0;k<Branch.size()-1;k++){  
             
-          }
+          //}
           
+      }
+    }
+  }
+
+  for(unsigned int i=0;i<Branch.size();i++){
+    for(unsigned int j=0;j<Branch[i].nDa;j++){
+      Branch[i].Da_idx[j]=NOVAL_I;
+      for(unsigned int k=i;k<Branch.size();k++){
+        if (Branch[i].Da_name[j]==Branch[k].name) Branch[i].Da_idx[j]=k;
       }
     }
   }
