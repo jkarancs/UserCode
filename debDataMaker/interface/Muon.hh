@@ -37,7 +37,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Muon.hh,v 1.11 2009/06/15 17:19:42 veszpv Exp $
+// $Id: Muon.hh,v 1.12 2009/06/29 17:40:28 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -212,9 +212,12 @@ template<class T> int Muon<T>::passed(std::string selection,unsigned int i) {
     if(muon(i).tight==NOVAL_I||
        muon(i).pt==NOVAL_F||
        muon(i).eta==NOVAL_F||
-       muon(i).reliso==NOVAL_F||
-       muon(i).hcalisodep==NOVAL_F||
-       muon(i).ecalisodep==NOVAL_F||
+       //muon(i).reliso==NOVAL_F||
+       //muon(i).hcalisodep==NOVAL_F||
+       //muon(i).ecalisodep==NOVAL_F||
+       muon(i).isoR03_trk==NOVAL_F||
+       muon(i).isoR03_hcal==NOVAL_F||
+       muon(i).isoR03_ecal==NOVAL_F||
        muon(i).has_trk==NOVAL_I||
        muon(i).is_combined==NOVAL_I){
       stdErr("Muon::passed() : NOVAL value in the cut criteria");
@@ -241,15 +244,20 @@ template<class T> int Muon<T>::passed(std::string selection,unsigned int i) {
     }
 
     if(muon(i).tight==1&&
-       muon(i).pt>=20.0&&
+       muon(i).pt>=10.0&&
        TMath::Abs(muon(i).eta)<=2.1&&
-       muon(i).reliso<0.1&&
+       //muon(i).reliso<0.1&&
        muon(i).ndof!=0.0&&
        muon(i).chi2/muon(i).ndof<10.0&&
        TMath::Abs(muon(i).bc_d0)<=0.2&&
        muon(i).hits>=11.0&&
-       muon(i).hcalisodep<6.0&&
-       muon(i).ecalisodep<4.0){
+       //muon(i).hcalisodep<6.0&&
+       //muon(i).ecalisodep<4.0
+       muon(i).isoR03_trk<6.0&&
+       muon(i).isoR03_hcal<6.0&&
+       muon(i).isoR03_ecal<6.0
+
+      ){
       return 1;
     }
     return 0;
