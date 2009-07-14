@@ -22,7 +22,7 @@
 //
 // Original Author:  Attila ARANYI
 //         Created:  Wed Jun 03 10:28:26 CET 2009
-// $Id: McParticleData.hh,v 1.1 2009/06/14 05:10:15 aranyi Exp $
+// $Id: McParticleData.hh,v 1.2 2009/06/18 15:07:26 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -50,11 +50,14 @@ template <int N>
     float pt;
     float phi;
     float eta;
-    
+
+    int idx;
     int mo1;
     int mo2;
     int da[N];
     int pdg;
+    int stat;
+    int orig;
 
     void clear() {
       e=NOVAL_F;
@@ -68,13 +71,15 @@ template <int N>
       phi=NOVAL_F;
       eta=NOVAL_F;
 
-      
+      idx=NOVAL_I;
       mo1=NOVAL_I;
       mo2=NOVAL_I;
       for(unsigned int i=0;i<N;++i){
         da[i]=NOVAL_I;
       }
       pdg=NOVAL_I;
+      stat=NOVAL_I;
+      orig=NOVAL_I;
     }
     
     std::string list(std::string prefix="") {
@@ -90,10 +95,13 @@ template <int N>
       ss << prefix << "phi/F:";
       ss << prefix << "eta/F:";
 
+      ss << prefix << "idx/I:";
       ss << prefix << "mo1/I:";
       ss << prefix << "mo2/I:";
       ss << prefix << "da["<<N<<"]/I:";
-      ss << prefix << "pdg/I";
+      ss << prefix << "pdg/I:";
+      ss << prefix << "stat/I:";
+      ss << prefix << "orig/I";
       return ss.str();
     }
 
