@@ -22,7 +22,7 @@
 //
 // Original Author:  Attila ARANYI
 //         Created:  Wed Jun 03 10:28:26 CET 2009
-// $Id: McParticleData.hh,v 1.2 2009/06/18 15:07:26 aranyi Exp $
+// $Id: McParticleData.hh,v 1.3 2009/07/14 13:21:58 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -35,10 +35,7 @@ namespace deb {
 
 template <int N>
   class McParticleData {
-  public: 
-          
-    McParticleData() {clear();}
-    ~McParticleData() { }
+  public:          
 
     float e;
     float px;
@@ -58,6 +55,23 @@ template <int N>
     int pdg;
     int stat;
     int orig;
+
+
+    McParticleData() {
+      clear();
+      selectionTypes_["VALID"]=VALID;
+      selectionTypes_["Origin"]=Origin;
+    }
+    ~McParticleData() { }
+
+    enum McParticleSelectionType {
+      VALID=PASS_VALIDITY,
+      Origin
+    };
+
+    std::map<std::string, int> selectionTypes_;
+
+
 
     void clear() {
       e=NOVAL_F;
