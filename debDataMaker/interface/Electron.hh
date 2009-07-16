@@ -11,196 +11,48 @@
 
  Implementation:
 
-   List of parameters to steer the object with (passed in iConfig):
-      int storeNElectrons,      : owned by Data<D>, mandatory in constructor
-      InputTag electronTag,     : owned by Data<D>
-      int selectionType,   : owned by Data<D> but decided here if set
-     
-   iConfig is passed only through the contructor. 
-
-   !!!! See usage of inherited functions in Data.hh source code !!!!
+   !!!! See usage of inherited functions in Container.hh source code !!!!
 
    The following fuctions should be overloaded here according to the exact 
-   definition of D in Data<D> :
+   definition of D in Container<D> :
 
-      void set(const edm::Event&) (virtual):
-         that implements reading variables of D from the CMSSW framework
-
-      void calculate(Beamspot<reco::BeamSpot>  *beamspot) (virtual):
-         that calculates values that depend on other data models
-
-      int passed(std::string selection,unsigned int i) (virtual):
+      int passed(std::string selection,size_t i) (virtual):
          returns the result of selection. The selections are implemented in 
 	 this function.
 
 */
 //
-// Original Author:  Anita KAPUSI
+// Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Electron.hh,v 1.13 2009/06/15 17:19:42 veszpv Exp $
+// $$
 //
 //
 //-----------------------------------------------------------------------------
 
-#include "DataFormats/Common/interface/View.h"
-#include "FWCore/MessageLogger/interface/MessageLogger.h"
-#include "SusyAnalysis/debDataMaker/interface/Data.hh"
+#include "SusyAnalysis/debDataMaker/interface/Container.hh"
 #include "SusyAnalysis/debDataMaker/interface/ElectronData.hh"
-
-#include "DataFormats/BeamSpot/interface/BeamSpot.h"
-#include "SusyAnalysis/debDataMaker/interface/Beamspot.hh"
 
 namespace deb {
 
 //----------------------------- Class Definition ------------------------------
 
-template<class T> class Electron : public Data<ElectronData>{ 
-                                                          // D:=ElectronData
+class Electron : public Container<ElectronData> {
 public:
-  Electron(const edm::ParameterSet& iConfig);
-  Electron() { stdErr("  Electron<%s> configuration missing\n",
-		      typeid(T).name()); }
-  inline ElectronData& electron(unsigned int i) { return *data(i); } 
-  // just a short-hand
-  
+  Electron(std::string name="") : Container<ElectronData>(name) { }
+  Electron(std::string name, size_t storeNObjects) 
+    : Container<ElectronData>(name, storeNObjects) { }
+  ~Electron() { }
+
+  inline ElectronData& electron(size_t i) { return at(i); }
+
   // Inherited functions to be overloaded
-  void set(const edm::Event&);
-  void calculate (Beamspot<reco::BeamSpot>  *beamspot=NULL);
-  int passed(std::string selection,unsigned int i);
-  
-  // Introduce new variables and functions
-  
+  int passed(std::string selection, size_t i);
+
 };
   
-
-//--------------------------------- Constructor -------------------------------
-/*
-   List of parameters to gear the object with (passed in iConfig):
-      int storeNElectrons,      : owned by Data<D>, mandatory in constructor
-      InputTag electronTag,     : owned by Data<D>
-      int selectionType,   : owned by Data<D>
-*/
-
-template<class T> Electron<T>::Electron(const edm::ParameterSet& iConfig) : 
-  Data<ElectronData>(iConfig.getParameter<int>("storeNElectrons")) {
-  
-  setTag(iConfig.getParameter<edm::InputTag>("electronTag"));
-  setSelectionType(iConfig.getParameter<std::string>("selectionType")); 
-
-  stdMesg("  Electron<%s> configuration:", typeid(T).name());
-  stdMesg("  \tstoreNElectrons = %d", max_size());
-  stdMesg("  \telectronTag = \"%s\"", tag().label().data());
-  stdMesg("  \tselectionType = %s", getSelectionType().data());  
-  stdMesg("  List of variables: %s\n", electron(0).list().data());
-  stdMesg("  Object is %svalid!\n", (isValid() ? "" : "not "));
-
-}
-
-//----------------------------------- set() -----------------------------------
-
-template<class T> void Electron<T>::set(const edm::Event& iEvent) {
-
-  if (!isValid()) return;
-
-  edm::Handle<edm::View<T> > electronHandle;
-  iEvent.getByLabel(tag(), electronHandle);
-  if (!electronHandle.isValid()){
-    stdErr("set() : Invalid tag %s", tag().label().data());
-    return;
-  }
-  
-  std::vector<std::pair<float, const T*> > electrons;  
-  for (typename edm::View<T>::const_iterator iElectron=electronHandle->begin();
-       iElectron!=electronHandle->end(); iElectron++) {
-    float pt = iElectron->pt();
-    electrons.push_back(std::make_pair(pt, &(*iElectron)));
-  }
-  std::sort(electrons.begin(), electrons.end(),
-	    std::greater<std::pair<float, const T* > >());
-
-  clear();
-  for (unsigned int i=0; i<electrons.size(); i++) {
-    ElectronData new_obj;
-    push_back(new_obj);
-
-    //functions from CMSSW/ DataFormats/ Candidate/ interface/ Particle.h
-    electron(i).e = electrons[i].second->energy();
-    electron(i).px= electrons[i].second->px();
-    electron(i).py= electrons[i].second->py();
-    electron(i).pz= electrons[i].second->pz();
-    electron(i).m= electrons[i].second->mass();
-    electron(i).p=electrons[i].second->p();
-    electron(i).pt=electrons[i].second->pt();
-    electron(i).et=electrons[i].second->et();
-    electron(i).eta=electrons[i].second->eta();
-    electron(i).phi=electrons[i].second->phi();
-    electron(i).isoR03_trk=electrons[i].second->trackIso();
-    electron(i).isoR03_hcal=electrons[i].second->hcalIso();
-    electron(i).isoR03_ecal=electrons[i].second->ecalIso();
-    if(electrons[i].second->gsfTrack().isNonnull()) {
-      electron(i).has_trk=1;
-      electron(i).d0=electrons[i].second->gsfTrack()->d0();
-      electron(i).phi_trk=electrons[i].second->gsfTrack()->phi();
-    }
-    else {
-      electron(i).has_trk=0;
-      electron(i).d0=NOVAL_F;
-      electron(i).phi_trk=NOVAL_F;
-    }
-    electron(i).tight=electrons[i].second->electronID("eidRobustTight");
-    electron(i).loose=electrons[i].second->electronID("eidRobustLoose");
-    electron(i).bc_d0=NOVAL_F;
-    electron(i).reliso=NOVAL_F; 
-    
-  }
-}
-  
-//-------------------------------- calculate() --------------------------------
-
-template<class T> 
-void Electron<T>::calculate (Beamspot<reco::BeamSpot>  *beamspot) { 
-
-  if (!isValid()) return;
-
-  if(beamspot==NULL){
-    for (unsigned int i=0; i<max_size(); i++) {
-      electron(i).bc_d0=NOVAL_F;
-      electron(i).reliso=NOVAL_F;
-    }
-    return;
-  }
-  
-  for (unsigned int i=0; i<size_; i++) {
-
-    electron(i).bc_d0=NOVAL_F;
-    electron(i).reliso=NOVAL_F;
-
-    if(electron(i).d0!=NOVAL_F&&
-       (*beamspot).beamspot(0).beamspotx!=NOVAL_F&&
-       (*beamspot).beamspot(0).beamspoty!=NOVAL_F&&
-       electron(i).phi_trk!=NOVAL_F){
-    electron(i).bc_d0=electron(i).d0
-            -(*beamspot).beamspot(0).beamspotx*TMath::Sin(electron(i).phi_trk)
-            +(*beamspot).beamspot(0).beamspoty*TMath::Cos(electron(i).phi_trk);
-    }
-    
-    if(electron(i).isoR03_ecal!=NOVAL_F&&
-       electron(i).isoR03_hcal!=NOVAL_F&&
-       electron(i).isoR03_trk!=NOVAL_F&&
-       electron(i).et!=NOVAL_F&&electron(i).et!=0){
-      electron(i).reliso=(electron(i).isoR03_ecal
-			  +electron(i).isoR03_hcal
-			  +electron(i).isoR03_trk)
-	                  /electron(i).et;
-    }
-  }
-  
-}
- 
 //--------------------------------- passed() ----------------------------------
 
-template<class T> 
-int Electron<T>::passed(std::string selection,unsigned int i) {
+int Electron::passed(std::string selection, size_t i) {
 
   if (!isValid()) return NOVAL_I;
 
