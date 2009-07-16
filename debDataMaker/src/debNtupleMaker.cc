@@ -13,7 +13,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: debNtupleMaker.cc,v 1.6 2009/06/08 18:42:06 akapusi Exp $
+// $Id: debNtupleMaker.cc,v 1.7 2009/06/09 22:22:18 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -45,7 +45,7 @@ debNtupleMaker::debNtupleMaker(const edm::ParameterSet& iConfig) :
   edm::Service<TFileService> fs;
   tree=fs->make<TTree>("tree", "Flat root tree for debNtupleMaker");
   //gjet.addBranch(tree, "gjet");
-  pjet.addBranch(tree, "pjet");
+  pjet.addBranch(tree);
   pmet.addBranch(tree, "pmet");
   pelectron.addBranch(tree, "pelectron");
   pmuon.addBranch(tree, "pmuon");
