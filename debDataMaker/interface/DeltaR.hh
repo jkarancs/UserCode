@@ -38,7 +38,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Sun Mar 24 12:15:11 CET 2009
-// $Id: DeltaR.hh,v 1.3 2009/06/10 14:25:29 veszpv Exp $
+// $Id: DeltaR.hh,v 1.4 2009/06/15 17:19:42 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -102,10 +102,10 @@ DeltaR<U,V>::DeltaR(U& u, std::vector<unsigned int> ind_u) :
 
 template<class U,class V> void DeltaR<U,V>::init(){
   stdMesg("  DeltaR<%s,%s> configuration:", 
-	  typeid(U_).name(),typeid(V_).name());
+	  humanTypeId(U_).data(),humanTypeId(V_).data());
   stdMesg("  Calculate dphi between %s(%s) and %s(%s)", 
-	  typeid(U_).name(), U_.tag().label().data(),
-	  typeid(V_).name(), V_.tag().label().data());
+	  humanTypeId(U_).data(), U_.tag().label().data(),
+	  humanTypeId(V_).data(), V_.tag().label().data());
   stdMesg("  for index pairs:");
   for (unsigned int i=0; i<ind().size(); i++) {
     stdMesg("\t\t(%d, %d)", ind(i).first, ind(i).second);
@@ -139,7 +139,7 @@ template<class U,class V> void DeltaR<U,V>::calculate() {
 // I will always put the Met as the second template parameter, let's don't
 // duplicate the number of calculate functions just to avoid this constraint
 
-template<> void DeltaR<Jet<pat::Jet>,Met<pat::MET> >::calculate() {
+template<> void DeltaR<JetProducer<pat::Jet>,Met<pat::MET> >::calculate() {
   if (!isValid()) return;
   clear();
   for (unsigned int i=0; i<storeNObjects(); i++) {
@@ -150,6 +150,7 @@ template<> void DeltaR<Jet<pat::Jet>,Met<pat::MET> >::calculate() {
     dr(i).r=NOVAL_F;
   }
 }
+
 
 //-----------------------------------------------------------------------------
 
