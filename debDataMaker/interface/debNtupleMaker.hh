@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: debNtupleMaker.hh,v 1.1 2009/05/30 19:38:37 veszpv Exp $
+// $Id: debNtupleMaker.hh,v 1.2 2009/06/02 09:26:04 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -59,7 +59,7 @@
 #include "TMath.h"
 #include "TLorentzVector.h"
 
-#include "SusyAnalysis/debDataMaker/interface/Jet.hh"
+#include "SusyAnalysis/debDataMaker/interface/JetProducer.hh"
 #include "SusyAnalysis/debDataMaker/interface/Met.hh"
 #include "SusyAnalysis/debDataMaker/interface/DeltaR.hh"
 #include "SusyAnalysis/debDataMaker/interface/Electron.hh"
@@ -78,15 +78,15 @@ public:
   Trigger<edm::TriggerResults> trigger;
   Beamspot<reco::BeamSpot> beamspot;
   //Jet<reco::GenJet> gjet; // genJet
-  Jet<pat::Jet> pjet;
+  JetProducer<pat::Jet> pjet;
   Met<pat::MET> pmet;
   Electron<pat::Electron> pelectron;
   Muon<pat::Muon> pmuon;
   Event event;
 
-  deb::DeltaR<Jet<pat::Jet>,Met<pat::MET> > dr_pjet_pmet;
+  deb::DeltaR<JetProducer<pat::Jet>,Met<pat::MET> > dr_pjet_pmet;
   //DeltaR<Jet<pat::Jet>,Jet<pat::Jet> > dr_pjet;  
-  deb::DeltaR<Data<JetData>,Data<JetData> > dr_pjet;
+  deb::DeltaR<JetProducer<pat::Jet>,JetProducer<pat::Jet> > dr_pjet;
 
   TTree *tree;  
 
