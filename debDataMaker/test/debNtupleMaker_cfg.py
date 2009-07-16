@@ -79,6 +79,7 @@ process.debNtupleMakerMod = cms.EDFilter(
 ##    caloMetTag = cms.InputTag("met")
 
     genJetConfig = cms.PSet(
+        name = cms.string("gjet"),
         storeNJets = cms.int32(1),
         jetTag = cms.InputTag("sisCone5GenJets"),
         selectionType = cms.string("N/A"),
@@ -87,6 +88,7 @@ process.debNtupleMakerMod = cms.EDFilter(
     ),
 
     patJetConfig = cms.PSet(
+        name = cms.string("pjet"),
         storeNJets = cms.int32(4),
         jetTag = cms.InputTag("allLayer1Jets"),
         selectionType = cms.string("N/A"),
