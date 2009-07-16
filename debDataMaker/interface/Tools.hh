@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Data.hh,v 1.10 2009/06/15 09:39:26 veszpv Exp $
+// $Id: Tools.hh,v 1.1 2009/06/19 08:40:24 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -31,6 +31,14 @@ template<class T> bool isContext(std::string context) {
 }
 
 template<class T> std::string humanTypeId(T& t) {
+  char *name=abi::__cxa_demangle(typeid(t).name(), NULL, NULL, NULL);
+  std::string humanTypeId=name;
+  free(name);
+  return humanTypeId;
+}
+
+template<class T> std::string humanTypeId() {
+  T t;
   char *name=abi::__cxa_demangle(typeid(t).name(), NULL, NULL, NULL);
   std::string humanTypeId=name;
   free(name);
