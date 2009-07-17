@@ -34,7 +34,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: JetProducer.hh,v 1.10 2009/07/03 15:35:24 veszpv Exp $
+// $Id: JetProducer.hh,v 1.1 2009/07/16 17:18:26 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -51,7 +51,7 @@ namespace deb {
 
 //----------------------------- Class Definition ------------------------------
 
-template<class T> class JetProducer : public Producer<Jet>{
+template<class T> class JetProducer : public Producer<Jet> {
  public:
   JetProducer(const edm::ParameterSet& iConfig);
   JetProducer() { 
@@ -59,13 +59,11 @@ template<class T> class JetProducer : public Producer<Jet>{
 	   humanTypeId<T>().data());
   }
 
-  inline JetData& jet(unsigned int i) { return *data(i); } // just a short-hand
-
   // Inherited functions to be overloaded
   void set(const edm::Event&);
   void calculate ();
 
-  // Introduce new variables and functions
+  // New variables and functions
  private:
   std::pair<std::string, std::string> correction_;
   std::string sortBy_;
@@ -130,7 +128,8 @@ template<class T> void JetProducer<T>::set(const edm::Event& iEvent) {
   edm::Handle<edm::View<T> > jetHandle;
   iEvent.getByLabel(tag(), jetHandle);
   if (!jetHandle.isValid()){
-    stdErr("set() : Invalid tag %s\n", tag().label().data());
+    stdErr("JetProducer<%s>::set() : Invalid tag %s\n", 
+	   humanTypeId<T>().data(), tag().label().data());
     setValid(false);
     return;
   }
