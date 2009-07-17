@@ -11,238 +11,149 @@
 
  Implementation:
 
-   List of parameters to steer the object with (passed through iConfig):
-      InputTag objectTag,  : owned by Data<D> but decided here if set
-      pair<string,string> correction: owned by this class
-      string sortBy        : owned by this class
-
-   iConfig must be parsed in the contructor. 
-
    !!!! See usage of inherited functions in Data.hh source code !!!!
 
    The following fuctions should be overloaded here according to the exact 
-   definition of D in Data<D> :
+   definition of D in Container<D> :
 
-      void set(const edm::Event&) (virtual):
-         implements reading variables of D from the CMSSW framework
-
-      void calculate(?) (virtual):
-         calculates values that depend on other data models
-
-      int passed(int i) (virtual,unsigned int i):
-         if selection is set, returns the result of the selections. The
-         selections are implemented in this function.
+      int passed(std::string selection,size_t i) (virtual):
+         returns the result of selection. The selections are implemented in 
+	 this function.
 
 */
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Met.hh,v 1.6 2009/06/08 09:48:07 veszpv Exp $
+// $Id: Met.hh,v 1.7 2009/06/15 17:19:42 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
 
-#include "DataFormats/Common/interface/View.h"
-#include "FWCore/MessageLogger/interface/MessageLogger.h"
-#include "DataFormats/PatCandidates/interface/MET.h"
-#include "DataFormats/METReco/interface/CaloMET.h"
-#include "SusyAnalysis/debDataMaker/interface/Data.hh"
+#include "SusyAnalysis/debDataMaker/interface/Container.hh"
 #include "SusyAnalysis/debDataMaker/interface/MetData.hh"
 
 namespace deb {
 
 //----------------------------- Class Definition ------------------------------
 
-template<class T> class Met : public Data<MetData>{ // D:=MetData
+class Met : private Container<MetData> {
  public:
-  Met(const edm::ParameterSet& iConfig);
-  Met() { stdErr("  Met<%s> configuration missing\n", typeid(T).name()); }
-  inline MetData& met(unsigned int i) { return *data(i); } // just a short-hand
+  Met(std::string name="") : Container<MetData>(name) { init(); }
+  Met(std::string name, std::vector<std::string> corrections) 
+    : Container<MetData>(name, corrections.size()) { init(corrections); }
+  ~Met() { }
+
+  inline MetData& met(size_t i) { return at(i); }
 
   // Inherited functions to be overloaded
-  void set(const edm::Event&);
-  void calculate ();
-  int passed(std::string,unsigned int i);
+  int passed(std::string, size_t);
 
-  // Introduce new variables and functions
+  // New variables and functions
  private:
-  std::vector<std::string> corrections_; // list of requested corrections
-  std::map<std::string,int> corrIndex_; // maps corrections to met(i) index 'i'
+  std::vector<std::string> corrections_; // i -> correction name
+  std::map<std::string,int> corrIndex_;  // correction name -> i 
+
+  inline size_t init();
+  inline size_t init(std::vector<std::string>);
 
  public:
-  std::vector<std::string>& getCorrection() { return corrections_; }
-  pat::MET::UncorrectionType getPatMetCorrType(std::string corr);
+  const std::vector<std::string>& getCorrections() { return corrections_; }
+  std::string correction(size_t i) { return corrections_[i]; }
 
-  // Some fuctions that make configuring this object easier:
-  std::map<std::string,int>& getCorrIndex() { return corrIndex_; }
+  const std::map<std::string,int>& getCorrIndex()  { return corrIndex_; }
+  inline int ind(std::string);
+  inline std::vector<size_t> ind(std::vector<std::string>);
 
-  // --------------------------------------------------------------------
-  inline int ind(std::string corr) {
-    std::map<std::string,int>::const_iterator it=corrIndex_.find(corr);
-    if (it==corrIndex_.end()) {
-      stdErr("Met<%s>::ind(%s) correction %s was not requested.\n", 
-	     typeid(T).name(), corr.data(), corr.data()); 
-      return NOVAL_I;
-    }
-    stdMesg("Met<%s>::ind(%s)=%d", typeid(T).name(), 
-	    corr.data(), corrIndex_[corr]);
-    return it->second;
-  }
+  // Enable some of the Container functions:
+  using Container<MetData>::operator [];
+  using Container<MetData>::size;
+  using Container<MetData>::operator ();
+  using Container<MetData>::data;
+  using Container<MetData>::storeNObjects;
+  using Container<MetData>::name;
+  using Container<MetData>::setName;
+  using Container<MetData>::setValid;
+  using Container<MetData>::isValid;
+  using Container<MetData>::list;
 
-  // --------------------------------------------------------------------
-  inline std::vector<unsigned int> ind(std::vector<std::string> corrs) {
-    std::vector<unsigned int> ret;
-    for (unsigned int i=0; i<corrs.size(); i++) {
-      int j=ind(corrs[i]);
-      if (j<0) {
-	ret.clear();
-	break;
-      }
-      ret.push_back((unsigned int)(j));
-    }
-    return ret;
-  }
+  using Container<MetData>::addBranch;
+  using Container<MetData>::setBranch;
+  using Container<MetData>::stdErr;
+  using Container<MetData>::stdWarn;
+  using Container<MetData>::stdMesg;
+  using Container<MetData>::print;
+
+  void clear() { for (size_t i=0; i<size(); i++) met(i).clear(); }
+  size_t max_size() { return size(); }
 
 };
 
+//--------------------------------- init() ------------------------------------
 
-//--------------------------------- Constructor -------------------------------
-/*
-   List of parameters to gear the object with (passed in iConfig):
-      InputTag metTag,     : owned by Data<D>
-      vector<string> corrections: owned by this class, contains the list of
-                             the MET records of various corrections. The MET
-			     records are numbered from 0 to 1,2,... accordingly
-*/
+size_t Met::init() {
+  corrections_.clear();
+  corrIndex_.clear();
+  corrections_.push_back(NOVAL_S);
+  corrIndex_[NOVAL_S]=0;
+  MetData new_obj;
+  push_back(new_obj);
+  
+  return size();
+}
 
-template<class T> 
-Met<T>::Met(const edm::ParameterSet& iConfig) : Data<MetData>(
-      iConfig.getParameter<std::vector<std::string> >("corrections").size()) {
-
-  // Read tag, set defaults:
-  //
-  setTag(iConfig.getParameter<edm::InputTag>("metTag"));
-  corrections_=iConfig.getParameter<std::vector<std::string> >("corrections");
-
-  // Print config settings
-  //
-  stdMesg("  Met<%s> configuration:", typeid(T).name());
-  stdMesg("  \tcorrections(%d)=(", corrections_.size());
-  for (unsigned int i=0; i<corrections_.size(); i++) {
-    if (i<corrections_.size()-1) {
-      stdMesg("  \t\t%d: %s,", i, corrections_[i].data());
-    }
-    else {
-      stdMesg("  \t\t%d: %s", i, corrections_[i].data());
-    }
-  }
-  stdMesg("  \t)");
-  stdMesg("  Options are: ");
-  for (std::map<std::string,int>::const_iterator it=MetCorrTypeMap.begin(); 
-       it!=MetCorrTypeMap.end(); ++it) {
-    stdMesg("  \t\t%s", (*it).first.data());
-  }
-  stdMesg("  \tmetTag = '%s'", tag().label().data());
-  stdMesg("  List of variables: %s", met(0).list().data());
-  stdMesg("  Object is %svalid!\n", (isValid() ? "" : "not "));
-
+size_t Met::init(std::vector<std::string> corrections) {
   // Check if requested corrections have been implemented
   // and build a map between the correction type and the met(i) index 'i'
-  for (unsigned int i=0; i<corrections_.size(); i++) {
+  corrections_.clear();
+  corrIndex_.clear();
+  for (unsigned int i=0; i<corrections.size(); i++) {
     std::map<std::string,int>::const_iterator it;
-    it=MetCorrTypeMap.find(corrections_[i]);
+    it=MetCorrTypeMap.find(corrections[i]);
     if (it==MetCorrTypeMap.end()) {
       stdErr("Correction %s not interpreted. Object will be invalid\n", 
-	     corrections_[i].data());
-      setValid(false);
+	     corrections[i].data());
       continue;
     }
-    corrIndex_[corrections_[i]]=i;
-  }
- 
-}
-
-//----------------------------------- set() -----------------------------------
-
-template<class T> void Met<T>::set(const edm::Event& iEvent) {
-
-  if (!isValid()) return;
-
-  edm::Handle<edm::View<T> > metHandle;
-  iEvent.getByLabel(tag(), metHandle);
-
-  if (!metHandle.isValid()) {
-    stdErr("Met<%s>::set(): Invalid tag %s\n", 
-	   typeid(T).name(), tag().label().data());
-    setValid(false);
-    return;
-  }
-
-  if (metHandle->size()!=1) {
-    stdErr("Met<%s>::set(): unexpected Met collection size %d\n", 
-	   typeid(T).name(), metHandle->size());
-  }
-
-  clear();
-  for (unsigned int i=0; i<corrections_.size(); i++) {
+    corrections_.push_back(corrections[i]);
+    corrIndex_[corrections[i]]=i;
     MetData new_obj;
     push_back(new_obj);
-    met(i).corr=MetCorrTypeMap[corrections_[i].data()];
-    
-    if (met(i).hasPatCorrType()) {
-      pat::MET::UncorrectionType patType=getPatMetCorrType(corrections_[i]);
-      
-      if (corrections_[i]=="uncorrMAXN") {
-	met(i).et = metHandle->front().pt();
-	met(i).phi = metHandle->front().phi();
-	met(i).sumet = metHandle->front().sumEt();
-      } else {
-	// WHAT THE HELL, LIVE DANGEROUSLY!!!! :
-	const void *p=&metHandle->front();
-	const pat::MET* pmet=(const pat::MET*)p;
-	met(i).et=pmet->uncorrectedPt(patType);
-	met(i).phi=pmet->uncorrectedPhi(patType);
-	met(i).sumet=pmet->corSumEt(patType);
-      }
-      continue;
-    }
-    
-    if(corrections_[i]=="DEFAULT") {
-      met(i).et=metHandle->front().pt();
-      met(i).phi=metHandle->front().phi();
-      met(i).sumet=metHandle->front().sumEt();
-      continue;
-    }
-
-    stdErr("Met<%s>::set(): correction type %s not recognized (implemented)\n",
-	   corrections_[i].data());
   }
-
+  return size();
 }
 
-//---------------------------- getPatMetCorrType() ----------------------------
+//---------------------------------- ind() ------------------------------------
 
-template<class T> 
-pat::MET::UncorrectionType Met<T>::getPatMetCorrType(std::string corr){
-  if (corr=="uncorrALL") return pat::MET::uncorrALL;
-  else if (corr=="uncorrJES") return pat::MET::uncorrJES;
-  else if (corr=="uncorrMUON") return pat::MET::uncorrMUON;
-  else if (corr=="uncorrMAXN") return pat::MET::uncorrMAXN;
-  stdErr("Met<%s>::getPatMetCorrType(): correction named %s is not recognized"\
-	 " as pat::MET type\n", corr.data());
-  return pat::MET::uncorrMAXN;
+int Met::ind(std::string corr) {
+  std::map<std::string,int>::const_iterator it=corrIndex_.find(corr);
+  if (it==corrIndex_.end()) {
+    stdErr("Met::ind(%s) correction %s was not requested.\n", 
+	   corr.data(), corr.data()); 
+    return NOVAL_I;
+  }
+  stdMesg("Met::ind(%s)=%d", corr.data(), corrIndex_[corr]);
+  return it->second;
 }
 
 
-//-------------------------------- calculate() --------------------------------
-
-template<class T> void Met<T>::calculate () { 
+std::vector<size_t> Met::ind(std::vector<std::string> corrs) {
+  std::vector<size_t> ret;
+  for (size_t i=0; i<corrs.size(); i++) {
+    int j=ind(corrs[i]);
+    if (j<0) {
+      ret.clear();
+      break;
+    }
+    ret.push_back((size_t)(j));
+  }
+  return ret;
 }
 
 
 //--------------------------------- passed() ----------------------------------
 
-template<class T> int Met<T>::passed(std::string selection,unsigned int i) { 
+int Met::passed(std::string selection, size_t i) {
+  stdWarn("Met::passed(): Met selection is an event selection.");
   return NOVAL_I;
 }
 
