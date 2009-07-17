@@ -72,7 +72,7 @@ ElectronProducer<T>::ElectronProducer(const edm::ParameterSet& iConfig)
   
   setSelectionType(iConfig.getParameter<std::string>("selectionType")); 
 
-  stdMesg("  Electron<%s> configuration:", humanTypeId<T>().data());
+  stdMesg("  ElectronProducer<%s> configuration:", humanTypeId<T>().data());
   stdMesg("  \tstoreNElectrons = %d", storeNObjects());
   stdMesg("  \telectronTag = \"%s\"", tag().label().data());
   stdMesg("  \tselectionType = %s", getSelectionType().data());  
