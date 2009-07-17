@@ -38,7 +38,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Sun Mar 24 12:15:11 CET 2009
-// $Id: DeltaR.hh,v 1.4 2009/06/15 17:19:42 veszpv Exp $
+// $Id: DeltaR.hh,v 1.5 2009/07/16 17:22:58 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -139,7 +139,8 @@ template<class U,class V> void DeltaR<U,V>::calculate() {
 // I will always put the Met as the second template parameter, let's don't
 // duplicate the number of calculate functions just to avoid this constraint
 
-template<> void DeltaR<JetProducer<pat::Jet>,Met<pat::MET> >::calculate() {
+template<> 
+void DeltaR<JetProducer<pat::Jet>,MetProducer<pat::MET> >::calculate() {
   if (!isValid()) return;
   clear();
   for (unsigned int i=0; i<storeNObjects(); i++) {
