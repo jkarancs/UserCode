@@ -24,7 +24,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Jet.hh,v 1.10 2009/07/03 15:35:24 veszpv Exp $
+// $Id: Jet.hh,v 1.11 2009/07/16 17:17:06 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -46,7 +46,7 @@ class Jet : public Container<JetData>{
   inline JetData& jet(size_t i) { return at(i); }
 
   // Inherited functions to be overloaded
-  int passed(std::string selection, size_t i);
+  int passed(std::string, size_t);
 
 };
 

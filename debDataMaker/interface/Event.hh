@@ -55,7 +55,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Event.hh,v 1.12 2009/07/16 17:23:37 veszpv Exp $
+// $Id: Event.hh,v 1.13 2009/07/17 13:19:34 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -87,7 +87,7 @@ class Event : public Data<EventData>{
   // parameters (pointer) is NULL
   int passed(std::string selection, 
 	     Jet*, Met*, Electron*,
-	     Muon<pat::Muon>*, Trigger<edm::TriggerResults>*);
+	     Muon*, Trigger<edm::TriggerResults>*);
 
   void calculate_pass() {
     stdWarn("calculate_pass(): function can't be called without parameters\n");
@@ -96,7 +96,7 @@ class Event : public Data<EventData>{
   // calculate_pass() with all the possible parameters for all selections
   // if a parameter does not exist we set NULL when calling this function
   void calculate_pass(Jet*, Met*, Electron*,
-		      Muon<pat::Muon>*, Trigger<edm::TriggerResults>*);
+		      Muon*, Trigger<edm::TriggerResults>*);
 
   void select() {
     stdWarn("select(): How do you want to select event information for an " \
@@ -186,7 +186,7 @@ int Event::passed(std::string selection,
 		  Jet* pjet,
 		  Met* pmet,
 		  Electron* pele,
-		  Muon<pat::Muon>* pmuon,
+		  Muon* pmuon,
 		  Trigger<edm::TriggerResults>* trigger) {
 
   if (!isValid()) return NOVAL_I;
@@ -314,7 +314,7 @@ int Event::passed(std::string selection,
 void Event::calculate_pass(Jet* pjet,
 			   Met* pmet,
 			   Electron* pele,
-			   Muon<pat::Muon>* pmuon,
+			   Muon* pmuon,
 			   Trigger<edm::TriggerResults>* trigger) {
   
   if (!isValid()) return;

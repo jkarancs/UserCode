@@ -110,6 +110,7 @@ process.debNtupleMakerMod = cms.EDFilter(
     ),
     
     patMuonConfig = cms.PSet(
+        name = cms.string("pmuon"),
         storeNMuons = cms.int32(4),
         muonTag = cms.InputTag("allLayer1Muons"),
         selectionType = cms.string("RefAna4JetMetMuon")

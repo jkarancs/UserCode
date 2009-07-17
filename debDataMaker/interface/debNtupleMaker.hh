@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: debNtupleMaker.hh,v 1.3 2009/07/16 17:25:05 veszpv Exp $
+// $Id: debNtupleMaker.hh,v 1.4 2009/07/17 13:21:38 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -63,7 +63,7 @@
 #include "SusyAnalysis/debDataMaker/interface/MetProducer.hh"
 #include "SusyAnalysis/debDataMaker/interface/DeltaR.hh"
 #include "SusyAnalysis/debDataMaker/interface/ElectronProducer.hh"
-#include "SusyAnalysis/debDataMaker/interface/Muon.hh"
+#include "SusyAnalysis/debDataMaker/interface/MuonProducer.hh"
 #include "SusyAnalysis/debDataMaker/interface/Event.hh"
 #include "SusyAnalysis/debDataMaker/interface/Beamspot.hh"
 #include "SusyAnalysis/debDataMaker/interface/Trigger.hh"
@@ -81,7 +81,7 @@ public:
   JetProducer<pat::Jet> pjet;
   MetProducer<pat::MET> pmet;
   ElectronProducer<pat::Electron> pelectron;
-  Muon<pat::Muon> pmuon;
+  MuonProducer<pat::Muon> pmuon;
   Event event;
 
   deb::DeltaR<JetProducer<pat::Jet>,MetProducer<pat::MET> > dr_pjet_pmet;
