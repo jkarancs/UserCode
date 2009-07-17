@@ -13,7 +13,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: debNtupleMaker.cc,v 1.7 2009/06/09 22:22:18 veszpv Exp $
+// $Id: debNtupleMaker.cc,v 1.8 2009/07/16 17:25:40 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -46,8 +46,8 @@ debNtupleMaker::debNtupleMaker(const edm::ParameterSet& iConfig) :
   tree=fs->make<TTree>("tree", "Flat root tree for debNtupleMaker");
   //gjet.addBranch(tree, "gjet");
   pjet.addBranch(tree);
-  pmet.addBranch(tree, "pmet");
-  pelectron.addBranch(tree, "pelectron");
+  pmet.addBranch(tree);
+  pelectron.addBranch(tree);
   pmuon.addBranch(tree, "pmuon");
   event.addBranch(tree,"event");
   beamspot.addBranch(tree,"beamspot");
