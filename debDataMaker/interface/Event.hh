@@ -55,7 +55,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Event.hh,v 1.11 2009/07/03 15:56:07 akapusi Exp $
+// $Id: Event.hh,v 1.12 2009/07/16 17:23:37 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -86,7 +86,7 @@ class Event : public Data<EventData>{
   // parameters that are used in the selection. Returns NOVAL_I if one of the
   // parameters (pointer) is NULL
   int passed(std::string selection, 
-	     Jet*, Met<pat::MET>*, Electron<pat::Electron>*,
+	     Jet*, Met*, Electron*,
 	     Muon<pat::Muon>*, Trigger<edm::TriggerResults>*);
 
   void calculate_pass() {
@@ -95,7 +95,7 @@ class Event : public Data<EventData>{
 
   // calculate_pass() with all the possible parameters for all selections
   // if a parameter does not exist we set NULL when calling this function
-  void calculate_pass(Jet*, Met<pat::MET>*, Electron<pat::Electron>*,
+  void calculate_pass(Jet*, Met*, Electron*,
 		      Muon<pat::Muon>*, Trigger<edm::TriggerResults>*);
 
   void select() {
@@ -184,8 +184,8 @@ void Event::set(const edm::Event& iEvent) {
 
 int Event::passed(std::string selection,
 		  Jet* pjet,
-		  Met<pat::MET>* pmet,
-		  Electron<pat::Electron>* pele,
+		  Met* pmet,
+		  Electron* pele,
 		  Muon<pat::Muon>* pmuon,
 		  Trigger<edm::TriggerResults>* trigger) {
 
@@ -312,8 +312,8 @@ int Event::passed(std::string selection,
 // prerequisite to other selections, call the function with NULL
 
 void Event::calculate_pass(Jet* pjet,
-			   Met<pat::MET>* pmet,
-			   Electron<pat::Electron>* pele,
+			   Met* pmet,
+			   Electron* pele,
 			   Muon<pat::Muon>* pmuon,
 			   Trigger<edm::TriggerResults>* trigger) {
   
