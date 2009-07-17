@@ -81,7 +81,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Container.hh,v 1.11 2009/06/19 08:41:17 aranyi Exp $
+// $Id: Container.hh,v 1.1 2009/07/16 17:14:59 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -135,7 +135,7 @@ template <class D> class Container : public std::vector<D> {
   void             stdWarn(std::string, ...);
   void             stdMesg(std::string, ...);
   void             print(int);
-  virtual void     select();
+  void             select();
 
   //
   // functions that need to be implemented in inheriting class
@@ -223,7 +223,7 @@ template <class D> void Container<D>::stdErr(std::string mesg, ...) {
   vsprintf(s, mesg.data(), argList);
   va_end(argList);
   mesg=s;
-  std::cerr<<"*** ERROR: "<<humanTypeId(objVoid_)<<"("<<name_<<")::"
+  std::cerr<<"*** ERROR: "<<name_<<"("<<humanTypeId(objVoid_)<<")::"
 	   <<mesg<<std::endl;
 }
 
@@ -234,7 +234,7 @@ template <class D> void Container<D>::stdWarn(std::string mesg, ...) {
   vsprintf(s, mesg.data(), argList);
   va_end(argList);
   mesg=s;
-  std::cout<<"*** WARNING: "<<humanTypeId(objVoid_)<<"("<<name_<<")::"<<mesg
+  std::cout<<"*** WARNING: "<<name_<<"("<<humanTypeId(objVoid_)<<")::"<<mesg
 	   <<std::endl;
 }
 
@@ -245,7 +245,7 @@ template <class D> void Container<D>::stdMesg(std::string mesg, ...) {
   vsprintf(s, mesg.data(), argList);
   va_end(argList);
   mesg=s;
-  std::cout<<humanTypeId(objVoid_)<<"("<<name_<<")::"<<mesg<<std::endl;
+  std::cout<<name_<<"("<<humanTypeId(objVoid_)<<")::"<<mesg<<std::endl;
 }
 
 //---------------------------------- print() ----------------------------------
