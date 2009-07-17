@@ -97,11 +97,13 @@ process.debNtupleMakerMod = cms.EDFilter(
     ),
    
     patMetConfig = cms.PSet(
+        name = cms.string("pmet"),
         metTag = cms.InputTag("allLayer1METs"),
         corrections = cms.vstring("uncorrALL", "uncorrMAXN") ## index 0
     ),
 
     patElectronConfig = cms.PSet(
+        name = cms.string("pele"),
         storeNElectrons = cms.int32(4),
         electronTag = cms.InputTag("allLayer1Electrons"),
         selectionType = cms.string("RefAna4JetMetMuon")
