@@ -148,7 +148,7 @@ void ElectronProducer<T>::calculate(Beamspot<reco::BeamSpot> *beamspot) {
   if (!isValid()) return;
 
   if(beamspot==NULL){
-    for (unsigned int i=0; i<max_size(); i++) {
+    for (unsigned int i=0; i<size(); i++) {
       electron(i).bc_d0=NOVAL_F;
       electron(i).reliso=NOVAL_F;
     }
