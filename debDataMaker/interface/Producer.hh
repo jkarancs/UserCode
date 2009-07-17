@@ -123,8 +123,8 @@
          calculates values in D that depend on other data models
 
       int passed(std::string selection, unsigned int i) (virtual):
-         returns the result of selection for the i^th element of Producer<D>. The 
-	 selection itself is implemented after Producer<D> is specified.
+         returns the result of selection for the i^th element of Producer<D>. 
+	 The selection itself is implemented after Producer<D> is specified.
 
   
       Note:      
@@ -136,7 +136,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Producer.hh,v 1.11 2009/06/19 08:41:17 aranyi Exp $
+// $Id: Producer.hh,v 1.1 2009/07/16 17:15:24 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -155,6 +155,8 @@ public:
   Producer(edm::InputTag tag, std::string name="") : C(name), tag_(tag) { }
   Producer(edm::InputTag tag, std::string name, size_t storeNObjects) 
     : C(name, storeNObjects), tag_(tag) { }
+  Producer(edm::InputTag tag, std::string name, std::vector<std::string> list) 
+    : C(name, list), tag_(tag) { }
   
   virtual ~Producer() { }
   
