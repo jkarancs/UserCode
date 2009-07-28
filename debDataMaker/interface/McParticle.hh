@@ -38,7 +38,7 @@
 //
 // Original Author:  Attila ARANYI
 //         Created:  Wed Jun 03 10:28:26 CET 2009
-// $Id: McParticle.hh,v 1.12 2009/07/14 13:20:27 aranyi Exp $
+// $Id: McParticle.hh,v 1.1 2009/07/15 20:06:27 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -120,8 +120,9 @@ if (!Data<McParticleData<N> >::isValid()) return;
   }
 
 
-  typename std::vector<const T *>::const_iterator found;
+  typename std::vector<const T *>::const_iterator found; 
 
+  genParticles.clear();
   for(typename edm::View<T>::const_iterator p = particleHandle->begin();
     p != particleHandle->end(); ++ p ) {
     genParticles.push_back( & * p );
