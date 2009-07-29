@@ -26,15 +26,12 @@
       void set(const edm::Event&) (virtual):
          implements reading variables of D from the CMSSW framework
 
-      void calculate(Beamspot<reco::BeamSpot>  *beamspot) (virtual):
-         calculates values that depend on other data models
-
 
 */
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: MuonProducer.hh,v 1.13 2009/07/14 12:56:05 aranyi Exp $
+// $Id: MuonProducer.hh,v 1.1 2009/07/17 14:24:16 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -43,9 +40,6 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "SusyAnalysis/debDataMaker/interface/Muon.hh"
 #include "SusyAnalysis/debDataMaker/interface/Producer.hh"
-
-#include "DataFormats/BeamSpot/interface/BeamSpot.h"
-#include "SusyAnalysis/debDataMaker/interface/Beamspot.hh"
 
 namespace deb {
 
@@ -61,7 +55,6 @@ template<class T> class MuonProducer : public Producer<Muon>{
 
   // Inherited functions to be overloaded
   void set(const edm::Event&);
-  void calculate (Beamspot<reco::BeamSpot> *beamspot=NULL);
   
 };
 
@@ -162,40 +155,6 @@ template<class T> void MuonProducer<T>::set(const edm::Event& iEvent) {
   }
 }
   
-//-------------------------------- calculate() --------------------------------
-
-template<class T> 
-void MuonProducer<T>::calculate (Beamspot<reco::BeamSpot>  *beamspot){ 
-
-  if (!isValid()) return;
-  
-  for (size_t i=0; i<size(); i++) {
-    
-    muon(i).bc_d0=NOVAL_F;
-    muon(i).reliso=NOVAL_F;
-
-    if(muon(i).d0!=NOVAL_F&&
-       (*beamspot).beamspot(0).beamspotx!=NOVAL_F&&
-       (*beamspot).beamspot(0).beamspoty!=NOVAL_F&&
-       muon(i).phi_trk!=NOVAL_F) {
-	muon(i).bc_d0=muon(i).d0 
-	  -(*beamspot).beamspot(0).beamspotx*TMath::Sin(muon(i).phi_trk)
-	  +(*beamspot).beamspot(0).beamspoty*TMath::Cos(muon(i).phi_trk);
-      } 
-   
-    if(muon(i).isoR03_ecal!=NOVAL_F&&
-       muon(i).isoR03_hcal!=NOVAL_F&&
-       muon(i).isoR03_trk!=NOVAL_F&&
-       muon(i).pt!=NOVAL_F&&muon(i).pt!=0) {
-	muon(i).reliso=(muon(i).isoR03_ecal 
-			   +muon(i).isoR03_hcal
-			   +muon(i).isoR03_trk)
-	               /muon(i).pt;
-      } 
-  }
-
-}
-
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 

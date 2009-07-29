@@ -16,6 +16,9 @@
    The following fuctions should be overloaded here according to the exact 
    definition of D in Container<D> :
 
+      void calculate(Beamspot<reco::BeamSpot>  *beamspot) (virtual):
+         calculates values that depend on other data models
+
       int passed(std::string selection,unsigned int i) (virtual):
          returns the result of selection. The selections are implemented in 
 	 this function.
@@ -24,32 +27,68 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Muon.hh,v 1.13 2009/07/14 12:56:05 aranyi Exp $
+// $Id: Muon.hh,v 1.14 2009/07/17 14:25:33 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
 
-#include "SusyAnalysis/debDataMaker/interface/Container.hh"
+#include "SusyAnalysis/debDataMaker/interface/VContainer.hh"
 #include "SusyAnalysis/debDataMaker/interface/MuonData.hh"
+#include "SusyAnalysis/debDataMaker/interface/Beamspot.hh"
 
 namespace deb {
 
 //----------------------------- Class Definition ------------------------------
 
-class Muon : public Container<MuonData> {
+class Muon : public VContainer<MuonData> {
  public:
-  Muon(std::string name="") : Container<MuonData>(name) { }
+  Muon(std::string name="") : VContainer<MuonData>(name) { }
   Muon(std::string name, size_t storeNObjects) 
-    : Container<MuonData>(name, storeNObjects) { }
+    : VContainer<MuonData>(name, storeNObjects) { }
   ~Muon() { }
 
-  inline MuonData& muon(size_t i) { return at(i); }
+  inline MuonData& muon(size_t i) { return *(*this)(i); }
 
   // Inherited functions to be overloaded
+  void calculate (Beamspot<reco::BeamSpot> *beamspot=NULL);
   int passed(std::string, size_t);
   
 };
   
+//-------------------------------- calculate() --------------------------------
+
+void Muon::calculate (Beamspot<reco::BeamSpot>  *beamspot){ 
+
+  if (!isValid()) return;
+  
+  for (size_t i=0; i<size(); i++) {
+    
+    muon(i).bc_d0=NOVAL_F;
+    muon(i).reliso=NOVAL_F;
+
+    if(muon(i).d0!=NOVAL_F&&
+       (*beamspot).beamspot(0).beamspotx!=NOVAL_F&&
+       (*beamspot).beamspot(0).beamspoty!=NOVAL_F&&
+       muon(i).phi_trk!=NOVAL_F) {
+	muon(i).bc_d0=muon(i).d0 
+	  -(*beamspot).beamspot(0).beamspotx*TMath::Sin(muon(i).phi_trk)
+	  +(*beamspot).beamspot(0).beamspoty*TMath::Cos(muon(i).phi_trk);
+      } 
+   
+    if(muon(i).isoR03_ecal!=NOVAL_F&&
+       muon(i).isoR03_hcal!=NOVAL_F&&
+       muon(i).isoR03_trk!=NOVAL_F&&
+       muon(i).pt!=NOVAL_F&&muon(i).pt!=0) {
+	muon(i).reliso=(muon(i).isoR03_ecal 
+			   +muon(i).isoR03_hcal
+			   +muon(i).isoR03_trk)
+	               /muon(i).pt;
+      } 
+  }
+
+}
+
+
 //--------------------------------- passed() ----------------------------------
 
 int Muon::passed(std::string selection, size_t i) { 
