@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Tools.hh,v 1.1 2009/06/19 08:40:24 aranyi Exp $
+// $Id: Tools.hh,v 1.2 2009/07/16 17:24:14 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -63,6 +63,20 @@ template<class T> std::string humanTypeId() {
        throw BadConversion("string2int(\"" + s + "\")");
      return x;
    }
+
+//-----------------------------------------------------------------------------
+
+template <class K> std::string keyToString(K key) {
+  std::ostringstream ss;
+  ss<<key;
+  return ss.str();
+}
+
+template <class K1, class K2> std::string keyToString(std::pair<K1,K2> key) {
+  std::ostringstream ss;
+  ss<<key.first<<"_"<<key.second;
+  return ss.str();  
+}
 
 //-----------------------------------------------------------------------------
 
