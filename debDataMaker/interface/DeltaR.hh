@@ -38,81 +38,154 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Sun Mar 24 12:15:11 CET 2009
-// $Id: DeltaR.hh,v 1.5 2009/07/16 17:22:58 veszpv Exp $
+// $Id: DeltaR.hh,v 1.6 2009/07/17 13:18:59 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
 
-#include "DataFormats/Common/interface/View.h"
-#include "FWCore/MessageLogger/interface/MessageLogger.h"
-#include "SusyAnalysis/debDataMaker/interface/PairData.hh"
+#include "SusyAnalysis/debDataMaker/interface/PContainer.hh"
 #include "SusyAnalysis/debDataMaker/interface/DeltaRData.hh"
+#include "SusyAnalysis/debDataMaker/interface/Met.hh"
 
 namespace deb {
 
 //----------------------------- Class Definition ------------------------------
 
-template<class U,class V> class DeltaR : public PairData<DeltaRData>{
+template<class U,class V> 
+class DeltaR
+  : public PContainer<typename U::KeyType,typename V::KeyType,DeltaRData>{
+
+  typedef PContainer<typename U::KeyType,typename V::KeyType,DeltaRData> CBase;
+  typedef typename CBase::KeyType1                  KeyType1;
+  typedef typename CBase::KeyType2                  KeyType2;
+  typedef typename CBase::KeyType                   KeyType;
+  typedef typename CBase::KeyList1                  KeyList1;
+  typedef typename CBase::KeyList2                  KeyList2;
+  typedef typename CBase::KeyList                   KeyList;
+  typedef typename U::iterator                      U_iterator;
+  typedef typename V::iterator                      V_iterator;
+  // Note: KeyType1   := U::KeyType
+  //       KeyType2   := V::KeyType
+  //       KeyType    := std::pair<KeyType1,KeyType2>
+  //       KeyList1/2 := std::vector<KeyType1/2>
+  //       KeyList    := std::vector<std::pair<KeyType1,KeyType2> >
  public:
-  DeltaR(U&, std::vector<unsigned int>, V&, std::vector<unsigned int>);
-  DeltaR(U&, std::vector<unsigned int>);
+  // One parameter -> type_="triangle"
+  DeltaR(U&, std::string name);
+  DeltaR(U&, std::string name, size_t storeNObjects);
+  DeltaR(U&, std::string name, std::pair<typename CBase::KeyType1,
+	 typename CBase::KeyType1>);
+  DeltaR(U&, std::string name, KeyList1);
 
-  inline DeltaRData& dr(unsigned int u, unsigned int v) { 
-    return *PairData<DeltaRData>::at(u,v);
-  }
-  inline DeltaRData& dr(std::pair<unsigned int,unsigned int>& p) { 
-    return *PairData<DeltaRData>::at(p);
-  }
-  inline DeltaRData& dr(int i) { 
-    return *data(i);
-  }
+  // Two parameters -> type_="full"
+  DeltaR(U&, V&, std::string name);
+  DeltaR(U&, V&, std::string name, size_t storeNObjects);
+  DeltaR(U&, V&, std::string name, KeyList);
+  DeltaR(U&, V&, std::string name, KeyList1, KeyList2);
 
-  // Inherited functions to be overloaded
+  ~DeltaR() { }
+
   void calculate();
+  
+  inline int getMode() { return mode_; }
+  inline void setMode(int mode) { 
+    this->stdMesg("Mode set to calculate DR for %s pairs\n", 
+	    (mode==0 ? "ALL (mode=0)" : "ONLY STORED"));
+    mode_=mode; 
+  }
 
  private:
+  inline DeltaRData& dr(KeyType1 u, KeyType2 v) { 
+    return (*this)[KeyType(u,v)]; 
+  }
   U& U_;
   V& V_;
+  std::string type_;
+  int mode_;
   void init();
-  void calculate_dphi(unsigned int i);
-  void calculate_deta(unsigned int i);
-  void calculate_dr(unsigned int i);
+  void calculate_dr(U_iterator, V_iterator);
+  void calculate_dphi(U_iterator, V_iterator);
+  void calculate_deta(U_iterator, V_iterator);
 
 };
 
 
-//------------------------------- Constructors --------------------------------
-
-template<class U,class V> 
-DeltaR<U,V>::DeltaR(U& u, std::vector<unsigned int> ind_u, 
-		    V& v, std::vector<unsigned int> ind_v):
-  PairData<DeltaRData>(ind_u, u.max_size(), ind_v, v.max_size(), ""),
-  U_(u), V_(v) {
+//------------------------- One-parameter constructors ------------------------
+template<class U,class V>
+DeltaR<U,V>::DeltaR(U& u, std::string name="") :
+  CBase(name), U_(u), V_(u) {
+  type_="triangle";
   init();
 }
 
-template<class U,class V> 
-DeltaR<U,V>::DeltaR(U& u, std::vector<unsigned int> ind_u) :
-  PairData<DeltaRData>(ind_u, u.max_size(), ind_u, u.max_size(), "triangle"),
-  U_(u), V_(u) {
+template<class U,class V>
+DeltaR<U,V>::DeltaR(U& u, std::string name, size_t storeNObjects) :
+  CBase(name, storeNObjects), U_(u), V_(u) {
+  type_="triangle";
   init();
 }
+
+template<class U,class V>
+DeltaR<U,V>::DeltaR(U& u, std::string name, 
+		    std::pair<KeyType1,KeyType1> storeList) :
+  CBase(name, storeList), U_(u), V_(u) {
+  type_="triangle";
+  init();
+}
+
+template<class U,class V>
+DeltaR<U,V>::DeltaR(U& u, std::string name, KeyList1 ind) :
+  CBase(name, ind, ind, "triangle"), U_(u), V_(u) {
+  type_="triangle";
+  init();
+}
+
+
+//------------------------- Two-parameter constructors ------------------------
+template<class U,class V>
+DeltaR<U,V>::DeltaR(U& u, V& v, std::string name="") :
+  CBase(name), U_(u), V_(v) {
+  type_="full";
+  init();
+}
+
+template<class U,class V>
+DeltaR<U,V>::DeltaR(U& u, V& v, std::string name, size_t storeNObjects) :
+  CBase(name, storeNObjects), U_(u), V_(v) {
+  type_="full";
+  init();
+}
+
+template<class U,class V>
+DeltaR<U,V>::DeltaR(U& u, V& v, std::string name, KeyList storeList) :
+  CBase(name, storeList), U_(u), V_(v) {
+  type_="full";
+  init();
+}
+
+template<class U,class V>
+DeltaR<U,V>::DeltaR(U& u, V& v, std::string name, 
+		    KeyList1 ind1, KeyList2 ind2)
+  : CBase(name, ind1, ind2), U_(u), V_(v) {
+  type_="full";
+  init();
+}
+
 
 // --------------------------------- init() ---------------------------------- 
 
 template<class U,class V> void DeltaR<U,V>::init(){
+  mode_=0;
+
   stdMesg("  DeltaR<%s,%s> configuration:", 
-	  humanTypeId(U_).data(),humanTypeId(V_).data());
+	  humanTypeId(U_).data(), humanTypeId(V_).data());
   stdMesg("  Calculate dphi between %s(%s) and %s(%s)", 
-	  humanTypeId(U_).data(), U_.tag().label().data(),
-	  humanTypeId(V_).data(), V_.tag().label().data());
-  stdMesg("  for index pairs:");
-  for (unsigned int i=0; i<ind().size(); i++) {
-    stdMesg("\t\t(%d, %d)", ind(i).first, ind(i).second);
-  }
-  
-  stdMesg("  List of variables: %s", data(0)->list().data());
-  stdMesg("  Object is %svalid!\n", (isValid() ? "" : "not "));
+	  U_.name().data(),  humanTypeId(U_).data(),
+	  V_.name().data(), humanTypeId(V_).data());
+  stdMesg("  index pairs calculated in: %s", type_.data());
+  stdMesg("  for %s pairs", (this->mode_==0 ? "ALL (mode=0)" : "ONLY STORED"));
+  stdMesg("  List of variables: %s", this->list().data());
+  stdMesg("  Object is %svalid!\n", (this->isValid() ? "" : "not "));
 }
 
 
@@ -120,71 +193,91 @@ template<class U,class V> void DeltaR<U,V>::init(){
 // --------------------------- and specializations ----------------------------
 
 template<class U,class V> void DeltaR<U,V>::calculate() {
-  if (!isValid()) return;
-  clear();
-  for (unsigned int i=0; i<storeNObjects(); i++) {
-    DeltaRData new_obj;
-    push_back(new_obj);
-    calculate_dphi(i);
-    calculate_deta(i);
-    calculate_dr(i);
+  if (!this->isValid()) return;
+  this->clear();
+
+  for (U_iterator it1=U_.begin(); it1!=U_.end(); it1++) {
+    for (V_iterator it2=V_.begin(); it2!=V_.end(); it2++) {
+      KeyType1 u=U_.key(it1);
+      KeyType2 v=V_.key(it2);
+      if (mode_) {
+	size_t j=0;
+	for (; j<this->storeList().size(); j++) 
+	  if (this->storeList()[j]==KeyType(u,v)) break;
+	if (j==this->storeList().size()) continue; 
+      }
+      if (type_.find("full")==std::string::npos) {
+	if (!this->isGoodKey(u, v, type_)) continue;
+      }
+      DeltaRData dr;
+      this->insert(u, v, dr);
+      calculate_dr(it1, it2);
+    }
   }
 }
-
-// !!!! WARNING !!!!
-// Your Met<pat::MET> or Met<reco::MET> object probably does not have an "eta"
-// parameter; if so, you need to add a specialized calculate() function, such 
-// as below:
-
-// I will always put the Met as the second template parameter, let's don't
-// duplicate the number of calculate functions just to avoid this constraint
-
-template<> 
-void DeltaR<JetProducer<pat::Jet>,MetProducer<pat::MET> >::calculate() {
-  if (!isValid()) return;
-  clear();
-  for (unsigned int i=0; i<storeNObjects(); i++) {
-    DeltaRData new_obj;
-    push_back(new_obj);
-    calculate_dphi(i);
-    dr(i).eta=NOVAL_F;
-    dr(i).r=NOVAL_F;
-  }
-}
-
 
 //-----------------------------------------------------------------------------
 
 template<class U,class V> 
-inline void DeltaR<U,V>::calculate_dphi(unsigned int i) { 
-  if (U_[ind(i).first].phi!=NOVAL_F && V_[ind(i).second].phi!=NOVAL_F) {
-    float temp_dphi=fabs(U_[ind(i).first].phi-V_[ind(i).second].phi);
+void DeltaR<U,V>::calculate_dr(U_iterator it1, V_iterator it2) { 
+  calculate_dphi(it1, it2);
+  calculate_deta(it1, it2);
+  KeyType1 u=U_.key(it1);
+  KeyType2 v=V_.key(it2);
+
+  if (dr(u,v).phi!=NOVAL_F && dr(u,v).eta!=NOVAL_F) {
+    dr(u,v).r=sqrt(dr(u,v).phi*dr(u,v).phi+dr(u,v).eta*dr(u,v).eta);
+  } else {
+    dr(u,v).r=NOVAL_F;
+  }
+}
+
+template<> 
+void DeltaR<Met,Jet>::calculate_dr(U_iterator it1, V_iterator it2) { 
+  calculate_dphi(it1, it2);
+  KeyType1 u=U_.key(it1);
+  KeyType2 v=V_.key(it2);
+  dr(u,v).eta=NOVAL_F;
+  dr(u,v).r=NOVAL_F;
+}
+
+template<> 
+void DeltaR<Jet,Met>::calculate_dr(U_iterator it1, V_iterator it2) { 
+  calculate_dphi(it1, it2);
+  KeyType1 u=U_.key(it1);
+  KeyType2 v=V_.key(it2);
+  dr(u,v).eta=NOVAL_F;
+  dr(u,v).r=NOVAL_F;
+}
+
+//-----------------------------------------------------------------------------
+
+template<class U,class V> 
+inline void DeltaR<U,V>::calculate_dphi(U_iterator it1, V_iterator it2) { 
+  KeyType1 u=U_.key(it1);
+  KeyType2 v=V_.key(it2);
+
+  if (U_(u)->phi!=NOVAL_F && V_(v)->phi!=NOVAL_F) {
+    float temp_dphi=fabs(U_(u)->phi - V_(v)->phi);
     if (temp_dphi<TMath::Pi()) {
-      dr(i).phi=temp_dphi;
-    }
-    else {
-      dr(i).phi=2*TMath::Pi()-temp_dphi;
+      dr(u,v).phi=temp_dphi;
+    } else {
+      dr(u,v).phi=2*TMath::Pi()-temp_dphi;
     }      
   } else {
-    dr(i).phi=NOVAL_F;
+    dr(u,v).phi=NOVAL_F;
   }
 }
 
 template<class U,class V> 
-inline void DeltaR<U,V>::calculate_deta(unsigned int i) { 
-  if (U_[ind(i).first].eta!=NOVAL_F && V_[ind(i).second].eta!=NOVAL_F) {     
-    dr(i).eta=fabs(U_[ind(i).first].eta-V_[ind(i).second].eta);
-  } else {
-    dr(i).eta=NOVAL_F;
-  }
-}
+inline void DeltaR<U,V>::calculate_deta(U_iterator it1, V_iterator it2) { 
+  KeyType1 u=U_.key(it1);
+  KeyType2 v=V_.key(it2);
 
-template<class U,class V> 
-inline void DeltaR<U,V>::calculate_dr(unsigned int i) { 
-  if (dr(i).phi!=NOVAL_F && dr(i).eta!=NOVAL_F) {
-    dr(i).r=sqrt(dr(i).phi*dr(i).phi+dr(i).eta*dr(i).eta);
+  if (U_(u)->eta!=NOVAL_F && V_(v)->eta!=NOVAL_F) {     
+    dr(u,v).eta=fabs(U_(u)->eta - V_(v)->eta);
   } else {
-    dr(i).r=NOVAL_F;
+    dr(u,v).eta=NOVAL_F;
   }
 }
 
