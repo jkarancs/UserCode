@@ -20,35 +20,48 @@
          returns the result of selection. The selections are implemented in 
 	 this function.
 
+      void calculate(?) (virtual):
+         calculates values that depend on other data models
+
 */
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Jet.hh,v 1.11 2009/07/16 17:17:06 veszpv Exp $
+// $Id: Jet.hh,v 1.12 2009/07/17 14:25:33 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
 
-#include "SusyAnalysis/debDataMaker/interface/Container.hh"
+#include "SusyAnalysis/debDataMaker/interface/VContainer.hh"
 #include "SusyAnalysis/debDataMaker/interface/JetData.hh"
 
 namespace deb {
 
 //----------------------------- Class Definition ------------------------------
 
-class Jet : public Container<JetData>{
+class Jet : public VContainer<JetData>{
  public:
-  Jet(std::string name="") : Container<JetData>(name) { }
+  Jet(std::string name="") : VContainer<JetData>(name) { }
   Jet(std::string name, size_t storeNObjects) 
-    : Container<JetData>(name, storeNObjects) { }
+    : VContainer<JetData>(name, storeNObjects) { }
+  Jet(std::string name, std::vector<size_t> storeList) 
+    : VContainer<JetData>(name, storeList) { }
   ~Jet() { }
 
-  inline JetData& jet(size_t i) { return at(i); }
+  inline JetData& jet(size_t i) { return *(*this)(i); }
 
   // Inherited functions to be overloaded
+  void calculate ();
   int passed(std::string, size_t);
 
 };
+
+
+//-------------------------------- calculate() --------------------------------
+
+void Jet::calculate () { 
+}
+  
 
 //--------------------------------- passed() ----------------------------------
 

@@ -27,14 +27,11 @@
       void set(const edm::Event&) (virtual):
          implements reading variables of D from the CMSSW framework
 
-      void calculate(?) (virtual):
-         calculates values that depend on other data models
-
 */
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: JetProducer.hh,v 1.1 2009/07/16 17:18:26 veszpv Exp $
+// $Id: JetProducer.hh,v 1.2 2009/07/17 13:20:53 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -53,7 +50,7 @@ namespace deb {
 
 template<class T> class JetProducer : public Producer<Jet> {
  public:
-  JetProducer(const edm::ParameterSet& iConfig);
+  JetProducer(const edm::ParameterSet&);
   JetProducer() { 
     stdErr("  JetProducer<%s> configuration missing\n", 
 	   humanTypeId<T>().data());
@@ -61,7 +58,6 @@ template<class T> class JetProducer : public Producer<Jet> {
 
   // Inherited functions to be overloaded
   void set(const edm::Event&);
-  void calculate ();
 
   // New variables and functions
  private:
@@ -78,12 +74,12 @@ template<class T> class JetProducer : public Producer<Jet> {
 };
 
 
-//--------------------------------- Constructor -------------------------------
+//--------------------------------- Constructor ------------------------------
 
 template<class T> JetProducer<T>::JetProducer(const edm::ParameterSet& iConfig)
   : Producer<Jet>(iConfig.getParameter<edm::InputTag>("jetTag"),
 		  iConfig.getParameter<std::string>("name"),
-		  iConfig.getParameter<int>("storeNJets")) {
+		  iConfig.getParameter<size_t>("storeNJets")) {
 
   // Read tag, set defaults:
   //
@@ -246,12 +242,6 @@ float JetProducer<reco::GenJet>::getEmFraction(const reco::GenJet* jet) {
   return NOVAL_F;
 }
 
-
-//-------------------------------- calculate() --------------------------------
-
-template<class T> void JetProducer<T>::calculate () { 
-}
-  
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
