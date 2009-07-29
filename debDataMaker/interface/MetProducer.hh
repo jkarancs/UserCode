@@ -20,24 +20,11 @@
 
    !!!! See usage of inherited functions in Data.hh source code !!!!
 
-   The following fuctions should be overloaded here according to the exact 
-   definition of D in Data<D> :
-
-      void set(const edm::Event&) (virtual):
-         implements reading variables of D from the CMSSW framework
-
-      void calculate(?) (virtual):
-         calculates values that depend on other data models
-
-      int passed(int i) (virtual,unsigned int i):
-         if selection is set, returns the result of the selections. The
-         selections are implemented in this function.
-
 */
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: MetProducer.hh,v 1.1 2009/06/15 17:19:42 veszpv Exp $
+// $Id: MetProducer.hh,v 1.1 2009/07/17 13:17:10 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -63,9 +50,15 @@ template<class T> class MetProducer : public Producer<Met> {
 
   // Inherited functions to be overloaded
   void set(const edm::Event&);
-  void calculate ();
 
-  // Additional functions
+ private:
+  using Producer<Met>::calculate_pass;
+  // New variables and functions
+  std::vector<std::string> corrections_;
+ 
+ public: 
+  const std::vector<std::string>& getCorrections() { return corrections_; }
+  inline std::string correction(size_t i) { return corrections_[i]; }
   pat::MET::UncorrectionType getPatMetCorrType(std::string);
 
 };
@@ -77,13 +70,31 @@ template<class T> MetProducer<T>::MetProducer(const edm::ParameterSet& iConfig)
   : Producer<Met>(
 	      iConfig.getParameter<edm::InputTag>("metTag"),
               iConfig.getParameter<std::string>("name"),
-              iConfig.getParameter<std::vector<std::string> >("corrections")) {
+              iConfig.getParameter<std::vector<std::string> >("storeList")) {
 
-  // Print config settings
-  //
+  std::vector<std::string> corrections=
+    iConfig.getParameter<std::vector<std::string> >("corrections");
+
+  corrections_.clear();
+  for (unsigned int i=0; i<corrections.size(); i++) {
+    std::map<std::string,int>::const_iterator it;
+    it=MetCorrTypeMap.find(corrections[i]);
+    if (it==MetCorrTypeMap.end()) {
+      stdErr("Correction %s not interpreted", corrections[i].data());
+      continue;
+    }
+    corrections_.push_back(corrections[i]);
+  }
+
+  if (corrections_.size()==0) {
+    stdErr("  MetProducer<%s>: no valid correction has been set. Object " \
+	   "will be invalid", humanTypeId<T>().data());
+    setValid(false);
+  }
+
   stdMesg("  MetProducer<%s> configuration:", humanTypeId<T>().data());
   stdMesg("  \tcorrections(%d)=(", getCorrections().size());
-  for (unsigned int i=0; i<getCorrections().size(); i++) {
+  for (size_t i=0; i<getCorrections().size(); i++) {
     if (i<getCorrections().size()-1) {
       stdMesg("  \t\t%d: %s,", i, correction(i).data());
     }
@@ -126,35 +137,38 @@ template<class T> void MetProducer<T>::set(const edm::Event& iEvent) {
 
   clear();
   for (unsigned int i=0; i<getCorrections().size(); i++) {
-    met(i).corr=MetCorrTypeMap[correction(i).data()];
+    std::string corr=correction(i);
+    MetData new_obj;
+    insert(corr, new_obj);
+    met(corr).corr=MetCorrTypeMap[corr];
     
-    if (met(i).hasPatCorrType()) {
-      pat::MET::UncorrectionType patType=getPatMetCorrType(correction(i));
+    if (met(corr).hasPatCorrType()) {
+      pat::MET::UncorrectionType patType=getPatMetCorrType(corr);
       
-      if (correction(i)=="uncorrMAXN") {
-	met(i).et = metHandle->front().pt();
-	met(i).phi = metHandle->front().phi();
-	met(i).sumet = metHandle->front().sumEt();
+      if (corr=="uncorrMAXN") {
+	met(corr).et = metHandle->front().pt();
+	met(corr).phi = metHandle->front().phi();
+	met(corr).sumet = metHandle->front().sumEt();
       } else {
 	// WHAT THE HELL, LIVE DANGEROUSLY!!!! :
 	const void *p=&metHandle->front();
 	const pat::MET* pmet=(const pat::MET*)p;
-	met(i).et=pmet->uncorrectedPt(patType);
-	met(i).phi=pmet->uncorrectedPhi(patType);
-	met(i).sumet=pmet->corSumEt(patType);
+	met(corr).et=pmet->uncorrectedPt(patType);
+	met(corr).phi=pmet->uncorrectedPhi(patType);
+	met(corr).sumet=pmet->corSumEt(patType);
       }
       continue;
     }
     
-    if(correction(i)=="DEFAULT") {
-      met(i).et=metHandle->front().pt();
-      met(i).phi=metHandle->front().phi();
-      met(i).sumet=metHandle->front().sumEt();
+    if(corr=="DEFAULT") {
+      met(corr).et=metHandle->front().pt();
+      met(corr).phi=metHandle->front().phi();
+      met(corr).sumet=metHandle->front().sumEt();
       continue;
     }
 
     stdErr("Met<%s>::set(): correction type %s not recognized (implemented)\n",
-	   correction(i).data());
+	   corr.data());
   }
 
 }
@@ -172,12 +186,6 @@ pat::MET::UncorrectionType MetProducer<T>::getPatMetCorrType(std::string corr){
   return pat::MET::uncorrMAXN;
 }
 
-
-//-------------------------------- calculate() --------------------------------
-
-template<class T> void MetProducer<T>::calculate () { 
-}
-  
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 
