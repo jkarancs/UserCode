@@ -80,7 +80,7 @@ process.debNtupleMakerMod = cms.EDFilter(
 
     genJetConfig = cms.PSet(
         name = cms.string("gjet"),
-        storeNJets = cms.int32(1),
+        storeNJets = cms.uint32(4),
         jetTag = cms.InputTag("sisCone5GenJets"),
         selectionType = cms.string("N/A"),
         correction = cms.vstring("HAD", "UDS"),
@@ -89,7 +89,7 @@ process.debNtupleMakerMod = cms.EDFilter(
 
     patJetConfig = cms.PSet(
         name = cms.string("pjet"),
-        storeNJets = cms.int32(4),
+        storeNJets = cms.uint32(4),
         jetTag = cms.InputTag("allLayer1Jets"),
         selectionType = cms.string("N/A"),
         correction = cms.vstring("HAD", "UDS"),
@@ -99,7 +99,8 @@ process.debNtupleMakerMod = cms.EDFilter(
     patMetConfig = cms.PSet(
         name = cms.string("pmet"),
         metTag = cms.InputTag("allLayer1METs"),
-        corrections = cms.vstring("uncorrALL", "uncorrMAXN") ## index 0
+        corrections = cms.vstring("uncorrALL", "uncorrMAXN"),
+        storeList = cms.vstring("uncorrMAXN", "uncorrALL")
     ),
 
     patElectronConfig = cms.PSet(
@@ -151,15 +152,13 @@ process.debNtupleMakerMod = cms.EDFilter(
     ),
 
     drPatJetPatMetConfig = cms.PSet(
+        name = cms.string("dr_pjet_pmet"),
         patJetIndices = cms.vuint32(0, 1, 2, 3),
-        ## Met indices follow the order of the requested corrections given
-        ## in patMetConfig, conversion is done in the constructor of
-        ## debNtupleMakerMod or one could just manually conver them by passing
-        ## a vuint32() here listing the corresponding indices starting from 0
-        caloMetCorrections = cms.vstring("uncorrMAXN")
+        patMetIndices = cms.vstring("uncorrMAXN", "uncorrALL")
     ),
 
     drPatJetConfig = cms.PSet(
+        name = cms.string("dr_pjet"),
         patJetIndices = cms.vuint32(0, 1, 2, 3)
     )
 )
