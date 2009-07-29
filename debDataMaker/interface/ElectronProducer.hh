@@ -25,8 +25,6 @@
       void set(const edm::Event&) (virtual):
          that implements reading variables of D from the CMSSW framework
 
-      void calculate(Beamspot<reco::BeamSpot>  *beamspot) (virtual):
-         that calculates values that depend on other data models
 
 */
 //
@@ -41,7 +39,6 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "SusyAnalysis/debDataMaker/interface/Electron.hh"
 #include "SusyAnalysis/debDataMaker/interface/Producer.hh"
-#include "SusyAnalysis/debDataMaker/interface/Beamspot.hh"
 
 namespace deb {
 
@@ -57,7 +54,6 @@ template<class T> class ElectronProducer : public Producer<Electron> {
   
   // Inherited functions to be overloaded
   void set(const edm::Event&);
-  void calculate (Beamspot<reco::BeamSpot>  *beamspot=NULL);
   
 };
   
@@ -140,48 +136,6 @@ template<class T> void ElectronProducer<T>::set(const edm::Event& iEvent) {
   }
 }
   
-//-------------------------------- calculate() --------------------------------
-
-template<class T> 
-void ElectronProducer<T>::calculate(Beamspot<reco::BeamSpot> *beamspot) { 
-
-  if (!isValid()) return;
-
-  if(beamspot==NULL){
-    for (unsigned int i=0; i<size(); i++) {
-      electron(i).bc_d0=NOVAL_F;
-      electron(i).reliso=NOVAL_F;
-    }
-    return;
-  }
-  
-  for (unsigned int i=0; i<size(); i++) {
-
-    electron(i).bc_d0=NOVAL_F;
-    electron(i).reliso=NOVAL_F;
-
-    if(electron(i).d0!=NOVAL_F&&
-       (*beamspot).beamspot(0).beamspotx!=NOVAL_F&&
-       (*beamspot).beamspot(0).beamspoty!=NOVAL_F&&
-       electron(i).phi_trk!=NOVAL_F){
-    electron(i).bc_d0=electron(i).d0
-            -(*beamspot).beamspot(0).beamspotx*TMath::Sin(electron(i).phi_trk)
-            +(*beamspot).beamspot(0).beamspoty*TMath::Cos(electron(i).phi_trk);
-    }
-    
-    if(electron(i).isoR03_ecal!=NOVAL_F&&
-       electron(i).isoR03_hcal!=NOVAL_F&&
-       electron(i).isoR03_trk!=NOVAL_F&&
-       electron(i).et!=NOVAL_F&&electron(i).et!=0){
-      electron(i).reliso=(electron(i).isoR03_ecal
-			  +electron(i).isoR03_hcal
-			  +electron(i).isoR03_trk)
-	                  /electron(i).et;
-    }
-  }
-  
-}
- 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 

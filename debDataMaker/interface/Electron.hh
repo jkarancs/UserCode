@@ -16,6 +16,9 @@
    The following fuctions should be overloaded here according to the exact 
    definition of D in Container<D> :
 
+      void calculate(Beamspot<reco::BeamSpot>  *beamspot) (virtual):
+         that calculates values that depend on other data models
+
       int passed(std::string selection,size_t i) (virtual):
          returns the result of selection. The selections are implemented in 
 	 this function.
@@ -29,27 +32,72 @@
 //
 //-----------------------------------------------------------------------------
 
-#include "SusyAnalysis/debDataMaker/interface/Container.hh"
+#include "SusyAnalysis/debDataMaker/interface/VContainer.hh"
 #include "SusyAnalysis/debDataMaker/interface/ElectronData.hh"
+#include "SusyAnalysis/debDataMaker/interface/Beamspot.hh"
 
 namespace deb {
 
 //----------------------------- Class Definition ------------------------------
 
-class Electron : public Container<ElectronData> {
+class Electron : public VContainer<ElectronData> {
 public:
-  Electron(std::string name="") : Container<ElectronData>(name) { }
+  Electron(std::string name="") : VContainer<ElectronData>(name) { }
   Electron(std::string name, size_t storeNObjects) 
-    : Container<ElectronData>(name, storeNObjects) { }
+    : VContainer<ElectronData>(name, storeNObjects) { }
   ~Electron() { }
 
-  inline ElectronData& electron(size_t i) { return at(i); }
+  inline ElectronData& electron(size_t i) { return *(*this)(i); }
 
   // Inherited functions to be overloaded
+  void calculate (Beamspot<reco::BeamSpot>  *beamspot=NULL);
   int passed(std::string selection, size_t i);
 
 };
   
+  
+//-------------------------------- calculate() --------------------------------
+
+void Electron::calculate(Beamspot<reco::BeamSpot> *beamspot) { 
+
+  if (!isValid()) return;
+
+  if(beamspot==NULL){
+    for (unsigned int i=0; i<size(); i++) {
+      electron(i).bc_d0=NOVAL_F;
+      electron(i).reliso=NOVAL_F;
+    }
+    return;
+  }
+  
+  for (unsigned int i=0; i<size(); i++) {
+
+    electron(i).bc_d0=NOVAL_F;
+    electron(i).reliso=NOVAL_F;
+
+    if(electron(i).d0!=NOVAL_F&&
+       (*beamspot).beamspot(0).beamspotx!=NOVAL_F&&
+       (*beamspot).beamspot(0).beamspoty!=NOVAL_F&&
+       electron(i).phi_trk!=NOVAL_F){
+    electron(i).bc_d0=electron(i).d0
+            -(*beamspot).beamspot(0).beamspotx*TMath::Sin(electron(i).phi_trk)
+            +(*beamspot).beamspot(0).beamspoty*TMath::Cos(electron(i).phi_trk);
+    }
+    
+    if(electron(i).isoR03_ecal!=NOVAL_F&&
+       electron(i).isoR03_hcal!=NOVAL_F&&
+       electron(i).isoR03_trk!=NOVAL_F&&
+       electron(i).et!=NOVAL_F&&electron(i).et!=0){
+      electron(i).reliso=(electron(i).isoR03_ecal
+			  +electron(i).isoR03_hcal
+			  +electron(i).isoR03_trk)
+	                  /electron(i).et;
+    }
+  }
+  
+}
+
+
 //--------------------------------- passed() ----------------------------------
 
 int Electron::passed(std::string selection, size_t i) {
