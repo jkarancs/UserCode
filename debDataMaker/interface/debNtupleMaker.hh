@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: debNtupleMaker.hh,v 1.4 2009/07/17 13:21:38 veszpv Exp $
+// $Id: debNtupleMaker.hh,v 1.5 2009/07/17 14:25:33 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -84,9 +84,9 @@ public:
   MuonProducer<pat::Muon> pmuon;
   Event event;
 
-  deb::DeltaR<JetProducer<pat::Jet>,MetProducer<pat::MET> > dr_pjet_pmet;
+  deb::DeltaR<Jet,Met> dr_pjet_pmet;
   //DeltaR<Jet<pat::Jet>,Jet<pat::Jet> > dr_pjet;  
-  deb::DeltaR<JetProducer<pat::Jet>,JetProducer<pat::Jet> > dr_pjet;
+  deb::DeltaR<Jet,Jet> dr_pjet;
 
   TTree *tree;  
 
