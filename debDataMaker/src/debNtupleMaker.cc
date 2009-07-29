@@ -13,7 +13,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: debNtupleMaker.cc,v 1.9 2009/07/17 13:23:09 veszpv Exp $
+// $Id: debNtupleMaker.cc,v 1.10 2009/07/17 14:25:33 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -30,15 +30,19 @@ debNtupleMaker::debNtupleMaker(const edm::ParameterSet& iConfig) :
   pelectron(iConfig.getParameter<edm::ParameterSet>("patElectronConfig")),
   pmuon(iConfig.getParameter<edm::ParameterSet>("patMuonConfig")),
   event(iConfig.getParameter<edm::ParameterSet>("EventConfig")),
-  dr_pjet_pmet(
-       pjet, iConfig.getParameter<edm::ParameterSet>("drPatJetPatMetConfig").
-             getParameter<std::vector<unsigned int> >("patJetIndices"),
-       pmet, pmet.ind(
-             iConfig.getParameter<edm::ParameterSet>("drPatJetPatMetConfig").
-	     getParameter<std::vector<std::string> >("caloMetCorrections"))),
+  dr_pjet_pmet(pjet, pmet, 
+       iConfig.getParameter<edm::ParameterSet>("drPatJetPatMetConfig").
+	       getParameter<std::string >("name"),
+       iConfig.getParameter<edm::ParameterSet>("drPatJetPatMetConfig").
+	       getParameter<std::vector<unsigned int> >("patJetIndices"),
+       iConfig.getParameter<edm::ParameterSet>("drPatJetPatMetConfig").
+	       getParameter<std::vector<std::string> >("patMetIndices")),
   dr_pjet(
-       pjet, iConfig.getParameter<edm::ParameterSet>("drPatJetConfig").
-             getParameter<std::vector<unsigned int> >("patJetIndices"))
+	  pjet,  
+	  iConfig.getParameter<edm::ParameterSet>("drPatJetConfig").
+	  getParameter<std::string>("name"),
+	  iConfig.getParameter<edm::ParameterSet>("drPatJetConfig").
+	  getParameter<std::vector<unsigned int> >("patJetIndices"))
 {
 
   // Create an output tree for a manual cross-check of the produced data
@@ -52,8 +56,9 @@ debNtupleMaker::debNtupleMaker(const edm::ParameterSet& iConfig) :
   event.addBranch(tree,"event");
   beamspot.addBranch(tree,"beamspot");
   trigger.addBranch(tree,"trigger");
-  dr_pjet_pmet.addBranch(tree, "dr_pj_pmet");
-  dr_pjet.addBranch(tree, "dr_pjet");
+  dr_pjet_pmet.addBranch(tree);
+  dr_pjet.addBranch(tree);
+  dr_pjet.setMode(1);
 }
 
 
@@ -94,7 +99,6 @@ bool debNtupleMaker::filter(edm::Event& iEvent, const edm::EventSetup& iSetup){
   // 
 
   pjet.calculate();
-  pmet.calculate();
   beamspot.calculate();
   trigger.calculate();
   pelectron.calculate(&beamspot);
@@ -130,6 +134,7 @@ bool debNtupleMaker::filter(edm::Event& iEvent, const edm::EventSetup& iSetup){
   trigger.setBranch();
   dr_pjet_pmet.setBranch();
   dr_pjet.setBranch();
+
 
   tree->Fill();
   return true;
