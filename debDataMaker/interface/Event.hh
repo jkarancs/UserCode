@@ -55,7 +55,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Event.hh,v 1.13 2009/07/17 13:19:34 veszpv Exp $
+// $Id: Event.hh,v 1.14 2009/07/17 14:25:33 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -256,7 +256,7 @@ int Event::passed(std::string selection,
     }
     
     if(selection.compare("RefAna4JetMetMuon")==0){  
-      if((*pmet).met(0).et==NOVAL_F){
+      if((*pmet).met("uncorrMAXN").et==NOVAL_F){
 	stdErr("passed(std::string selection, Jet<pat::Jet>*, "		\
 	       "Met<pat::MET>*, Electron<pat::Electron>*, Muon<pat::Muon>*, " \
 	       "Trigger<edm::TriggerResults>*): NOVAL value in the cut " \
@@ -266,7 +266,7 @@ int Event::passed(std::string selection,
       if(nummuo==1&&
 	 numele==0&&
 	 numjetpt50>=3&&
-	 (*pmet).met(0).et>100.0){
+	 (*pmet).met("uncorrMAXN").et>100.0){
 	return 1;
       }      
       else{
@@ -275,7 +275,7 @@ int Event::passed(std::string selection,
     }
     
     if(selection.compare("RefAna4JetMetElectron")==0){  
-      if((*pmet).met(0).et==NOVAL_F){
+      if((*pmet).met("uncorrMAXN").et==NOVAL_F){
 	stdErr("passed(std::string selection, Jet<pat::Jet>*, "		\
 	       "Met<pat::MET>*, Electron<pat::Electron>*, Muon<pat::Muon>*, " \
 	       "Trigger<edm::TriggerResults>*): NOVAL value in the cut " \
@@ -286,7 +286,7 @@ int Event::passed(std::string selection,
       if((*trigger).trigger(0).hlt==1&&
 	 numele==1&&
 	 numjetpt50eta3emfrac09>=3&&
-	 (*pmet).met(0).et>100.0){
+	 (*pmet).met("uncorrMAXN").et>100.0){
 	return 1;
       }
       else{
