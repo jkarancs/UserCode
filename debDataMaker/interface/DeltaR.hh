@@ -38,7 +38,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Sun Mar 24 12:15:11 CET 2009
-// $Id: DeltaR.hh,v 1.6 2009/07/17 13:18:59 veszpv Exp $
+// $Id: DeltaR.hh,v 1.7 2009/07/29 13:37:00 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -73,8 +73,7 @@ class DeltaR
   // One parameter -> type_="triangle"
   DeltaR(U&, std::string name);
   DeltaR(U&, std::string name, size_t storeNObjects);
-  DeltaR(U&, std::string name, std::pair<typename CBase::KeyType1,
-	 typename CBase::KeyType1>);
+  DeltaR(U&, std::string name, std::vector<std::pair<KeyType1,KeyType1> >);
   DeltaR(U&, std::string name, KeyList1);
 
   // Two parameters -> type_="full"
@@ -87,6 +86,9 @@ class DeltaR
 
   void calculate();
   
+  // Mode determines if DR is calculated for all pairs that can be produced
+  // from U and V containers or just for the ones that are going to be stored
+  // in the ROOT::TTree-s (in principle these two cases should be the same)
   inline int getMode() { return mode_; }
   inline void setMode(int mode) { 
     this->stdMesg("Mode set to calculate DR for %s pairs\n", 
@@ -95,6 +97,9 @@ class DeltaR
   }
 
  private:
+  // No need to check if KeyType (u,v) exists, since we create it in 
+  // calculate() before calling dr() the first time. Also, dr() is private
+  // in order to prevent calling it with the wrong (u,v)
   inline DeltaRData& dr(KeyType1 u, KeyType2 v) { 
     return (*this)[KeyType(u,v)]; 
   }
@@ -127,7 +132,7 @@ DeltaR<U,V>::DeltaR(U& u, std::string name, size_t storeNObjects) :
 
 template<class U,class V>
 DeltaR<U,V>::DeltaR(U& u, std::string name, 
-		    std::pair<KeyType1,KeyType1> storeList) :
+		    std::vector<std::pair<KeyType1,KeyType1> > storeList) :
   CBase(name, storeList), U_(u), V_(u) {
   type_="triangle";
   init();
