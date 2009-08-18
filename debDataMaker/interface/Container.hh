@@ -81,7 +81,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Container.hh,v 1.2 2009/07/17 13:12:41 veszpv Exp $
+// $Id: Container.hh,v 1.3 2009/07/29 13:31:49 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -286,7 +286,7 @@ void Container<C,D,K>::setBranch() {
     }
     else stdErr("setBranch(): Did not find branch %s in tree!!!\n", 
 		ss.str().data());
-    it++;
+    if (it!=this->end()) it++;
   }
 }
 
