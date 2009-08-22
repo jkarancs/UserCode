@@ -31,7 +31,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: MuonProducer.hh,v 1.1 2009/07/17 14:24:16 veszpv Exp $
+// $Id: MuonProducer.hh,v 1.2 2009/07/29 10:06:08 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -89,6 +89,18 @@ MuonProducer<T>::MuonProducer(const edm::ParameterSet& iConfig)
 template<class T> void MuonProducer<T>::set(const edm::Event& iEvent) {
 
   if (!isValid()) return;
+
+  edm::InputTag mcMuonTag("genParticles","","HLT");
+	
+  edm::Handle<edm::View<reco::Candidate> > particleHandle;
+  iEvent.getByLabel(mcMuonTag, particleHandle );
+
+  std::vector<const reco::Candidate *> genParticles;
+  genParticles.clear();
+  for(edm::View<reco::Candidate>::const_iterator p = particleHandle->begin();
+    p != particleHandle->end(); ++ p ) {
+    genParticles.push_back( & * p );
+  }
 
   edm::Handle<edm::View<T> > muonHandle;
   iEvent.getByLabel(tag(), muonHandle);
@@ -151,6 +163,24 @@ template<class T> void MuonProducer<T>::set(const edm::Event& iEvent) {
     muon(i).ecalisodep=muons[i].second->ecalIsoDeposit()->candEnergy();
     muon(i).bc_d0=NOVAL_F;
     muon(i).reliso=NOVAL_F;   
+
+    const reco::Candidate * gl = muons[i].second->genLepton();
+    
+    std::vector<const reco::Candidate *>::const_iterator found;
+
+    int idx=-1;
+
+    if (gl==NULL){
+      muon(i).gen=NOVAL_I;
+    }else{ 
+
+
+      found = find(genParticles.begin(), genParticles.end(), gl);
+       if(found != genParticles.end()) 
+ 	idx = found - genParticles.begin(); 
+
+        muon(i).gen = idx;
+    }
 
   }
 }
