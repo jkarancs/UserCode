@@ -25,7 +25,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: MuonData.hh,v 1.6 2009/06/05 19:36:38 veszpv Exp $
+// $Id: MuonData.hh,v 1.7 2009/06/29 17:40:34 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -65,6 +65,7 @@ namespace deb {
     int pass;
     int has_trk;
     int is_combined;
+    int gen; 
 
     MuonData() {
       clear();
@@ -106,7 +107,8 @@ namespace deb {
       reliso=NOVAL_F;  
       pass=0; // set 0 to bit at PASS_VALIDITY (pass is invalid)
       has_trk=NOVAL_I; 
-      is_combined=NOVAL_I;     
+      is_combined=NOVAL_I;
+      gen=NOVAL_I;     
     }
 
     std::string list(std::string prefix="") {
@@ -136,7 +138,8 @@ namespace deb {
       ss << prefix << "reliso/F:";
       ss << prefix << "pass/I:";
       ss << prefix << "has_trk/I:";
-      ss << prefix << "is_combined/I";
+      ss << prefix << "is_combined/I:";
+      ss << prefix << "gen/I";
       return ss.str();
     }
 
