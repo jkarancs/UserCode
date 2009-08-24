@@ -160,7 +160,29 @@ process.debNtupleMakerMod = cms.EDFilter(
     drPatJetConfig = cms.PSet(
         name = cms.string("dr_pjet"),
         patJetIndices = cms.vuint32(0, 1, 2, 3)
+    ),
+
+    promptMuonConfig = cms.PSet(
+        mcProcessTag = cms.InputTag("genParticles","","HLT"),
+        name = cms.string('promptmuon'), 
+        processTree  = cms.vstring(
+          'chi1(1000024,-1000024),mu(13,-13)'       
+	
+        ),
+        storeList = cms.vstring("chi1", "mu")
+    ),
+      
+    mcMuonConfig = cms.PSet(
+        mcParticleTag = cms.InputTag("genParticles","","HLT"),
+        name = cms.string('mcmuon'),  
+  
+        mcParticlePdgId = cms.vint32(13,-13),
+        mcParticleStatus = cms.int32(1), 
+        storeNParticles = cms.int32(4),
+        selectionType = cms.string("Origin"),
+        sortBy = cms.string("pt")
     )
+
 )
 
 process.p = cms.Path(

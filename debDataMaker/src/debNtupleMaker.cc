@@ -13,7 +13,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: debNtupleMaker.cc,v 1.10 2009/07/17 14:25:33 veszpv Exp $
+// $Id: debNtupleMaker.cc,v 1.11 2009/07/29 13:35:47 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -29,6 +29,8 @@ debNtupleMaker::debNtupleMaker(const edm::ParameterSet& iConfig) :
   pmet(iConfig.getParameter<edm::ParameterSet>("patMetConfig")),
   pelectron(iConfig.getParameter<edm::ParameterSet>("patElectronConfig")),
   pmuon(iConfig.getParameter<edm::ParameterSet>("patMuonConfig")),
+  promptmuon(iConfig.getParameter<edm::ParameterSet>("promptMuonConfig")),
+  mcmuon(iConfig.getParameter<edm::ParameterSet>("mcMuonConfig")),
   event(iConfig.getParameter<edm::ParameterSet>("EventConfig")),
   dr_pjet_pmet(pjet, pmet, 
        iConfig.getParameter<edm::ParameterSet>("drPatJetPatMetConfig").
@@ -53,6 +55,8 @@ debNtupleMaker::debNtupleMaker(const edm::ParameterSet& iConfig) :
   pmet.addBranch(tree);
   pelectron.addBranch(tree);
   pmuon.addBranch(tree);
+  promptmuon.addBranch(tree);
+  mcmuon.addBranch(tree);
   event.addBranch(tree,"event");
   beamspot.addBranch(tree,"beamspot");
   trigger.addBranch(tree,"trigger");
@@ -80,6 +84,8 @@ bool debNtupleMaker::filter(edm::Event& iEvent, const edm::EventSetup& iSetup){
   trigger.clear();
   pelectron.clear();
   pmuon.clear();
+  promptmuon.clear();
+  mcmuon.clear();
   dr_pjet_pmet.clear();
   dr_pjet.clear();
 
@@ -93,6 +99,11 @@ bool debNtupleMaker::filter(edm::Event& iEvent, const edm::EventSetup& iSetup){
   trigger.set(iEvent);
   pelectron.set(iEvent);
   pmuon.set(iEvent);
+  unsigned int v;                 ///Number of processes found in the event
+  v=promptmuon.findProcess(iEvent);
+  if (v!=0)
+    promptmuon.set(iEvent,0);
+  mcmuon.set(iEvent);
 
 
   // Calculate
@@ -103,6 +114,8 @@ bool debNtupleMaker::filter(edm::Event& iEvent, const edm::EventSetup& iSetup){
   trigger.calculate();
   pelectron.calculate(&beamspot);
   pmuon.calculate(&beamspot);
+  if (v!=0)
+    mcmuon.calculate(promptmuon("chi1")->idx);
 
   // Calculate pass
   //
@@ -116,6 +129,7 @@ bool debNtupleMaker::filter(edm::Event& iEvent, const edm::EventSetup& iSetup){
   //
   pjet.select();
   pmuon.select();
+  mcmuon.select();
   pelectron.select();
 
   // Calculate angles between selected objects
@@ -129,6 +143,8 @@ bool debNtupleMaker::filter(edm::Event& iEvent, const edm::EventSetup& iSetup){
   pmet.setBranch();
   pelectron.setBranch();
   pmuon.setBranch();
+  promptmuon.setBranch();
+  mcmuon.setBranch();
   event.setBranch();
   beamspot.setBranch();
   trigger.setBranch();
