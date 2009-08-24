@@ -81,7 +81,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Container.hh,v 1.3 2009/07/29 13:31:49 veszpv Exp $
+// $Id: Container.hh,v 1.4 2009/08/18 13:12:58 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -297,7 +297,7 @@ template <class C, class D, class K>
 void Container<C,D,K>::stdErr(std::string mesg, ...) {
   va_list argList;
   va_start(argList, mesg);
-  char s[256];
+  char s[10000];
   vsprintf(s, mesg.data(), argList);
   va_end(argList);
   mesg=s;
@@ -310,7 +310,7 @@ template <class C, class D, class K>
 void Container<C,D,K>::stdWarn(std::string mesg, ...) {
   va_list argList;
   va_start(argList, mesg);
-  char s[256];
+  char s[10000];
   vsprintf(s, mesg.data(), argList);
   va_end(argList);
   mesg=s;
@@ -323,7 +323,7 @@ template <class C, class D, class K>
 void Container<C,D,K>::stdMesg(std::string mesg, ...) {
   va_list argList;
   va_start(argList, mesg);
-  char s[256];
+  char s[10000];
   vsprintf(s, mesg.data(), argList);
   va_end(argList);
   mesg=s;
