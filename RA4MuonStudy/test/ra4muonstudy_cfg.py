@@ -50,38 +50,33 @@ process.TFileService = cms.Service("TFileService",
 process.RA4MuonStudyMod = cms.EDFilter(
     "RA4MuonStudy",
 
-
     patMuonConfig = cms.PSet(
-        name = cms.string("patmuon"),
+        name = cms.string("pmuon"),
         storeNMuons = cms.int32(1),
         muonTag = cms.InputTag("allLayer1Muons"),
         selectionType = cms.string("RefAna4JetMetMuon")
     ),
 
     
-    mcProcessConfig = cms.PSet(
-      mcProcessTag = cms.InputTag("genParticles","","HLT"),
-      name = cms.string('promptmuon'), 
-      processTree  = cms.vstring(
-	'~chi1+(1000024,-1000024),mu(13,-13)'
-       
-	#'~g(1000021),~sLbar(-1000003,1000003)',
-        #'~sLbar(-1000003,1000003),c(-4,4),~chi1+(1000024,-1000024)',
-	#'~chi1+(1000024,-1000024),~chi1-(1000024,-1000024),mu(13,-13)'
+    promptMuonConfig = cms.PSet(
+        mcProcessTag = cms.InputTag("genParticles","","HLT"),
+        name = cms.string('promptmuon'), 
+        processTree  = cms.vstring(
+          '~chi1+(1000024,-1000024),mu(13,-13)'       
 	
-      )
-      #storeList = cms.vstring("~chi1", "mu")
+        ),
+        storeList = cms.vstring("~chi1+", "mu")
     ),
       
-    mcParticleConfig = cms.PSet(
-      mcParticleTag = cms.InputTag("genParticles","","HLT"),
-      name = cms.string('mcmuon'),  
-
-      mcParticlePdgId = cms.vint32(13,-13),
-      mcParticleStatus = cms.int32(1), 
-      storeNParticles = cms.int32(4),
-      selectionType = cms.string("Origin"),
-      sortBy = cms.string("pt")
+    mcMuonConfig = cms.PSet(
+        mcParticleTag = cms.InputTag("genParticles","","HLT"),
+        name = cms.string('mcmuon'),  
+  
+        mcParticlePdgId = cms.vint32(13,-13),
+        mcParticleStatus = cms.int32(1), 
+        storeNParticles = cms.int32(4),
+        selectionType = cms.string("Origin"),
+        sortBy = cms.string("pt")
     )
     
 )
