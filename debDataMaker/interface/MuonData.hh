@@ -25,7 +25,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: MuonData.hh,v 1.7 2009/06/29 17:40:34 akapusi Exp $
+// $Id: MuonData.hh,v 1.8 2009/08/22 17:20:27 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -51,11 +51,11 @@ namespace deb {
     float isoR03_trk;  //Tracker Isolation in DeltaR<0.3 cone
     float isoR03_hcal; //Hadron Calorimeter Isolation in DeltaR<0.3 cone
     float isoR03_ecal; //Electromagn. Calorimeter Isolation in DeltaR<0.3 cone
-    float hits;        //Number of track hits
-    float chi2;
-    float ndof;        //Number of degrees of freedom
-    float d0;          //Displacement of the track
-    float phi_trk;     //Phi in the tracker
+    float hits;        //Number of innerTrack hits
+    float chi2;        // chi2 of fitting the globalTrack (combinedMuon)
+    float ndof;        //Deg of freedom in fitting the globalTrack (combMuon)
+    float d0;          //Displacement of the innerTrack
+    float phi_trk;     //Phi of the innerTrack
     int tight;       //Muon Id e.g.:"GlobalMuonPromptTight"
     float hcalisodep;  //Hadron Calorimeter Isolation Deposit
     float ecalisodep;  //Electromagnetic Calorimeter Isolation Deposit
@@ -63,9 +63,24 @@ namespace deb {
     float reliso;      //Relative isolation 
                        //(isoR03_ecal+isoR03_hcal+isoR03_trk/pt)
     int pass;
-    int has_trk;
+    int has_trk;       // has innerTrack() 
     int is_combined;
-    int gen; 
+    int gen;
+
+    float time;
+    float timeerr;
+    int dttimevalid;
+    float dttime;
+    float dttimeerr;
+    float ecaltime;
+    float ecaltimeerr;
+    float ecalenergy;
+    float ecalphi;
+    float ecaltheta;
+    int   ecaldet;
+    float hcaltime;
+    float hcaltimeerr;
+    float hcalenergy;
 
     MuonData() {
       clear();
@@ -104,11 +119,27 @@ namespace deb {
       hcalisodep=NOVAL_F;
       ecalisodep=NOVAL_F;
       bc_d0=NOVAL_F;
-      reliso=NOVAL_F;  
+      reliso=NOVAL_F;
+
       pass=0; // set 0 to bit at PASS_VALIDITY (pass is invalid)
       has_trk=NOVAL_I; 
       is_combined=NOVAL_I;
-      gen=NOVAL_I;     
+      gen=NOVAL_I;
+
+      time=NOVAL_F;
+      timeerr=NOVAL_F;
+      dttimevalid=NOVAL_I;
+      dttime=NOVAL_F;
+      dttimeerr=NOVAL_F;
+      ecaltime=NOVAL_F;
+      ecaltimeerr=NOVAL_F;
+      ecalenergy=NOVAL_F;
+      ecalphi=NOVAL_F;
+      ecaltheta=NOVAL_F;
+      ecaldet=NOVAL_I;
+      hcaltime=NOVAL_F;
+      hcaltimeerr=NOVAL_F;
+      hcalenergy=NOVAL_F;
     }
 
     std::string list(std::string prefix="") {
@@ -136,10 +167,26 @@ namespace deb {
       ss << prefix << "ecalisodep/F:";
       ss << prefix << "bc_d0/F:";
       ss << prefix << "reliso/F:";
+
       ss << prefix << "pass/I:";
       ss << prefix << "has_trk/I:";
       ss << prefix << "is_combined/I:";
       ss << prefix << "gen/I";
+
+      ss << prefix << "time/F:";
+      ss << prefix << "timeerr/F:";
+      ss << prefix << "dttimevalid/I:";
+      ss << prefix << "dttime/F:";
+      ss << prefix << "dttimeerr/F:";
+      ss << prefix << "ecaltime/F:";
+      ss << prefix << "ecaltimeerr/F:";
+      ss << prefix << "ecalenergy/F:";
+      ss << prefix << "ecalphi/F:";
+      ss << prefix << "ecaltheta/F:";
+      ss << prefix << "ecaldet/I:";
+      ss << prefix << "hcaltime/F:";
+      ss << prefix << "hcaltimeerr/F:";
+      ss << prefix << "hcalenergy/F";
       return ss.str();
     }
 

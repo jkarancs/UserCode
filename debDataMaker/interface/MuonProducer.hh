@@ -15,7 +15,7 @@
       int storeNMuons,     : owned by Data<D>, mandatory in constructor
       InputTag objectTag,  : owned by Data<D> but decided here if set
       int selectionType,   : owned by Data<D> but decided here if set
-  
+
 
    iConfig is passed only through the contructor. 
 
@@ -31,7 +31,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: MuonProducer.hh,v 1.2 2009/07/29 10:06:08 veszpv Exp $
+// $Id: MuonProducer.hh,v 1.3 2009/08/22 17:23:52 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -40,6 +40,11 @@
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "SusyAnalysis/debDataMaker/interface/Muon.hh"
 #include "SusyAnalysis/debDataMaker/interface/Producer.hh"
+
+#include "DataFormats/MuonReco/interface/Muon.h"
+#include "DataFormats/EcalDetId/interface/EBDetId.h"
+#include "DataFormats/EcalDetId/interface/EEDetId.h"
+
 
 namespace deb {
 
@@ -136,6 +141,7 @@ template<class T> void MuonProducer<T>::set(const edm::Event& iEvent) {
     muon(i).isoR03_trk=muons[i].second->trackIso();
     muon(i).isoR03_hcal=muons[i].second->hcalIso();
     muon(i).isoR03_ecal=muons[i].second->ecalIso();
+    // This is the innerTrack() - track()
     if(muons[i].second->track().isNonnull()) {
       muon(i).has_trk=1;
       muon(i).hits=muons[i].second->track()->numberOfValidHits();
@@ -148,6 +154,7 @@ template<class T> void MuonProducer<T>::set(const edm::Event& iEvent) {
       muon(i).d0=NOVAL_F;
       muon(i).phi_trk=NOVAL_F;
     }
+    // This is the globalTrack() - combinedMuon()
     if(muons[i].second->combinedMuon().isNonnull()) {
       muon(i).is_combined=1;
       muon(i).chi2=muons[i].second->combinedMuon()->chi2();
@@ -162,7 +169,37 @@ template<class T> void MuonProducer<T>::set(const edm::Event& iEvent) {
     muon(i).hcalisodep=muons[i].second->hcalIsoDeposit()->candEnergy();
     muon(i).ecalisodep=muons[i].second->ecalIsoDeposit()->candEnergy();
     muon(i).bc_d0=NOVAL_F;
-    muon(i).reliso=NOVAL_F;   
+    muon(i).reliso=NOVAL_F;
+
+#if DEB_PROJECT_VERSION >= DEB_CMSSW_VERSION_31X
+#line __LINE__ "Compiling for CMSSW_3_1_X"
+
+    if (muons[i].second->isTimeValid()) {
+      muon(i).dttimevalid=1;
+      muon(i).dttime=muons[i].second->time().timeAtIpInOut;
+      muon(i).dttimeerr=muons[i].second->time().timeAtIpInOutErr;
+    }
+
+    muons(i).ecalenergy=muons[i].second->calEnergy().emMax;
+    if (muons[i].second->calEnergy().ecal_id.subdetId()==EcalEndcap) {
+      EEDetId hitId(muons[i].second->calEnergy().ecal_id);
+      muons(i).ecalphi=hitId.ix();
+      muons(i).ecaltheta=hitId.iy();
+      muons(i).ecaldet=hitId.subdet();
+    } else if (muons[i].second->calEnergy().ecal_id.subdetId()==EcalBarrel) {
+      EBDetId hitId(muons[i].second->calEnergy().ecal_id);
+      muons(i).ecalphi=hitId.iphi();
+      muons(i).ecaltheta=atan(exp((hitId.ieta()-0.5*
+				   (hitId.ieta()/fabs(hitId.ieta()))
+				   )*-1.479/85.
+				  ))*2;
+      muons(i).ecaldet=hitId.subdet();
+      muons(i).ecaltime=muons[i].second->calEnergy().ecal_time-
+	                4.77/sin(muons(i).ecaltheta);
+      muons(i).ecaltimeerr=33./(muons[i].second->calEnergy().emMax/0.3);
+    }
+
+#endif
 
     const reco::Candidate * gl = muons[i].second->genLepton();
     
