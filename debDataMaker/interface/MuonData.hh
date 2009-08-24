@@ -25,7 +25,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: MuonData.hh,v 1.8 2009/08/22 17:20:27 aranyi Exp $
+// $Id: MuonData.hh,v 1.9 2009/08/24 12:33:29 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -171,7 +171,7 @@ namespace deb {
       ss << prefix << "pass/I:";
       ss << prefix << "has_trk/I:";
       ss << prefix << "is_combined/I:";
-      ss << prefix << "gen/I";
+      ss << prefix << "gen/I:";
 
       ss << prefix << "time/F:";
       ss << prefix << "timeerr/F:";
