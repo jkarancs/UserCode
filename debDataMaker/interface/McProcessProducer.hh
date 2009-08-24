@@ -81,7 +81,7 @@
 //
 // Original Author:  Attila ARANYI
 //         Created:  Wed Jun 03 10:28:26 CET 2009
-// $Id: McProcess.hh,v 1.12 2009/07/14 13:20:27 aranyi Exp $
+// $Id: McProcessProducer.hh,v 1.1 2009/08/22 17:05:03 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -176,26 +176,18 @@ public:
 
 };
     
-//typedef McProcess<reco::Candidate,2> McProcess_b;
-
-//template <class T,int N=2> typedef McProcess<T,2> template <class T> McProcess<T>;
 
 
 //--------------------------------- Constructor -------------------------------
-/*
-   List of parameters to gear the object with (passed in iConfig):
-      edm::InputTag triggerResults_,       : owned by this class
-      std::vector<std::string> pathNames_, : owned by this class      
-*/
 
 template<class T,int N> McProcessProducer<T,N>::
   McProcessProducer(const edm::ParameterSet& iConfig) : 
   Producer<McProcess<N> >(
 	iConfig.getParameter<edm::InputTag>("mcProcessTag"), 
 	iConfig.getParameter<std::string>("name"),
-	//getStoreNParticles(iConfig)){ 
-        //iConfig.getParameter< std::vector<std::string> >("storeList")){
-         getParticleNames(iConfig)){
+        iConfig.getParameter< std::vector<std::string> >("storeList")){
+	//getStoreNParticles(iConfig)){         
+        //getParticleNames(iConfig)){
   
   processTreePara_=
     iConfig.getParameter< std::vector<std::string> >("processTree");
