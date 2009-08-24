@@ -1,6 +1,17 @@
 #ifndef SusyAnalysis_debDataMaker_CONST_hh_
 #define SusyAnalysis_debDataMaker_CONST_hh_
 
+//
+// PROJECT OF THIS VERSION USED BY THE PREPROCESSOR !!!
+//
+#define DEB_CMSSW_VERSION 20209
+
+// ----------------------------------------------------
+//
+
+#define DEB_CMSSW_VERSION_31X 31000
+#define DEB_CMSSW_VERSION_2XX 20000
+
   namespace deb{
   
     double const NOVAL_D=-9999.0;
