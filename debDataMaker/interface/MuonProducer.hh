@@ -31,7 +31,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: MuonProducer.hh,v 1.3 2009/08/22 17:23:52 aranyi Exp $
+// $Id: MuonProducer.hh,v 1.4 2009/08/24 12:33:33 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -96,15 +96,19 @@ template<class T> void MuonProducer<T>::set(const edm::Event& iEvent) {
   if (!isValid()) return;
 
   edm::InputTag mcMuonTag("genParticles","","HLT");
-	
-  edm::Handle<edm::View<reco::Candidate> > particleHandle;
-  iEvent.getByLabel(mcMuonTag, particleHandle );
 
   std::vector<const reco::Candidate *> genParticles;
-  genParticles.clear();
-  for(edm::View<reco::Candidate>::const_iterator p = particleHandle->begin();
-    p != particleHandle->end(); ++ p ) {
-    genParticles.push_back( & * p );
+	
+  edm::Handle<edm::View<reco::Candidate> > particleHandle;
+  iEvent.getByLabel(mcMuonTag, particleHandle );    
+  if (!particleHandle.isValid()){
+    stdErr("set() : Invalid tag %s", tag().label().data());
+  }else{  
+    genParticles.clear();
+    for(edm::View<reco::Candidate>::const_iterator p = particleHandle->begin();
+      p != particleHandle->end(); ++ p ) {
+      genParticles.push_back( & * p );
+    }
   }
 
   edm::Handle<edm::View<T> > muonHandle;
@@ -200,23 +204,24 @@ template<class T> void MuonProducer<T>::set(const edm::Event& iEvent) {
     }
 
 #endif
-
-    const reco::Candidate * gl = muons[i].second->genLepton();
-    
-    std::vector<const reco::Candidate *>::const_iterator found;
-
-    int idx=-1;
-
-    if (gl==NULL){
-      muon(i).gen=NOVAL_I;
-    }else{ 
-
-
-      found = find(genParticles.begin(), genParticles.end(), gl);
-       if(found != genParticles.end()) 
- 	idx = found - genParticles.begin(); 
-
-        muon(i).gen = idx;
+    if (particleHandle.isValid()){
+      const reco::Candidate * gl = muons[i].second->genLepton();
+      
+      std::vector<const reco::Candidate *>::const_iterator found;
+  
+      int idx=-1;
+  
+      if (gl==NULL){
+        muon(i).gen=NOVAL_I;
+      }else{ 
+  
+  
+        found = std::find(genParticles.begin(), genParticles.end(), gl);
+        if(found != genParticles.end()) 
+          idx = found - genParticles.begin(); 
+  
+          muon(i).gen = idx;
+      }
     }
 
   }
