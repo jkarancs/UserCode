@@ -25,7 +25,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: JetData.hh,v 1.2 2009/06/03 14:01:00 veszpv Exp $
+// $Id: JetData.hh,v 1.3 2009/06/05 19:36:38 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -58,6 +58,7 @@ namespace deb {
       selectionTypes_["VALID"]=VALID;
       selectionTypes_["RefAna4JetMetMuon"]=RefAna4JetMetMuon;
       selectionTypes_["RefAna4JetMetElectron"]=RefAna4JetMetElectron;
+      selectionTypes_["TopJetSelection"]=TopJetSelection;
     }
     ~JetData() { }
 
@@ -66,7 +67,8 @@ namespace deb {
     enum JetSelectionType {
       VALID=PASS_VALIDITY,
       RefAna4JetMetMuon,
-      RefAna4JetMetElectron
+      RefAna4JetMetElectron,
+      TopJetSelection
     };
 
     void clear() {
