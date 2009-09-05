@@ -15,10 +15,12 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Tools.hh,v 1.2 2009/07/16 17:24:14 veszpv Exp $
+// $Id: Tools.hh,v 1.3 2009/07/29 10:03:01 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
+
+#include "cxxabi.h"
 
 namespace deb {
 
