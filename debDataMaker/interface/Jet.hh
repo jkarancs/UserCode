@@ -27,7 +27,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Jet.hh,v 1.12 2009/07/17 14:25:33 veszpv Exp $
+// $Id: Jet.hh,v 1.13 2009/07/29 10:09:06 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -103,8 +103,8 @@ int Jet::passed(std::string selection, size_t i) {
       return NOVAL_I;
     }
     if(jet(i).pt>=20.0&&
-       TMath::Abs(jet(i).eta)<=2.7){//&&
-       //jet(i).emfrac<=0.9) {
+       TMath::Abs(jet(i).eta)<=2.7 &&
+       jet(i).emfrac<=0.9) {
       return 1;
     }      
     return 0;
