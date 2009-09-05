@@ -219,7 +219,12 @@ template<class T> void TTbarHH<T>::calculate () {
     Vertex4DData& w2 = W2_[T2_.ind(ttbarI(i).second).first];
 
     if (w1.m==NOVAL_F || t1.m==NOVAL_F || 
-	w2.m==NOVAL_F || t2.m==NOVAL_F) continue;
+	w2.m==NOVAL_F || t2.m==NOVAL_F) {
+      
+      std::pair<float, size_t> p(fabs(NOVAL_I), i);
+      chi2_list.push_back(p);
+      continue;
+    }
 
     float chi2=w1.chi2+t1.chi2+w2.chi2+t2.chi2;
     std::pair<float, size_t> p(chi2, i);
@@ -240,9 +245,9 @@ template<class T> void TTbarHH<T>::calculate () {
     Vertex4DData& w1 = W1_[T1_.ind(ttbarI(j).first).first];
     Vertex4DData& w2 = W2_[T2_.ind(ttbarI(j).second).first];
 
-    stdMesg("  calculate(): %d: chi2=%f of %d", i, chi2_list[i].first, j);
-    stdMesg("               m_w1=%f, m_t1=%f, m_w2=%f, m_t2=%f", 
-	    w1.m, t1.m, w2.m, t2.m);
+//     stdMesg("  calculate(): %d: chi2=%f of %d", i, chi2_list[i].first, j);
+//     stdMesg("               m_w1=%f, m_t1=%f, m_w2=%f, m_t2=%f", 
+// 	    w1.m, t1.m, w2.m, t2.m);
 
     tt.chi2=chi2_list[i].first;
     tt.W1q1=W1_.ind(T1_.ind(ttbarI(j).first).first).first;
