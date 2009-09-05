@@ -81,7 +81,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Container.hh,v 1.4 2009/08/18 13:12:58 veszpv Exp $
+// $Id: Container.hh,v 1.5 2009/08/24 12:32:28 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -130,7 +130,10 @@ template <class C, class D, class K=size_t> class Container : public C {
  public:
   //virtual std::string       keyToString(K)=0;
   virtual KeyType   key(typename C::iterator)=0;
-  virtual D*        operator ()(K i) { return &(*this)[i]; } // Need to check i
+  // Commented out because it is dangerous, this operator should not be called
+  // from Container, but from one of the derived classes, lets see what happens
+  //  virtual D*        operator ()(K i) { return &(*this)[i]; }//Needtocheck i
+  virtual D*        operator ()(K i) { return NULL; } // Need to check i
   virtual D*        data(size_t i) { return NULL; }
   inline size_t     storeNObjects() { return storeNObjects_; }
   const std::vector<K>& storeList() { return storeList_; }
@@ -246,7 +249,8 @@ void Container<C,D,K>::setBranch() {
   }
 
   objVoid_.clear();
-  typename C::iterator it=this->begin();
+  typename C::iterator it=this->begin(); // used only when saving sequentially
+  // If only one element and no mapping then do not number the branch
   if (storeNObjects_==1 && storeList_.size()==0) {
     TBranch* br=tree_->GetBranch(name_.data());
     if (br!=NULL) {
@@ -255,38 +259,58 @@ void Container<C,D,K>::setBranch() {
     }
     else stdErr("setBranch(): Did not find branch %s in tree!!!\n", 
 		name_.data());
-    return;
+    return; // single element saved as required
   }
+  // Save storeNObjects_ number of elements either sequentially or mapped
   for (size_t i=0; i<storeNObjects_; i++) {
     std::ostringstream ss;
-    if (storeList_.size()==0) {
+    if (storeList_.size()==0) { // save sequentially, branch is numbered by i
       ss<<name_<<"_"<<i;
-    } else {
+    } else { // save mapped elements, branch is named by the mapping key
       ss<<name_<<"_"<<keyToString(storeList_[i]);
     }
     TBranch* br=tree_->GetBranch(ss.str().data());
-    if (br!=NULL) {
-      if (i<this->size()) {
-	if (storeList_.size()==0) {
-	  br->SetAddress(&(*it));	  
-	} else {
-	  D* data=(*this)(storeList_[i]);
-	  if (data==NULL) {
-	    stdErr("setBranch(): data with key %s does not exist",
-		   keyToString(storeList_[i]).data());
-	    br->SetAddress(&objVoid_);
-	  } else {
-	    br->SetAddress(data);
-	  }
-	  //br->SetAddress(&(*this)[storeList_[i]]);
+    if (br!=NULL) { // branch with appropriate name found
+      if (storeList_.size()==0) { // SAVE SEQUENTIALLY
+	if (i<this->size()) { // make sure element exists
+	  br->SetAddress(&(*it));
+	  it++;
+	} else { // if not, just save the void element
+	  br->SetAddress(&objVoid_);
 	}
-      } else {
-	br->SetAddress(&objVoid_);
+      } else { // SAVE MAPPED ELEMENTS
+	D* data=(*this)(storeList_[i]); // try to find the element (checked)
+	if (data==NULL) { // if not in the container
+	  stdErr("setBranch(): data with key %s does not exist",
+		 keyToString(storeList_[i]).data());
+	  br->SetAddress(&objVoid_);
+	} else { // if it is in the container
+	  br->SetAddress(data);
+	}
       }
+      
+//   if (i<this->size()) {
+// 	if (storeList_.size()==0) {
+// 	  br->SetAddress(&(*it));	  
+// 	} else {
+// 	  D* data=(*this)(storeList_[i]);
+// 	  if (data==NULL) {
+// 	    stdErr("setBranch(): data with key %s does not exist",
+// 		   keyToString(storeList_[i]).data());
+// 	    br->SetAddress(&objVoid_);
+// 	  } else {
+// 	    br->SetAddress(data);
+// 	  }
+// 	  //br->SetAddress(&(*this)[storeList_[i]]);
+// 	}
+//   } else {
+// 	br->SetAddress(&objVoid_);
+//   }
+
     }
     else stdErr("setBranch(): Did not find branch %s in tree!!!\n", 
 		ss.str().data());
-    if (it!=this->end()) it++;
+    //if (it!=this->end()) it++;
   }
 }
 
@@ -334,6 +358,14 @@ void Container<C,D,K>::stdMesg(std::string mesg, ...) {
 
 template <class C, class D, class K> 
 void Container<C,D,K>::print(int verbose=0) {
+  // verbose 0: Print BASIC SETTINGS of object
+  //         1: add LIST OF VARIABLES IF it will be saved in a tree,
+  //            show container MAP in memory of ELEMENTS to be saved (STORED)
+  //         2: show container MAP for ALL ELEMENTS (not stored up to 20)
+  //         3: additionally list VALUES in the elements to be saved (STORED)
+  //         4: show container MAP for ALL ELEMENTS and
+  //            list VALUES of ALL elements in the container (up to 20)
+  //         5: list all elements with all values
   stdMesg("  Number of valid objects in container (size): %d", this->size());
   stdMesg("  Number of objects to be stored (storeNObjects): %d", 
 	  storeNObjects());
@@ -360,6 +392,7 @@ void Container<C,D,K>::print(int verbose=0) {
   stdMesg("  Container map:");
   //  for (size_t i=0; i<this->size(); i++) {
   typename C::iterator iObj=this->begin();
+  size_t nNonStored=0;
   for (size_t i=0; iObj!=this->end(); iObj++) {
     std::string sstore="";
     std::string k=keyToString(key(iObj));
@@ -374,9 +407,17 @@ void Container<C,D,K>::print(int verbose=0) {
 	if (j!=storeList_.size()) sstore=" * [STORE]";
       }
     }
-    stdMesg("   (%s): 0x%x - 0x%x %s", 
-	    k.data(), &(*iObj), &(*iObj)+sizeof(D), sstore.data());
-    if (verbose<2) continue;
+    // conditions:
+    if (sstore.empty()) nNonStored++;
+    if (!sstore.empty() || (verbose>=2 && nNonStored<21) || verbose>=4) {
+      stdMesg("   (%s): 0x%x - 0x%x %s", 
+	      k.data(), &(*iObj), &(*iObj)+sizeof(D), sstore.data());
+    }
+    if (verbose<3 || (sstore.empty() && verbose==3) || 
+	(sstore.empty() && verbose==4 && nNonStored>20)) {
+      i++; 
+      continue;
+    }
     std::map<std::string,std::pair<char,size_t> >::const_iterator it;
     for (it=vars_.begin(); it!=vars_.end(); it++) {
       std::ostringstream ss;
