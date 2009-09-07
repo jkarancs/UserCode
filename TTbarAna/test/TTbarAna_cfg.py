@@ -201,7 +201,7 @@ process.source = cms.Source("PoolSource",
 )
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(10)
+    input = cms.untracked.int32(-1)
 )
 
 process.TFileService = cms.Service("TFileService",
@@ -214,7 +214,7 @@ process.TTbarAnaMod = cms.EDFilter(
 
     patJetConfig = cms.PSet(
         name = cms.string("pjet"),
-        storeNJets = cms.uint32(6),
+        storeNJets = cms.uint32(8),
         jetTag = cms.InputTag("allLayer1JetsIC5"), ## try iterative cone
         selectionType = cms.string("TopJetSelection"),
         correction = cms.vstring("HAD", "UDS"),
@@ -268,6 +268,50 @@ process.TTbarAnaMod = cms.EDFilter(
 ##        ),
 ##        matchParticles = cms.vuint32(2, 3, 4), ## q, qbar, b
 ##    )
+
+    mcTtbarHH1ProcessConfig = cms.PSet(
+        name = cms.string("mcttbar1"),
+        mcProcessTag = cms.InputTag("genParticles","","HLT"),
+        processTree  = cms.vstring(
+        't(6,-6),W(24,-24),b(5,-5)',
+        'W(24,-24),q(1,2,3,4),qbar(-1,-2,-3,-4)'
+       )
+    ),
+
+    mcTtbarHH2ProcessConfig = cms.PSet(
+        name = cms.string("mcttbar2"),
+        mcProcessTag = cms.InputTag("genParticles","","HLT"),
+        processTree  = cms.vstring(
+        't(6,-6),W(24,-24),b(5,-5)',
+        'W(24,-24),q(1,2,3,4),qbar(-1,-2,-3,-4)'
+       )
+    ),
+
+##    drMcTop1PatJetConfig = cms.PSet(
+##        name = cms.string("dr_t1_pjet"),
+##        storePatJetIndices = cms.vuint32(0, 1, 2, 3, 4, 5, 6, 7),
+##        storeMcTopIndices = cms.vstring("b","q","qbar")
+##    ),
+
+##    drMcTop2PatJetConfig = cms.PSet(
+##        name = cms.string("dr_t2_pjet"),
+##        storePatJetIndices = cms.vuint32(0, 1, 2, 3, 4, 5, 6, 7),
+##        storeMcTopIndices = cms.vstring("b","q","qbar")
+##    ),
+
+    matchTtbarQuarksJets = cms.PSet(
+        ## two DeltaR will compute angles between mcTtbarHH{1,2} and Pat Jets
+        ## the following 4 parameters are needed only to save DeltaR on ntuples
+        ## for later cross-check of the DR values
+        nameDr1 = cms.string("dr_t1_pjet"),
+        nameDr2 = cms.string("dr_t2_pjet"),
+        storeDrMatchQuarks = cms.vstring("b","q","qbar"),
+        storeDrPatJetIndices = cms.vuint32(0, 1, 2, 3, 4, 5, 6, 7),
+        ## jets matched to quarks will be collected in an MContainer and saved
+        nameJets = cms.string("qjet"),
+        matchQuarks = cms.vstring("q", "qbar", "b"),
+        storeMatchedJets = cms.vstring("b1","q1","qbar1","b2","q2","qbar2")
+    )
 
 )
 
