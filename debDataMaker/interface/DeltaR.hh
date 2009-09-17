@@ -11,34 +11,11 @@
 
  Implementation:
 
-   !!!! See usage of inherited functions in Data.hh source code !!!!
-
-   unsigned int ij(unsigned int i, unsigned int j):
-       provides mapping between the (i,j) parameters of the two input classes 
-       and the single 'i' parameter used in data(i). PRIVATE, used in the
-       operator () and in inline DeltaRData& dr(unsigned int u, unsigned int v)
-
-   The following fuctions should be overloaded here according to the exact 
-   definition of D in Data<D> :
-
-      void set(const edm::Event&) (virtual): NOT IMPLEMENTED, 
-         we do not read any information from the CMSSW data files
-
-      void calculate(?) (virtual): 
-         calculates values that depend on other data models. WARNING, since the
-	 MetData object does not have 'eta' parameter at the moment, in the
-         implementation of calculate, the class template parameters must be
-	 fully specified if U or V inherits from MetData
-
-      DeltaRData& operator () (unsigned int i, unsigned int j):
-         provides the (i,j) element of the Data, overloads the single parameter
-	 version in Data<D>
-
 */
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Sun Mar 24 12:15:11 CET 2009
-// $Id: DeltaR.hh,v 1.7 2009/07/29 13:37:00 veszpv Exp $
+// $Id: DeltaR.hh,v 1.8 2009/08/18 13:13:34 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -54,7 +31,7 @@ namespace deb {
 template<class U,class V> 
 class DeltaR
   : public PContainer<typename U::KeyType,typename V::KeyType,DeltaRData>{
-
+ public:
   typedef PContainer<typename U::KeyType,typename V::KeyType,DeltaRData> CBase;
   typedef typename CBase::KeyType1                  KeyType1;
   typedef typename CBase::KeyType2                  KeyType2;
@@ -69,7 +46,7 @@ class DeltaR
   //       KeyType    := std::pair<KeyType1,KeyType2>
   //       KeyList1/2 := std::vector<KeyType1/2>
   //       KeyList    := std::vector<std::pair<KeyType1,KeyType2> >
- public:
+
   // One parameter -> type_="triangle"
   DeltaR(U&, std::string name);
   DeltaR(U&, std::string name, size_t storeNObjects);
@@ -92,9 +69,12 @@ class DeltaR
   inline int getMode() { return mode_; }
   inline void setMode(int mode) { 
     this->stdMesg("Mode set to calculate DR for %s pairs\n", 
-	    (mode==0 ? "ALL (mode=0)" : "ONLY STORED"));
+		  (mode==0 ? "ALL (mode=0)" : "ONLY STORED"));
     mode_=mode; 
   }
+  
+  typename CBase::iterator findMinDrForFirst(KeyType1 u);
+  typename CBase::iterator findMinDr();
 
  private:
   // No need to check if KeyType (u,v) exists, since we create it in 
@@ -284,6 +264,38 @@ inline void DeltaR<U,V>::calculate_deta(U_iterator it1, V_iterator it2) {
   } else {
     dr(u,v).eta=NOVAL_F;
   }
+}
+
+//-------------------------------- findMinDr() --------------------------------
+
+template<class U,class V> 
+typename DeltaR<U,V>::CBase::iterator DeltaR<U,V>::findMinDr() {
+  float minDr=fabs(NOVAL_F);
+  typename CBase::iterator ret=this->end();
+  typename CBase::iterator it=this->begin();
+  for (; it!=this->end(); it++) {
+    if (it->second.r>=minDr) continue; 
+    minDr=it->second.r;
+    ret=it;
+  }
+  return ret;
+}
+
+//----------------------------- findMinDrForFirst() ---------------------------
+
+template<class U,class V> 
+typename DeltaR<U,V>::CBase::iterator 
+DeltaR<U,V>::findMinDrForFirst(KeyType1 u) {
+  float minDr=fabs(NOVAL_F);
+  typename CBase::iterator it=this->begin();
+  typename CBase::iterator ret=this->end();
+  for (; it!=this->end(); it++) {
+    if (it->first.first!=u) continue;
+    if (it->second.r>=minDr) continue; 
+    minDr=it->second.r;
+    ret=it;
+  }
+  return ret;
 }
 
 //-----------------------------------------------------------------------------
