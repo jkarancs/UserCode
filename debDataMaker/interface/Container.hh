@@ -81,7 +81,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Container.hh,v 1.5 2009/08/24 12:32:28 veszpv Exp $
+// $Id: Container.hh,v 1.6 2009/09/05 09:19:59 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -210,6 +210,10 @@ void Container<C,D,K>::addBranch(TTree* tree){
     return;
   }
   if (storeNObjects_==0) return;
+  if (name_.empty()) {
+    stdErr("addBranch(): Cannot add to tree without name.");
+    return;
+  }
   if (tree_!=NULL) {
     stdWarn("addBranch(): Object is already added to a tree.\n");
     return;
