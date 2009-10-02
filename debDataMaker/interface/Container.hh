@@ -81,7 +81,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Container.hh,v 1.6 2009/09/05 09:19:59 veszpv Exp $
+// $Id: Container.hh,v 1.7 2009/09/17 14:53:33 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -163,7 +163,8 @@ template <class C, class D, class K=size_t> class Container : public C {
   void              select();
   virtual int       passed(std::string, typename C::const_iterator);
   virtual int       passed(std::string, size_t);
-
+  virtual int       passed(std::string, size_t, 
+    std::vector<std::pair<std::string,int> >&);
 };
 
 //--------------------------------- Constructor -------------------------------
@@ -192,7 +193,7 @@ void Container<C,D,K>::init(std::vector<K>& storeList){
   init(storeList_.size());
 }
 
-// //------------------------------- keyToString() -------------------------------
+//------------------------------- keyToString() -------------------------------
 
 // template <class C, class D, class K> 
 // std::string Container<C,D,K>::keyToString(K key) {
@@ -510,6 +511,13 @@ int Container<C,D,K>::passed(std::string selection,
 
 template <class C, class D, class K>
 int Container<C,D,K>::passed(std::string selection, size_t i) {
+  stdErr("passed(): virtual function passed() has not been implemented\n");
+  return NOVAL_I;
+}
+
+template <class C, class D, class K>
+int Container<C,D,K>::passed(std::string selection, size_t i,
+  std::vector<std::pair<std::string,int> > &cutflow) {
   stdErr("passed(): virtual function passed() has not been implemented\n");
   return NOVAL_I;
 }

@@ -16,7 +16,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: VContainer.hh,v 1.1 2009/07/17 14:49:38 veszpv Exp $
+// $Id: VContainer.hh,v 1.1 2009/07/29 13:38:47 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -64,7 +64,8 @@ public:
 
   virtual int      passed(std::string,typename std::vector<D>::const_iterator);
   virtual int      passed(std::string, size_t);
-
+  virtual int       passed(std::string, size_t, 
+    std::vector<std::pair<std::string,int> >&);
 };
 
 
@@ -83,6 +84,12 @@ template <class D> int VContainer<D>::passed(std::string selection, size_t i) {
   return NOVAL_I;
 }
 
+template <class D> int VContainer<D>::passed(std::string selection, size_t i,
+  std::vector<std::pair<std::string,int> > &cutflow) {
+  this->stdErr("passed(): virtual function passed() has not been "	\
+	       "implemented\n");
+  return NOVAL_I;
+}
 
 //---------------------------------- getKeys() --------------------------------
 
