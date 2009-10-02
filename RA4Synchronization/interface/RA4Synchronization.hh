@@ -15,58 +15,46 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Mon Jun 01 17:54:26 CET 2009
-// $Id$
+// $Id: RA4Synchronization.hh,v 1.1.1.1 2009/07/03 10:11:55 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
 
 // system include files 
-#include <memory>
 
-// user include files
+//user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDFilter.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/EventSetup.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
 
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
+
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "PhysicsTools/UtilAlgos/interface/TFileService.h"
-#include "FWCore/ParameterSet/interface/InputTag.h"
 
-#include "SimGeneral/HepPDTRecord/interface/ParticleDataTable.h"
-#include "DataFormats/Candidate/interface/Candidate.h"
-#include "DataFormats/Candidate/interface/CandidateFwd.h"
-#include "DataFormats/Common/interface/Ref.h"
-#include "DataFormats/Common/interface/View.h"
-#include "FWCore/Framework/interface/ESHandle.h"
-
-#include "DataFormats/JetReco/interface/GenJet.h"
-#include "DataFormats/JetReco/interface/CaloJet.h"
-#include "DataFormats/METReco/interface/GenMET.h"
-#include "DataFormats/METReco/interface/GenMETFwd.h"
-#include "DataFormats/METReco/interface/CaloMET.h"
-#include "DataFormats/PatCandidates/interface/Electron.h"
 #include "DataFormats/PatCandidates/interface/Muon.h"
+#include "DataFormats/PatCandidates/interface/Electron.h"
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
 
-#include "DataFormats/Common/interface/TriggerResults.h"
-#include "FWCore/Framework/interface/TriggerNames.h"
 
 #include "TTree.h"
 #include "TH1.h"
 #include "TMath.h"
-#include "TLorentzVector.h"
+#include "TLorentzVector.h"   
 
-#include "SusyAnalysis/debDataMaker/interface/CONST.hh"
-#include "SusyAnalysis/debDataMaker/interface/Jet.hh"
-#include "SusyAnalysis/debDataMaker/interface/Met.hh"
-#include "SusyAnalysis/debDataMaker/interface/Electron.hh"
-#include "SusyAnalysis/debDataMaker/interface/Muon.hh"
-#include "SusyAnalysis/debDataMaker/interface/Event.hh"
-#include "SusyAnalysis/debDataMaker/interface/Beamspot.hh"
+#include "DataFormats/Common/interface/TriggerResults.h"
+#include "FWCore/Framework/interface/TriggerNames.h"
+
 #include "SusyAnalysis/debDataMaker/interface/Trigger.hh"
+#include "SusyAnalysis/debDataMaker/interface/MuonProducer.hh"
+#include "SusyAnalysis/debDataMaker/interface/ElectronProducer.hh"
+#include "SusyAnalysis/debDataMaker/interface/JetProducer.hh"
+#include "SusyAnalysis/debDataMaker/interface/MetProducer.hh"
+#include "SusyAnalysis/debDataMaker/interface/Event.hh"
+
+#include <iostream>    
+#include <fstream> 
 
 using namespace deb;
 
@@ -77,10 +65,10 @@ public:
 
   Trigger<edm::TriggerResults> trigger;
   Beamspot<reco::BeamSpot> beamspot;
-  Jet<pat::Jet> pjet;
-  Met<pat::MET> pmet;
-  Electron<pat::Electron> pelectron;
-  Muon<pat::Muon> pmuon;
+  JetProducer<pat::Jet> pjet;
+  MetProducer<pat::MET> pmet;
+  ElectronProducer<pat::Electron> pelectron;
+  MuonProducer<pat::Muon> pmuon;
   Event event;
 
 public:
@@ -92,6 +80,11 @@ public:
   int cutelenum_RA4mu;
   int cutjet_RA4mu;
   int cutmet_RA4mu;
+
+  int cutmuonum_RA4mu_cutflow;
+  int cutelenum_RA4mu_cutflow;
+  int cutjet_RA4mu_cutflow;
+  int cutmet_RA4mu_cutflow;
 
   int cuthlt_RA4el;
   int cutelenum_RA4el;

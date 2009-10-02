@@ -13,7 +13,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Mon Jun 01 17:54:26 CET 2009
-// $Id$
+// $Id: RA4Synchronization.cc,v 1.1.1.1 2009/07/03 10:11:55 akapusi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -29,7 +29,8 @@ RA4Synchronization::RA4Synchronization(const edm::ParameterSet& iConfig) :
   pelectron(iConfig.getParameter<edm::ParameterSet>("patElectronConfig")),
   pmuon(iConfig.getParameter<edm::ParameterSet>("patMuonConfig")),
   event(iConfig.getParameter<edm::ParameterSet>("EventConfig")),
-  selection(iConfig.getParameter<edm::ParameterSet>("EventConfig").getParameter<std::vector<std::string> >("selectionType"))
+  selection(iConfig.getParameter<edm::ParameterSet>("EventConfig").
+    getParameter<std::vector<std::string> >("selectionType"))
 {
   
   totaleventnum=0;
@@ -38,6 +39,11 @@ RA4Synchronization::RA4Synchronization(const edm::ParameterSet& iConfig) :
   cutelenum_RA4mu=0;
   cutjet_RA4mu=0;
   cutmet_RA4mu=0;
+
+  cutmuonum_RA4mu_cutflow=0;
+  cutelenum_RA4mu_cutflow=0;
+  cutjet_RA4mu_cutflow=0;
+  cutmet_RA4mu_cutflow=0;
 
   cuthlt_RA4el=0;
   cutelenum_RA4el=0;
@@ -84,7 +90,6 @@ bool RA4Synchronization::filter(edm::Event& iEvent,
 
   pjet.calculate();
   pmet.calculate();
-  // event.calculate();
   beamspot.calculate();
   trigger.calculate();
   pelectron.calculate(&beamspot);
@@ -113,6 +118,12 @@ bool RA4Synchronization::filter(edm::Event& iEvent,
     cutelenum_RA4mu=NOVAL_I;
     cutjet_RA4mu=NOVAL_I;
     cutmet_RA4mu=NOVAL_I;
+
+    cutmuonum_RA4mu_cutflow=NOVAL_I;
+    cutelenum_RA4mu_cutflow=NOVAL_I;
+    cutjet_RA4mu_cutflow=NOVAL_I;
+    cutmet_RA4mu_cutflow=NOVAL_I;
+
   }
   if (string_ele==0){
     cuthlt_RA4el=NOVAL_I;
@@ -127,12 +138,25 @@ bool RA4Synchronization::filter(edm::Event& iEvent,
     unsigned int nummuo=0;
     unsigned int numele=0;
     unsigned int numjetpt_mu=0;
-    unsigned int numjetpt_el=0;
-    std::vector<int> muonpass(pmuon.size());
+    unsigned int numjetpt_el=0;  
+
+    std::vector<int> muonpass(pmuon.size()); 
+
+    unsigned int nummuo_cutflow=0;
+    std::vector<std::pair<std::string,int> > cutflow;
+    std::vector<int> muonpass_cutflow(pmuon.size());
+
     for (unsigned int i=0;i<pmuon.size();i++){
       muonpass[i]=pmuon.passed(selection[j],i);
+
+      cutflow.clear();
+      muonpass_cutflow[i]=pmuon.passed(selection[j],i,cutflow);     
+
       if(muonpass[i]==1){
 	nummuo++;
+      }
+      if(muonpass_cutflow[i]==1){
+	nummuo_cutflow++;
       }
     }
     std::vector<int> electronpass(pelectron.size());
@@ -155,7 +179,7 @@ bool RA4Synchronization::filter(edm::Event& iEvent,
       }
       if(pjet.jet(i).pt==NOVAL_F||
 	 pjet.jet(i).eta==NOVAL_F||
-	 pjet.jet(i).emfrac==NOVAL_F){
+	 pjet.jet(i).hadfrac==NOVAL_F){
 	std::cout << "NOVAL value in the cut criteria"<< std::endl;
       }
       else {
@@ -170,6 +194,9 @@ bool RA4Synchronization::filter(edm::Event& iEvent,
     
     //Selection
 
+      
+     std::vector<std::string> corr=pmet.getCorrections();
+
     if(selection[j].compare("RefAna4JetMetMuon")==0){  
       if(nummuo==1){
 	cutmuonum_RA4mu++;
@@ -177,12 +204,26 @@ bool RA4Synchronization::filter(edm::Event& iEvent,
 	  cutelenum_RA4mu++;
 	  if(numjetpt_mu>=3){
 	    cutjet_RA4mu++;
-	    if(pmet.met(0).et>100.0){
+	    if(pmet.met(corr[0]).et>100.0){
 	      cutmet_RA4mu++;
 	    }
 	  }
 	}
       }
+
+      if(nummuo_cutflow==1){
+	cutmuonum_RA4mu_cutflow++;
+	if(numele==0){
+	  cutelenum_RA4mu_cutflow++;
+	  if(numjetpt_mu>=3){
+	    cutjet_RA4mu_cutflow++;
+	    if(pmet.met(corr[0]).et>100.0){
+	      cutmet_RA4mu_cutflow++;
+	    }
+	  }
+	}
+      }
+
     }      
        
     if(selection[j].compare("RefAna4JetMetElectron")==0){  
@@ -192,7 +233,7 @@ bool RA4Synchronization::filter(edm::Event& iEvent,
 	  cutelenum_RA4el++;
 	  if(numjetpt_el>=3){
 	    cutjet_RA4el++;
-	    if(pmet.met(0).et>100.0){
+	    if(pmet.met(corr[0]).et>100.0){
 	      cutmet_RA4el++;
 	    }
 	  }
@@ -217,6 +258,11 @@ void RA4Synchronization::endJob() {
   std::cout << "After number of electron cut:" << cutelenum_RA4mu << std::endl;
   std::cout << "After jet cut:" << cutjet_RA4mu << std::endl;
   std::cout << "After met cut:" << cutmet_RA4mu << std::endl;
+
+  std::cout << "After number of muon cut (cutflow):" << cutmuonum_RA4mu_cutflow << std::endl;
+  std::cout << "After number of electron cut (cutflow):" << cutelenum_RA4mu_cutflow << std::endl;
+  std::cout << "After jet cut (cutflow):" << cutjet_RA4mu_cutflow << std::endl;
+  std::cout << "After met cut (cutflow):" << cutmet_RA4mu_cutflow << std::endl;
 
   std::cout << "Reference Analysis 4 Jet+Met+Electron:" << std::endl;
   std::cout << "After hlt cut:" << cuthlt_RA4el << std::endl;
