@@ -13,7 +13,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Mon Jun 01 17:54:26 CET 2009
-// $Id: RA4Synchronization.cc,v 1.1.1.1 2009/07/03 10:11:55 akapusi Exp $
+// $Id: RA4Synchronization.cc,v 1.2 2009/10/02 07:32:13 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -140,25 +140,35 @@ bool RA4Synchronization::filter(edm::Event& iEvent,
     unsigned int numjetpt_mu=0;
     unsigned int numjetpt_el=0;  
 
-    std::vector<int> muonpass(pmuon.size()); 
+    std::vector<int> muonpass(pmuon.size());    
+    
+    for (unsigned int i=0;i<pmuon.size();i++){
+	    muonpass[i]=pmuon.passed(selection[j],i);     
+
+	    if(muonpass[i]==1){
+		    nummuo++;
+	    }   
+    } 
 
     unsigned int nummuo_cutflow=0;
     std::vector<std::pair<std::string,int> > cutflow;
     std::vector<int> muonpass_cutflow(pmuon.size());
 
     for (unsigned int i=0;i<pmuon.size();i++){
-      muonpass[i]=pmuon.passed(selection[j],i);
-
       cutflow.clear();
       muonpass_cutflow[i]=pmuon.passed(selection[j],i,cutflow);     
 
-      if(muonpass[i]==1){
-	nummuo++;
-      }
       if(muonpass_cutflow[i]==1){
 	nummuo_cutflow++;
       }
+   
+//       std::cout<<"muon["<<i<<"], cutflow:"<<muonpass_cutflow[i]<<std::endl;
+//       for (unsigned int ii=0;ii<cutflow.size();ii++){
+// 	      std::cout<<"   "<<cutflow[ii].first<<" "<<cutflow[ii].second<<std::endl;           
+//       }
+    
     }
+    
     std::vector<int> electronpass(pelectron.size());
     for (unsigned int i=0;i<pelectron.size();i++){
       electronpass[i]=pelectron.passed(selection[j],i);
