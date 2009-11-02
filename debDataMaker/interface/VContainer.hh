@@ -16,7 +16,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: VContainer.hh,v 1.1 2009/07/29 13:38:47 veszpv Exp $
+// $Id: VContainer.hh,v 1.2 2009/10/02 07:26:55 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -64,8 +64,10 @@ public:
 
   virtual int      passed(std::string,typename std::vector<D>::const_iterator);
   virtual int      passed(std::string, size_t);
-  virtual int       passed(std::string, size_t, 
-    std::vector<std::pair<std::string,int> >&);
+  virtual int      passed(std::string, typename std::vector<D>::const_iterator, 
+			  std::vector<std::pair<std::string,int> >&);
+  virtual int      passed(std::string, size_t, 
+			  std::vector<std::pair<std::string,int> >&);
 };
 
 
@@ -84,8 +86,15 @@ template <class D> int VContainer<D>::passed(std::string selection, size_t i) {
   return NOVAL_I;
 }
 
+template <class D>
+int VContainer<D>::passed(std::string selection, 
+			  typename std::vector<D>::const_iterator it,
+			  std::vector<std::pair<std::string,int> > &cutflow){
+  return this->passed(selection, it-this->begin(),cutflow);
+}
+
 template <class D> int VContainer<D>::passed(std::string selection, size_t i,
-  std::vector<std::pair<std::string,int> > &cutflow) {
+			   std::vector<std::pair<std::string,int> > &cutflow) {
   this->stdErr("passed(): virtual function passed() has not been "	\
 	       "implemented\n");
   return NOVAL_I;
