@@ -15,7 +15,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Mon Jun 01 17:54:26 CET 2009
-// $Id: RA4Synchronization.hh,v 1.1.1.1 2009/07/03 10:11:55 akapusi Exp $
+// $Id: RA4Synchronization.hh,v 1.2 2009/10/02 07:31:58 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -90,6 +90,10 @@ public:
   int cutelenum_RA4el;
   int cutjet_RA4el;
   int cutmet_RA4el;
+
+  std::vector<std::pair<std::string,std::vector<int> > > muonCutFlow;
+  int numberofmuons;
+  int numberofmuons_cutflow;
 
 private:
   virtual void beginJob(const edm::EventSetup&);

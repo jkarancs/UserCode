@@ -13,7 +13,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Mon Jun 01 17:54:26 CET 2009
-// $Id: RA4Synchronization.cc,v 1.2 2009/10/02 07:32:13 aranyi Exp $
+// $Id: RA4Synchronization.cc,v 1.3 2009/11/02 15:08:10 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -50,6 +50,8 @@ RA4Synchronization::RA4Synchronization(const edm::ParameterSet& iConfig) :
   cutjet_RA4el=0;
   cutmet_RA4el=0;
 
+  numberofmuons=0;
+  numberofmuons_cutflow=0;
 }
 
 
@@ -146,28 +148,71 @@ bool RA4Synchronization::filter(edm::Event& iEvent,
 	    muonpass[i]=pmuon.passed(selection[j],i);     
 
 	    if(muonpass[i]==1){
-		    nummuo++;
+              nummuo++;
+              numberofmuons++;
 	    }   
     } 
 
-    unsigned int nummuo_cutflow=0;
-    std::vector<std::pair<std::string,int> > cutflow;
+    unsigned int nummuo_cutflow=0;    
     std::vector<int> muonpass_cutflow(pmuon.size());
 
-    for (unsigned int i=0;i<pmuon.size();i++){
-      cutflow.clear();
-      muonpass_cutflow[i]=pmuon.passed(selection[j],i,cutflow);     
 
-      if(muonpass_cutflow[i]==1){
-	nummuo_cutflow++;
+
+
+
+
+    for (unsigned int i=0;i<pmuon.size();i++){
+      std::vector<std::pair<std::string,int> > cutflow;
+      
+      muonpass_cutflow[i]=pmuon.passed(selection[j],i,cutflow);     
+     
+      if (muonCutFlow.size()==0) { 
+        muonCutFlow.resize(cutflow.size());
+        std::vector<int> axu;
+        axu.push_back(0);
+        axu.push_back(0);
+        for (unsigned int ii=0;ii<cutflow.size();ii++){          
+          muonCutFlow[ii].first=cutflow[ii].first;
+          muonCutFlow[ii].second=axu;
+        }
+      }
+      
+      if (muonpass_cutflow[i]!=NOVAL_I){
+
+        int prev=1;
+        for (unsigned int ii=0;ii<cutflow.size();ii++){        
+          if (ii>0 && prev!=0){ 
+            prev=cutflow[ii-1].second;
+          }          
+          if (prev==1){
+            if (i==0)  
+              muonCutFlow[ii].second[0]=
+                muonCutFlow[ii].second[0]+cutflow[ii].second;
+            if (i==1)  
+              muonCutFlow[ii].second[1]=
+                muonCutFlow[ii].second[1]+cutflow[ii].second;
+            if (ii==cutflow.size()-1 && cutflow[ii].second==1){
+              nummuo_cutflow++;
+              numberofmuons_cutflow++;          
+            }
+          }
+        }
       }
    
 //       std::cout<<"muon["<<i<<"], cutflow:"<<muonpass_cutflow[i]<<std::endl;
 //       for (unsigned int ii=0;ii<cutflow.size();ii++){
-// 	      std::cout<<"   "<<cutflow[ii].first<<" "<<cutflow[ii].second<<std::endl;           
+//               std::cout<<" "<<cutflow[ii].first<<
+//                               " "<<cutflow[ii].second<<std::endl;           
 //       }
     
     }
+
+    
+
+
+
+
+
     
     std::vector<int> electronpass(pelectron.size());
     for (unsigned int i=0;i<pelectron.size();i++){
@@ -280,6 +325,27 @@ void RA4Synchronization::endJob() {
   std::cout << "After jet cut:" << cutjet_RA4el << std::endl;
   std::cout << "After met cut:" << cutmet_RA4el << std::endl;
 
+
+//   for (unsigned int i=0;i<muonCuts.size();i++){
+//     std::cout<<"muon["<<i<<"]:"<<std::endl;
+//     for (unsigned int ii=0;ii<muonCuts[i].size();ii++){
+//       std::cout<<" "<<muonCuts[i][ii].first<<
+//           " "<<muonCuts[i][ii].second<<std::endl;           
+//     }
+//   }
+
+  std::cout<<std::endl;
+  std::cout<<"numberofmuons: "<<numberofmuons<<std::endl;
+
+  std::cout<<std::endl;
+  std::cout<<"numberofmuons_cutflow: "<<numberofmuons_cutflow<<std::endl;
+
+  std::cout<<std::endl;
+  std::cout<<"muonCutFlow:"<<std::endl;
+  for (unsigned int i=0;i<muonCutFlow.size();i++){
+      std::cout<<" "<<muonCutFlow[i].first<<
+          " "<<muonCutFlow[i].second[0]<<" "<<muonCutFlow[i].second[1]<<std::endl;           
+  }     
 }
 
 DEFINE_FWK_MODULE(RA4Synchronization);
