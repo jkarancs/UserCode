@@ -27,7 +27,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Muon.hh,v 1.17 2009/11/02 15:00:40 aranyi Exp $
+// $Id: Muon.hh,v 1.18 2009/11/06 14:17:00 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -51,8 +51,10 @@ class Muon : public VContainer<MuonData> {
 
   // Inherited functions to be overloaded
   void calculate (Beamspot<reco::BeamSpot> *beamspot=NULL);
-  int passed(std::string, size_t);
-  int passed(std::string, size_t, std::vector<std::pair<std::string,int> >&);
+  int passed(std::string selection, size_t i) {
+    return passed(selection, i, NULL);
+  };
+  int passed(std::string, size_t, std::vector<std::pair<std::string,int> >*);
 
 };
   
@@ -92,136 +94,137 @@ void Muon::calculate (Beamspot<reco::BeamSpot>  *beamspot){
 
 //--------------------------------- passed() ----------------------------------
 
-int Muon::passed(std::string selection, size_t i) { 
-
-  if (!isValid()) return NOVAL_I;
-
-
-  if (selection=="RefAna4JetMetMuon") {
-
-    if( muon(i).tight==NOVAL_I ||
-        muon(i).pt==NOVAL_F ||
-        muon(i).eta==NOVAL_F ||
-        muon(i).isoR03_trk==NOVAL_F ||
-        muon(i).isoR03_hcal==NOVAL_F ||
-        muon(i).isoR03_ecal==NOVAL_F ||
-        muon(i).has_trk==NOVAL_I ||
-        muon(i).is_combined==NOVAL_I ||
-        (muon(i).is_combined==1 && 
-        (muon(i).chi2==NOVAL_F || muon(i).ndof==NOVAL_F)) ||
-        (muon(i).has_trk==1 && 
-        (muon(i).bc_d0==NOVAL_F||muon(i).hits==NOVAL_F))) {
-        stdErr("Muon::passed() : NOVAL value in the cut criteria");
-        return NOVAL_I;
-    }
-
-    if (muon(i).ndof==0.0){
-      stdErr("Muon::passed() : division by zero (ndof=0)");
-      return NOVAL_I;
-    }
-
-    if(muon(i).tight==1 &&
-       muon(i).pt>=10.0 &&
-       TMath::Abs(muon(i).eta)<=2.1 &&
-       muon(i).chi2/muon(i).ndof<10.0 &&
-       TMath::Abs(muon(i).bc_d0)<=0.2 &&
-       muon(i).hits>=11.0 &&
-       muon(i).isoR03_trk<6.0 &&
-       muon(i).isoR03_hcal<6.0 &&
-       muon(i).isoR03_ecal<6.0 &&
-       muon(i).has_trk==1 &&
-       muon(i).is_combined==1) {
-      return 1;
-    }
-
-    return 0;
-  }
-
-
-  return NOVAL_I;
-}
+// int Muon::passed(std::string selection, size_t i) { 
+// 
+//   if (!isValid()) return NOVAL_I;
+// 
+// 
+//   if (selection=="RefAna4JetMetMuon") {
+// 
+//     if( muon(i).tight==NOVAL_I ||
+//         muon(i).pt==NOVAL_F ||
+//         muon(i).eta==NOVAL_F ||
+//         muon(i).isoR03_trk==NOVAL_F ||
+//         muon(i).isoR03_hcal==NOVAL_F ||
+//         muon(i).isoR03_ecal==NOVAL_F ||
+//         muon(i).has_trk==NOVAL_I ||
+//         muon(i).is_combined==NOVAL_I ||
+//         (muon(i).is_combined==1 && 
+//         (muon(i).chi2==NOVAL_F || muon(i).ndof==NOVAL_F)) ||
+//         (muon(i).has_trk==1 && 
+//         (muon(i).bc_d0==NOVAL_F||muon(i).hits==NOVAL_I))) {
+//         stdErr("Muon::passed() : NOVAL value in the cut criteria");
+//         return NOVAL_I;
+//     }
+// 
+//     if (muon(i).ndof==0.0){
+//       stdErr("Muon::passed() : division by zero (ndof=0)");
+//       return NOVAL_I;
+//     }
+// 
+//     if(muon(i).tight==1 &&
+//        muon(i).pt>=10.0 &&
+//        TMath::Abs(muon(i).eta)<=2.1 &&
+//        muon(i).chi2/muon(i).ndof<10.0 &&
+//        TMath::Abs(muon(i).bc_d0)<=0.2 &&
+//        muon(i).hits>=11 &&
+//        muon(i).isoR03_trk<6.0 &&
+//        muon(i).isoR03_hcal<6.0 &&
+//        muon(i).isoR03_ecal<6.0 &&
+//        muon(i).has_trk==1 &&
+//        muon(i).is_combined==1) {
+//       return 1;
+//     }
+// 
+//     return 0;
+//   }
+// 
+// 
+//   return NOVAL_I;
+// }
 
 //--------------------------------- passed() ----------------------------------  
 
 int Muon::passed(std::string selection, size_t i, 
-                 std::vector<std::pair<std::string,int> > &cutflow) { 
+                 std::vector<std::pair<std::string,int> > *cutflow) { 
 
   if (!isValid()) return NOVAL_I;
-
+  
+  if (cutflow!=NULL) (*cutflow).clear();
 
   if(selection=="RefAna4JetMetMuon"){
 
 
-    std::pair<std::string,int> has_trk("has_trk",NOVAL_I);
+    std::pair<std::string,int> has_trk("has_trk     ",NOVAL_I);
     if (muon(i).has_trk!=NOVAL_I) {
       muon(i).has_trk==1 ? has_trk.second=1 : has_trk.second=0;
     }
-    cutflow.push_back(has_trk);
+    if (cutflow!=NULL) (*cutflow).push_back(has_trk);
+
+    
+    std::pair<std::string,int> hits("hits        ",NOVAL_I);
+    if (muon(i).hits!=NOVAL_I) muon(i).hits>=11 ? 
+          hits.second=1 : hits.second=0;
+    if (cutflow!=NULL) (*cutflow).push_back(hits);
+    
+    
+    std::pair<std::string,int> eta("eta         ",NOVAL_I);
+    if (muon(i).eta!=NOVAL_F) TMath::Abs(muon(i).eta)<=2.1 ? 
+          eta.second=1 : eta.second=0;
+    if (cutflow!=NULL) (*cutflow).push_back(eta);
 
 
-    std::pair<std::string,int> is_combined("is_combined",NOVAL_I);
+    std::pair<std::string,int> is_combined("is_combined ",NOVAL_I);
     if (muon(i).is_combined!=NOVAL_I) {
       muon(i).is_combined==1 ? is_combined.second=1 : is_combined.second=0;
     }
-    cutflow.push_back(is_combined);
+    if (cutflow!=NULL) (*cutflow).push_back(is_combined);
 
 
-    std::pair<std::string,int> eta("eta",NOVAL_I);
-    if (muon(i).eta!=NOVAL_F) TMath::Abs(muon(i).eta)<=2.1 ? 
-          eta.second=1 : eta.second=0;
-    cutflow.push_back(eta);
-
-
-    std::pair<std::string,int> pt("pt",NOVAL_I);
+    std::pair<std::string,int> pt("pt          ",NOVAL_I);
     if (muon(i).pt!=NOVAL_F) muon(i).pt>=10.0 ? 
           pt.second=1 : pt.second=0;
-    cutflow.push_back(pt);
+    if (cutflow!=NULL) (*cutflow).push_back(pt);
 
 	  	  	  	 
-    std::pair<std::string,int> tight("tight",NOVAL_I);
+    std::pair<std::string,int> tight("tight       ",NOVAL_I);
     if (muon(i).tight!=NOVAL_I) muon(i).tight==1 ? 
           tight.second=1 : tight.second=0;    
-    cutflow.push_back(tight);
+    if (cutflow!=NULL) (*cutflow).push_back(tight);
   
 
-    std::pair<std::string,int> chi2_ndof("chi2/ndof",NOVAL_I);            
+    std::pair<std::string,int> chi2_ndof("chi2/ndof   ",NOVAL_I);            
     if (muon(i).is_combined==1 && 
         muon(i).chi2!=NOVAL_F && muon(i).ndof!=NOVAL_F && 
         muon(i).ndof!=0) {
       muon(i).chi2/muon(i).ndof<10.0 ? chi2_ndof.second=1 : chi2_ndof.second=0;
     }
     if (muon(i).is_combined==0) chi2_ndof.second=0;
-    cutflow.push_back(chi2_ndof);	  
+    if (cutflow!=NULL) (*cutflow).push_back(chi2_ndof);	  
   
        
-    std::pair<std::string,int> bc_d0("bc_d0",NOVAL_I);
-    if (muon(i).bc_d0!=NOVAL_F) TMath::Abs(muon(i).bc_d0)<=0.2 ? 
+    std::pair<std::string,int> bc_d0("bc_d0       ",NOVAL_I);
+    if (muon(i).bc_d0!=NOVAL_F) TMath::Abs(muon(i).bc_d0)<0.2 ? 
           bc_d0.second=1 : bc_d0.second=0;
-    cutflow.push_back(bc_d0);
+    if (cutflow!=NULL) (*cutflow).push_back(bc_d0);
     
     
-    std::pair<std::string,int> hits("hits",NOVAL_I);
-    if (muon(i).hits!=NOVAL_F) muon(i).hits>=11.0 ? 
-          hits.second=1 : hits.second=0;
-    cutflow.push_back(hits);
-    
-    
-    std::pair<std::string,int> isoR03_trk("isoR03_trk",NOVAL_I);
+    std::pair<std::string,int> isoR03_trk("isoR03_trk  ",NOVAL_I);
     if (muon(i).isoR03_trk!=NOVAL_F) muon(i).isoR03_trk<6.0 ? 
 			    isoR03_trk.second=1 : isoR03_trk.second=0;
-    cutflow.push_back(isoR03_trk);
+    if (cutflow!=NULL) (*cutflow).push_back(isoR03_trk);
     
     
-    std::pair<std::string,int> isoR03_hcal("isoR03_hcal",NOVAL_I);
+    std::pair<std::string,int> isoR03_hcal("isoR03_hcal ",NOVAL_I);
     if (muon(i).isoR03_hcal!=NOVAL_F) muon(i).isoR03_hcal<6.0 ? 
 			    isoR03_hcal.second=1 : isoR03_hcal.second=0;
-    cutflow.push_back(isoR03_hcal);
+    if (cutflow!=NULL) (*cutflow).push_back(isoR03_hcal);
     
     
-    std::pair<std::string,int> isoR03_ecal("isoR03_ecal",NOVAL_I);
+    std::pair<std::string,int> isoR03_ecal("isoR03_ecal ",NOVAL_I);
     if (muon(i).isoR03_ecal!=NOVAL_F) muon(i).isoR03_ecal<6.0 ? 
 			    isoR03_ecal.second=1 : isoR03_ecal.second=0;
-    cutflow.push_back(isoR03_ecal);           
+    if (cutflow!=NULL) (*cutflow).push_back(isoR03_ecal);           
         
 
     if (muon(i).ndof==0.0){
@@ -240,7 +243,7 @@ int Muon::passed(std::string selection, size_t i,
         (muon(i).is_combined==1 && 
         (muon(i).chi2==NOVAL_F || muon(i).ndof==NOVAL_F)) ||
         (muon(i).has_trk==1 && 
-        (muon(i).bc_d0==NOVAL_F||muon(i).hits==NOVAL_F))) {
+        (muon(i).bc_d0==NOVAL_F||muon(i).hits==NOVAL_I))) {
       stdErr("Muon::passed() : NOVAL value in the cut criteria");
       return NOVAL_I;
     }
@@ -262,6 +265,124 @@ int Muon::passed(std::string selection, size_t i,
 
     return 0;
   }
+  
+//---------------------------- OLD selection!!! -------------------------------  
+  
+  
+  if(selection=="RefAna4JetMetMuon_Old"){
+
+
+    std::pair<std::string,int> has_trk("has_trk",NOVAL_I);
+    if (muon(i).has_trk!=NOVAL_I) {
+      muon(i).has_trk==1 ? has_trk.second=1 : has_trk.second=0;
+    }
+    if (cutflow!=NULL) (*cutflow).push_back(has_trk);
+
+    
+    std::pair<std::string,int> hits("hits",NOVAL_I);
+    if (muon(i).hits!=NOVAL_I) muon(i).hits>=11 ? 
+          hits.second=1 : hits.second=0;
+    if (cutflow!=NULL) (*cutflow).push_back(hits);
+    
+    
+    std::pair<std::string,int> eta("eta",NOVAL_I);
+    if (muon(i).eta!=NOVAL_F) TMath::Abs(muon(i).eta)<=2.1 ? 
+          eta.second=1 : eta.second=0;
+    if (cutflow!=NULL) (*cutflow).push_back(eta);
+
+
+//     std::pair<std::string,int> is_combined("is_combined",NOVAL_I);
+//     if (muon(i).is_combined!=NOVAL_I) {
+//       muon(i).is_combined==1 ? is_combined.second=1 : is_combined.second=0;
+//     }
+//     if (cutflow!=NULL) (*cutflow).push_back(is_combined);
+
+
+    std::pair<std::string,int> pt("pt",NOVAL_I);
+    if (muon(i).pt!=NOVAL_F) muon(i).pt>=20.0 ? 
+          pt.second=1 : pt.second=0;
+    if (cutflow!=NULL) (*cutflow).push_back(pt);
+
+	  	  	  	 
+    std::pair<std::string,int> tight("tight",NOVAL_I);
+    if (muon(i).tight!=NOVAL_I) muon(i).tight==1 ? 
+          tight.second=1 : tight.second=0;    
+    if (cutflow!=NULL) (*cutflow).push_back(tight);
+  
+
+    std::pair<std::string,int> chi2_ndof("chi2/ndof",NOVAL_I);            
+    if (muon(i).is_combined==1 && 
+        muon(i).chi2!=NOVAL_F && muon(i).ndof!=NOVAL_F && 
+        muon(i).ndof!=0) {
+      muon(i).chi2/muon(i).ndof<10.0 ? chi2_ndof.second=1 : chi2_ndof.second=0;
+    }
+    if (muon(i).is_combined==0) chi2_ndof.second=0;
+    if (cutflow!=NULL) (*cutflow).push_back(chi2_ndof);	  
+  
+       
+    std::pair<std::string,int> bc_d0("bc_d0",NOVAL_I);
+    if (muon(i).bc_d0!=NOVAL_F) TMath::Abs(muon(i).bc_d0)<0.2 ? 
+          bc_d0.second=1 : bc_d0.second=0;
+    if (cutflow!=NULL) (*cutflow).push_back(bc_d0);
+    
+    
+    std::pair<std::string,int> reliso("reliso",NOVAL_I);
+    if (muon(i).reliso!=NOVAL_F) muon(i).reliso<0.1 ? 
+          reliso.second=1 : reliso.second=0;
+    if (cutflow!=NULL) (*cutflow).push_back(reliso); 
+    
+    
+    std::pair<std::string,int> hcalisodep("hcalisodep",NOVAL_I);
+    if (muon(i).hcalisodep!=NOVAL_F) muon(i).hcalisodep<6.0 ? 
+          hcalisodep.second=1 : hcalisodep.second=0;
+    if (cutflow!=NULL) (*cutflow).push_back(hcalisodep);
+    
+    
+    std::pair<std::string,int> ecalisodep("ecalisodep",NOVAL_I);
+    if (muon(i).ecalisodep!=NOVAL_F) muon(i).ecalisodep<4.0 ? 
+          ecalisodep.second=1 : ecalisodep.second=0;
+    if (cutflow!=NULL) (*cutflow).push_back(ecalisodep);          
+        
+
+    if (muon(i).ndof==0.0){
+      stdErr("Muon::passed() : division by zero (ndof=0)");
+      return NOVAL_I;
+    }  
+    
+    if( muon(i).tight==NOVAL_I ||
+        muon(i).pt==NOVAL_F ||
+        muon(i).eta==NOVAL_F ||
+        muon(i).hcalisodep==NOVAL_F ||
+        muon(i).ecalisodep==NOVAL_F ||
+        muon(i).reliso==NOVAL_F ||
+        muon(i).has_trk==NOVAL_I ||
+        //muon(i).is_combined==NOVAL_I ||
+        (muon(i).is_combined==1 && 
+        (muon(i).chi2==NOVAL_F || muon(i).ndof==NOVAL_F)) ||
+        (muon(i).has_trk==1 && 
+        (muon(i).bc_d0==NOVAL_F||muon(i).hits==NOVAL_I))) {
+      stdErr("Muon::passed() : NOVAL value in the cut criteria");
+      return NOVAL_I;
+    }
+
+    
+    if( tight.second==1 &&
+        pt.second==1 &&
+        eta.second==1 &&
+        hcalisodep.second==1 &&
+        ecalisodep.second==1 &&
+        reliso.second==1 &&
+        chi2_ndof.second==1 &&
+        bc_d0.second==1 &&
+        hits.second==1 &&
+        has_trk.second==1 ) {
+        //is_combined.second==1) {
+      return 1;
+    }
+
+    return 0;
+  }
+  
   
   
   return NOVAL_I;
