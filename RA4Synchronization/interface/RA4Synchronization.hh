@@ -15,7 +15,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Mon Jun 01 17:54:26 CET 2009
-// $Id: RA4Synchronization.hh,v 1.2 2009/10/02 07:31:58 aranyi Exp $
+// $Id: RA4Synchronization.hh,v 1.4 2009/11/12 14:54:16 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -73,24 +73,14 @@ public:
   EventProducer event;
 
 public:
-  //int stg;
+
   int totaleventnum;
-  std::vector<std::string> selection;
 
-  int cutmuonum_RA4mu;
-  int cutelenum_RA4mu;
-  int cutjet_RA4mu;
-  int cutmet_RA4mu;
-
-  int cuthlt_RA4el;
-  int cutelenum_RA4el;
-  int cutjet_RA4el;
-  int cutmet_RA4el;
-
-  std::vector<std::pair<std::string,std::vector<int> > > muonCutFlow;
+  std::vector<std::pair<std::string,std::vector<int> > > muonCutFlowMu;
   std::vector<std::pair<std::string,std::vector<int> > > electronCutFlowMu;
   std::vector<std::pair<std::string,std::vector<int> > > jetCutFlowMu;
   
+  std::vector<std::pair<std::string,std::vector<int> > > muonCutFlowEle;
   std::vector<std::pair<std::string,std::vector<int> > > electronCutFlowEle;
   std::vector<std::pair<std::string,std::vector<int> > > jetCutFlowEle;
   
