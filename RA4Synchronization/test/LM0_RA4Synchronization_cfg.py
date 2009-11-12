@@ -108,10 +108,9 @@ process.RA4SynchronizationMod = cms.EDFilter(
     
     TriggerConfig = cms.PSet(
         name = cms.string("trigger"),
-        triggerResults = cms.InputTag("TriggerResults","","HLT"),
-        pathNames = cms.vstring(
-        'HLT_Ele15_LW_L1R'
-    )
+        triggerTag = cms.InputTag("TriggerResults","","HLT"),
+        storeList = cms.vstring("HLT_Ele15_LW_L1R","brr"),
+        selectionType = cms.string("RefAna4JetMetMuon") 
     )
     
 )
