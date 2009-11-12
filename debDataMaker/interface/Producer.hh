@@ -24,7 +24,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Producer.hh,v 1.3 2009/07/17 14:49:38 veszpv Exp $
+// $Id: Producer.hh,v 1.4 2009/07/29 10:05:39 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -49,7 +49,11 @@ public:
 
   Producer(edm::InputTag tag, std::string name, std::vector<std::string> list) 
     : C(name, list), tag_(tag) { }
-
+  
+  Producer(double eventNumber, double eventCrossSec, double luminosity, 
+           int procIdx) 
+  : C() { }
+  
   virtual ~Producer() { }
   
  private:
