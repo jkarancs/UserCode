@@ -31,7 +31,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: MuonProducer.hh,v 1.4 2009/08/24 12:33:33 veszpv Exp $
+// $Id: MuonProducer.hh,v 1.5 2009/08/24 14:09:22 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -154,7 +154,7 @@ template<class T> void MuonProducer<T>::set(const edm::Event& iEvent) {
     }
     else {
       muon(i).has_trk=0;
-      muon(i).hits=NOVAL_F;
+      muon(i).hits=NOVAL_I;
       muon(i).d0=NOVAL_F;
       muon(i).phi_trk=NOVAL_F;
     }
