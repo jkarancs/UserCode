@@ -27,7 +27,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Jet.hh,v 1.14 2009/09/05 09:18:07 veszpv Exp $
+// $Id: Jet.hh,v 1.15 2009/11/12 14:20:19 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -52,8 +52,10 @@ class Jet : public VContainer<JetData>{
 
   // Inherited functions to be overloaded
   void calculate ();
-  int passed(std::string, size_t);
-  int passed(std::string, size_t, std::vector<std::pair<std::string,int> >&);
+  int passed(std::string selection, size_t i) {
+    return passed(selection, i, NULL);
+  };
+  int passed(std::string, size_t, std::vector<std::pair<std::string,int> >*);
   
 };
 
@@ -66,84 +68,32 @@ void Jet::calculate () {
 
 //--------------------------------- passed() ----------------------------------
 
-int Jet::passed(std::string selection, size_t i) { 
-  
-  if (!isValid()) return NOVAL_I;
-
-  if(selection.compare("RefAna4JetMetMuon")==0){
-    if(jet(i).pt==NOVAL_F||jet(i).eta==NOVAL_F||jet(i).hadfrac==NOVAL_F){
-      stdErr("Jet::passed() : NOVAL value in the cut criteria");    
-      return NOVAL_I;
-    }
-    if(jet(i).pt>=30.0&&
-       TMath::Abs(jet(i).eta)<=2.4&&
-       jet(i).hadfrac>=0.1){
-      return 1;
-    }     
-    return 0;
-  }
-
-
-  if(selection.compare("RefAna4JetMetElectron")==0){
-    if(jet(i).pt==NOVAL_F||jet(i).eta==NOVAL_F||jet(i).emfrac==NOVAL_F){
-      stdErr("Jet::passed() : NOVAL value in the cut criteria");
-      return NOVAL_I;
-    }
-    if(jet(i).pt>=25.0&&
-       TMath::Abs(jet(i).eta)<=3.0&&
-       jet(i).emfrac<=0.9){
-      return 1;
-    }      
-    return 0;
-  }
-
-  
-  if(selection.compare("TopJetSelection")==0){
-    if(jet(i).pt==NOVAL_F||jet(i).eta==NOVAL_F||jet(i).emfrac==NOVAL_F){
-      stdErr("Jet::passed() : NOVAL value in the cut criteria");
-      return NOVAL_I;
-    }
-    if(jet(i).pt>=20.0&&
-       TMath::Abs(jet(i).eta)<=2.7 &&
-       jet(i).emfrac<=0.9) {
-      return 1;
-    }      
-    return 0;
-  }
-
-  
-  return NOVAL_I;
-}
-  
-
-//--------------------------------- passed() ----------------------------------
-
 int Jet::passed(std::string selection, size_t i, 
-                 std::vector<std::pair<std::string,int> > &cutflow) {  
+                 std::vector<std::pair<std::string,int> > *cutflow) {  
   
   if (!isValid()) return NOVAL_I;
   
-  cutflow.clear();
+  if (cutflow!=NULL) (*cutflow).clear();
 
   if(selection=="RefAna4JetMetMuon"){
     
     
-    std::pair<std::string,int> eta("eta",NOVAL_I);
+    std::pair<std::string,int> eta("eta         ",NOVAL_I);
     if (jet(i).eta!=NOVAL_F) TMath::Abs(jet(i).eta)<=2.4 ? 
           eta.second=1 : eta.second=0;
-    cutflow.push_back(eta);
+    if (cutflow!=NULL) (*cutflow).push_back(eta);
     
     
-    std::pair<std::string,int> pt("pt",NOVAL_I);
+    std::pair<std::string,int> pt("pt          ",NOVAL_I);
     if (jet(i).pt!=NOVAL_F) jet(i).pt>=30.0 ? 
           pt.second=1 : pt.second=0;
-    cutflow.push_back(pt);
+    if (cutflow!=NULL) (*cutflow).push_back(pt);
     
     
-    std::pair<std::string,int> hadfrac("hadfrac",NOVAL_I);
+    std::pair<std::string,int> hadfrac("hadfrac     ",NOVAL_I);
     if (jet(i).hadfrac!=NOVAL_F) jet(i).hadfrac>=0.1 ? 
           hadfrac.second=1 : hadfrac.second=0;
-    cutflow.push_back(hadfrac);
+    if (cutflow!=NULL) (*cutflow).push_back(hadfrac);
     
         
     if(jet(i).pt==NOVAL_F||jet(i).eta==NOVAL_F||jet(i).hadfrac==NOVAL_F){
@@ -164,22 +114,22 @@ int Jet::passed(std::string selection, size_t i,
   if(selection=="RefAna4JetMetElectron"){
     
     
-    std::pair<std::string,int> eta("eta",NOVAL_I);
+    std::pair<std::string,int> eta("eta         ",NOVAL_I);
     if (jet(i).eta!=NOVAL_F) TMath::Abs(jet(i).eta)<=3.0 ? 
           eta.second=1 : eta.second=0;
-    cutflow.push_back(eta);
+    if (cutflow!=NULL) (*cutflow).push_back(eta);
     
     
-    std::pair<std::string,int> pt("pt",NOVAL_I);
+    std::pair<std::string,int> pt("pt          ",NOVAL_I);
     if (jet(i).pt!=NOVAL_F) jet(i).pt>=50.0 ? 
           pt.second=1 : pt.second=0;
-    cutflow.push_back(pt);
+    if (cutflow!=NULL) (*cutflow).push_back(pt);
     
     
-    std::pair<std::string,int> emfrac("emfrac",NOVAL_I);
+    std::pair<std::string,int> emfrac("emfrac      ",NOVAL_I);
     if (jet(i).emfrac!=NOVAL_F) jet(i).emfrac<=0.9 ? 
           emfrac.second=1 : emfrac.second=0;
-    cutflow.push_back(emfrac);
+    if (cutflow!=NULL) (*cutflow).push_back(emfrac);
     
         
     if(jet(i).pt==NOVAL_F||jet(i).eta==NOVAL_F||jet(i).emfrac==NOVAL_F){
@@ -200,22 +150,22 @@ int Jet::passed(std::string selection, size_t i,
   if(selection=="TopJetSelection"){
     
     
-    std::pair<std::string,int> eta("eta",NOVAL_I);
+    std::pair<std::string,int> eta("eta         ",NOVAL_I);
     if (jet(i).eta!=NOVAL_F) TMath::Abs(jet(i).eta)<=2.7 ? 
           eta.second=1 : eta.second=0;
-    cutflow.push_back(eta);
+    if (cutflow!=NULL) (*cutflow).push_back(eta);
     
     
-    std::pair<std::string,int> pt("pt",NOVAL_I);
+    std::pair<std::string,int> pt("pt          ",NOVAL_I);
     if (jet(i).pt!=NOVAL_F) jet(i).pt>=20.0 ? 
           pt.second=1 : pt.second=0;
-    cutflow.push_back(pt);
+    if (cutflow!=NULL) (*cutflow).push_back(pt);
     
     
-    std::pair<std::string,int> emfrac("emfrac",NOVAL_I);
+    std::pair<std::string,int> emfrac("emfrac      ",NOVAL_I);
     if (jet(i).emfrac!=NOVAL_F) jet(i).emfrac<=0.9 ? 
           emfrac.second=1 : emfrac.second=0;
-    cutflow.push_back(emfrac);
+    if (cutflow!=NULL) (*cutflow).push_back(emfrac);
     
         
     if(jet(i).pt==NOVAL_F||jet(i).eta==NOVAL_F||jet(i).emfrac==NOVAL_F){

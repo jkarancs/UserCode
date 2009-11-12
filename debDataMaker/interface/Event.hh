@@ -55,7 +55,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Event.hh,v 1.15 2009/07/29 10:09:52 veszpv Exp $
+// $Id: Event.hh,v 1.16 2009/11/12 14:19:04 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -185,14 +185,14 @@ int Event::passed(std::string selection,
     }
     std::vector<int> electronpass((*pele).size());
     for (unsigned int i=0;i<(*pele).size();i++){
-      electronpass[i]=(*pele).passed(selection,i,cutflow);
+      electronpass[i]=(*pele).passed(selection,i);
       if(electronpass[i]==1){
 	numele++;
       }
     } 
     std::vector<int> pjetpass((*pjet).size());
     for (unsigned int i=0;i<(*pjet).size();i++){
-      pjetpass[i]=(*pjet).passed(selection,i,cutflow);
+      pjetpass[i]=(*pjet).passed(selection,i);
       if((*pjet).jet(i).pt==NOVAL_F){
         stdErr("passed(std::string selection, Jet<pat::Jet>*, "		\
             "Met<pat::MET>*, Electron<pat::Electron>*, Muon<pat::Muon>*, " \
@@ -286,14 +286,14 @@ int Event::passed(std::string selection,
     }
     std::vector<int> electronpass((*pele).size());
     for (unsigned int i=0;i<(*pele).size();i++){
-      electronpass[i]=(*pele).passed(selection,i,cutflow);
+      electronpass[i]=(*pele).passed(selection,i);
       if(electronpass[i]==1){
         numele++;
       }
     } 
     std::vector<int> pjetpass((*pjet).size());
     for (unsigned int i=0;i<(*pjet).size();i++){
-      pjetpass[i]=(*pjet).passed(selection,i,cutflow);
+      pjetpass[i]=(*pjet).passed(selection,i);
       if((*pjet).jet(i).pt==NOVAL_F||
            (*pjet).jet(i).eta==NOVAL_F||
            (*pjet).jet(i).emfrac==NOVAL_F){
