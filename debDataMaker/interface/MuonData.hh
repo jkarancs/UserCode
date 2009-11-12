@@ -25,7 +25,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: MuonData.hh,v 1.9 2009/08/24 12:33:29 veszpv Exp $
+// $Id: MuonData.hh,v 1.10 2009/08/24 14:27:32 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -51,12 +51,12 @@ namespace deb {
     float isoR03_trk;  //Tracker Isolation in DeltaR<0.3 cone
     float isoR03_hcal; //Hadron Calorimeter Isolation in DeltaR<0.3 cone
     float isoR03_ecal; //Electromagn. Calorimeter Isolation in DeltaR<0.3 cone
-    float hits;        //Number of innerTrack hits
+    int hits;          //Number of innerTrack hits
     float chi2;        // chi2 of fitting the globalTrack (combinedMuon)
     float ndof;        //Deg of freedom in fitting the globalTrack (combMuon)
     float d0;          //Displacement of the innerTrack
     float phi_trk;     //Phi of the innerTrack
-    int tight;       //Muon Id e.g.:"GlobalMuonPromptTight"
+    int tight;         //Muon Id e.g.:"GlobalMuonPromptTight"
     float hcalisodep;  //Hadron Calorimeter Isolation Deposit
     float ecalisodep;  //Electromagnetic Calorimeter Isolation Deposit
     float bc_d0;       //d0 with respect to the primary vertex
@@ -110,7 +110,7 @@ namespace deb {
       isoR03_trk=NOVAL_F;
       isoR03_hcal=NOVAL_F;
       isoR03_ecal=NOVAL_F;
-      hits=NOVAL_F;
+      hits=NOVAL_I;
       chi2=NOVAL_F;
       ndof=NOVAL_F;
       d0=NOVAL_F;
@@ -157,7 +157,7 @@ namespace deb {
       ss << prefix << "isoR03_trk/F:";
       ss << prefix << "isoR03_hcal/F:";
       ss << prefix << "isoR03_ecal/F:";
-      ss << prefix << "hits/F:";
+      ss << prefix << "hits/I:";
       ss << prefix << "chi2/F:";
       ss << prefix << "ndof/F:";
       ss << prefix << "d0/F:";
