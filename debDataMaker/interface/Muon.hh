@@ -27,7 +27,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Muon.hh,v 1.18 2009/11/06 14:17:00 aranyi Exp $
+// $Id: Muon.hh,v 1.19 2009/11/12 14:24:58 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -91,57 +91,6 @@ void Muon::calculate (Beamspot<reco::BeamSpot>  *beamspot){
 
 }
 
-
-//--------------------------------- passed() ----------------------------------
-
-// int Muon::passed(std::string selection, size_t i) { 
-// 
-//   if (!isValid()) return NOVAL_I;
-// 
-// 
-//   if (selection=="RefAna4JetMetMuon") {
-// 
-//     if( muon(i).tight==NOVAL_I ||
-//         muon(i).pt==NOVAL_F ||
-//         muon(i).eta==NOVAL_F ||
-//         muon(i).isoR03_trk==NOVAL_F ||
-//         muon(i).isoR03_hcal==NOVAL_F ||
-//         muon(i).isoR03_ecal==NOVAL_F ||
-//         muon(i).has_trk==NOVAL_I ||
-//         muon(i).is_combined==NOVAL_I ||
-//         (muon(i).is_combined==1 && 
-//         (muon(i).chi2==NOVAL_F || muon(i).ndof==NOVAL_F)) ||
-//         (muon(i).has_trk==1 && 
-//         (muon(i).bc_d0==NOVAL_F||muon(i).hits==NOVAL_I))) {
-//         stdErr("Muon::passed() : NOVAL value in the cut criteria");
-//         return NOVAL_I;
-//     }
-// 
-//     if (muon(i).ndof==0.0){
-//       stdErr("Muon::passed() : division by zero (ndof=0)");
-//       return NOVAL_I;
-//     }
-// 
-//     if(muon(i).tight==1 &&
-//        muon(i).pt>=10.0 &&
-//        TMath::Abs(muon(i).eta)<=2.1 &&
-//        muon(i).chi2/muon(i).ndof<10.0 &&
-//        TMath::Abs(muon(i).bc_d0)<=0.2 &&
-//        muon(i).hits>=11 &&
-//        muon(i).isoR03_trk<6.0 &&
-//        muon(i).isoR03_hcal<6.0 &&
-//        muon(i).isoR03_ecal<6.0 &&
-//        muon(i).has_trk==1 &&
-//        muon(i).is_combined==1) {
-//       return 1;
-//     }
-// 
-//     return 0;
-//   }
-// 
-// 
-//   return NOVAL_I;
-// }
 
 //--------------------------------- passed() ----------------------------------  
 
