@@ -81,7 +81,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Container.hh,v 1.8 2009/10/02 07:26:41 aranyi Exp $
+// $Id: Container.hh,v 1.9 2009/11/02 15:00:48 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -164,9 +164,9 @@ template <class C, class D, class K=size_t> class Container : public C {
   virtual int       passed(std::string, typename C::const_iterator);
   virtual int       passed(std::string, size_t);
   virtual int       passed(std::string, typename C::const_iterator, 
-			   std::vector<std::pair<std::string,int> >&);
+			   std::vector<std::pair<std::string,int> >*);
   virtual int       passed(std::string, size_t, 
-			   std::vector<std::pair<std::string,int> >&);
+			   std::vector<std::pair<std::string,int> >*);
 };
 
 //--------------------------------- Constructor -------------------------------
@@ -520,14 +520,14 @@ int Container<C,D,K>::passed(std::string selection, size_t i) {
 template <class C, class D, class K>
 int Container<C,D,K>::passed(std::string selection, 
 			      typename C::const_iterator it,
-  std::vector<std::pair<std::string,int> > &cutflow) {
+  std::vector<std::pair<std::string,int> > *cutflow) {
   stdErr("passed(): virtual function passed() has not been implemented\n");
   return NOVAL_I;
 }
 
 template <class C, class D, class K>
 int Container<C,D,K>::passed(std::string selection, size_t i,
-  std::vector<std::pair<std::string,int> > &cutflow) {
+  std::vector<std::pair<std::string,int> > *cutflow) {
   stdErr("passed(): virtual function passed() has not been implemented\n");
   return NOVAL_I;
 }
