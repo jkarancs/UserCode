@@ -96,10 +96,6 @@ process.RA4SynchronizationMod = cms.EDFilter(
 #                                    # TTbar+Jet: 30
 #                                    # Z+Jet: 40
 #                                    # QCD: 50
-         selectionType = cms.vstring(
-                         "RefAna4JetMetMuon",
-                         "RefAna4JetMetElectron"
-         )
 #        # RefAna4JetMetMuon:
 #        # https://twiki.cern.ch/twiki/bin/view/CMS/SusyRA4SingleMuonProjectTable
 #        # RefAna4JetMetElectron:
