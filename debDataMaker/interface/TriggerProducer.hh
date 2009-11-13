@@ -36,7 +36,7 @@
 //
 // Original Author:  Attila ARANYI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Trigger.hh,v 1.3 2009/06/15 17:19:42 veszpv Exp $
+// $Id: TriggerProducer.hh,v 1.1 2009/11/12 14:39:55 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -110,26 +110,32 @@ template<class T> void TriggerProducer<T>::set(const edm::Event& iEvent) {
 
   clear();
   TriggerData new_obj;
-  insert(storeList_[0], new_obj);
-  trigger(storeList_[0]).hlt=1;
   
-  insert(storeList_[1], new_obj);
-  trigger(storeList_[1]).hlt=0;
-  
-//   if ( hltHandle.isValid() ) {
-//     edm::TriggerNames trgNames;
-//     trgNames.init(*hltHandle);
-//     for ( unsigned int i=0; i<storeList_.size(); ++i ) {
-//       unsigned int index = trgNames.triggerIndex(storeList_[i]);
-//       if ( index==trgNames.size() ) {
-//         stdErr("set(): Unknown trigger name: %s\n", storeList_[i].c_str());
-// 	continue;
-//       }
-//     } 
-//     trigger(storeList_[0]).hlt = 1;//hltHandle->accept();
-//   }else{  
-//     stdErr("set(): No trigger results for InputTag\n");
-//   }
+  if ( hltHandle.isValid() ) {
+    edm::TriggerNames triggerNames;
+    triggerNames.init(*hltHandle);
+    
+//     std::cout<<std::endl;
+//     for (unsigned int i=0;i<hltHandle->size();i++) {
+//       std::cout << ">>> Trigger Name = " << triggerNames.triggerName(i)//<<std::endl;
+//           <<" Accept = " << hltHandle->accept(i)<< std::endl;
+//     }
+      
+    for (unsigned int i=0;i<storeList_.size();i++) {
+      insert(storeList_[i], new_obj);
+      trigger(storeList_[i]).hlt = NOVAL_I;
+      for (unsigned int j=0;j<hltHandle->size();j++) {        
+        if(triggerNames.triggerName(j)==storeList_[i].c_str()){
+          hltHandle->accept(j)==1 ? 
+              trigger(storeList_[i]).hlt = 1 : trigger(storeList_[i]).hlt = 0;          
+        }
+      }      
+      if (trigger(storeList_[i]).hlt==NOVAL_I)
+        stdErr("set(): Unknown trigger name: %s\n", storeList_[i].c_str());      
+    }                  
+  }else{  
+    stdErr("set(): No trigger results for InputTag\n");
+  }
 
 }  
 
