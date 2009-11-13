@@ -131,7 +131,8 @@ template<class T> void ElectronProducer<T>::set(const edm::Event& iEvent) {
     electron(i).tight=electrons[i].second->electronID("eidRobustTight");
     electron(i).loose=electrons[i].second->electronID("eidRobustLoose");
     electron(i).bc_d0=NOVAL_F;
-    electron(i).reliso=NOVAL_F; 
+    electron(i).reliso=NOVAL_F;
+    electron(i).combined_reliso=NOVAL_F; 
     
   }
 }

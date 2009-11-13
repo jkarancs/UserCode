@@ -25,7 +25,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: ElectronData.hh,v 1.5 2009/06/04 08:40:02 akapusi Exp $
+// $Id: ElectronData.hh,v 1.6 2009/06/05 19:36:38 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -48,16 +48,19 @@ namespace deb {
     float et;
     float eta;
     float phi;
-    float isoR03_trk;   //Tracker Isolation in DeltaR<0.3 cone
-    float isoR03_hcal;  //Hadron Calorimeter Isolation in DeltaR<0.3 cone
-    float isoR03_ecal;  //Electromagn. Calorimeter Isolation in DeltaR<0.3 cone
-    float d0;           //Displacement of the track
-    float phi_trk;      //Phi in the tracker
-    float tight;        //Electron Id e.g.:"eidRobustTight"
-    float loose;        //Electron Id e.g.:"eidRobustLoose"
-    float bc_d0;        //d0 with respect to the primary vertex
-    float reliso;       //Relative isolation 
-                        //(isoR03_ecal+isoR03_hcal+isoR03_trk/et)
+    float isoR03_trk;       //Tracker Isolation in DeltaR<0.3 cone
+    float isoR03_hcal;      //Hadron Calorimeter Isolation in DeltaR<0.3 cone
+    float isoR03_ecal;      //Electromagn. Calorimeter Isolation 
+                            //in DeltaR<0.3 cone
+    float d0;               //Displacement of the track
+    float phi_trk;          //Phi in the tracker
+    float tight;            //Electron Id e.g.:"eidRobustTight"
+    float loose;            //Electron Id e.g.:"eidRobustLoose"
+    float bc_d0;            //d0 with respect to the primary vertex
+    float reliso;           //Relative isolation 
+                            //(isoR03_ecal+isoR03_hcal)/pt    
+    float combined_reliso;  //Combined Relative isolation 
+                            //(isoR03_ecal+isoR03_hcal+isoR03_trk)/et
     int pass;
     int has_trk;
 
@@ -96,7 +99,8 @@ namespace deb {
       tight=NOVAL_F;
       loose=NOVAL_F;
       bc_d0=NOVAL_F;
-      reliso=NOVAL_F;     
+      reliso=NOVAL_F; 
+      combined_reliso=NOVAL_F;    
       pass=0;
       has_trk=NOVAL_I;
     }
@@ -122,6 +126,7 @@ namespace deb {
       ss << prefix << "loose/F:";
       ss << prefix << "bc_d0/F:";
       ss << prefix << "reliso/F:";
+      ss << prefix << "combined_reliso/F:";
       ss << prefix << "pass/I:";
       ss << prefix << "has_trk/I";
       return ss.str();

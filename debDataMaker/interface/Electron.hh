@@ -89,12 +89,18 @@ void Electron::calculate(Beamspot<reco::BeamSpot> *beamspot) {
     
     if(electron(i).isoR03_ecal!=NOVAL_F&&
        electron(i).isoR03_hcal!=NOVAL_F&&
+       electron(i).pt!=NOVAL_F&&electron(i).pt!=0){
+       electron(i).reliso=(electron(i).isoR03_ecal+electron(i).isoR03_hcal)
+	                  /electron(i).pt;
+    }
+    
+    if(electron(i).isoR03_ecal!=NOVAL_F&&
+       electron(i).isoR03_hcal!=NOVAL_F&&
        electron(i).isoR03_trk!=NOVAL_F&&
        electron(i).et!=NOVAL_F&&electron(i).et!=0){
-      electron(i).reliso=(electron(i).isoR03_ecal
-			  +electron(i).isoR03_hcal
-			  +electron(i).isoR03_trk)
-	                  /electron(i).et;
+       electron(i).combined_reliso=(electron(i).isoR03_ecal+
+                                    electron(i).isoR03_hcal+
+                                    electron(i).isoR03_trk)/electron(i).et;
     }
   }
   
@@ -146,11 +152,12 @@ int Electron::passed(std::string selection, size_t i,
     if (cutflow!=NULL) (*cutflow).push_back(bc_d0);
     
     
-    std::pair<std::string,int> reliso("reliso      ",NOVAL_I);
-    if(electron(i).reliso!=NOVAL_F) {
-      electron(i).reliso<=0.1 ? reliso.second=1 : reliso.second=0;
+    std::pair<std::string,int> combined_reliso("comb_reliso ",NOVAL_I);
+    if(electron(i).combined_reliso!=NOVAL_F) {
+      electron(i).combined_reliso<=0.1 ? 
+          combined_reliso.second=1 : combined_reliso.second=0;
     }
-    if (cutflow!=NULL) (*cutflow).push_back(reliso);
+    if (cutflow!=NULL) (*cutflow).push_back(combined_reliso);
             
     
     std::pair<std::string,int> tight("tight       ",NOVAL_I);
@@ -165,7 +172,7 @@ int Electron::passed(std::string selection, size_t i,
        electron(i).eta==NOVAL_F ||
        electron(i).pt==NOVAL_F ||
        electron(i).tight==NOVAL_F ||
-       electron(i).reliso==NOVAL_F) {
+       electron(i).combined_reliso==NOVAL_F) {
       stdErr("Electron::passed() : NOVAL value in the cut criteria");     
       return NOVAL_I;
     }
@@ -175,7 +182,7 @@ int Electron::passed(std::string selection, size_t i,
         pt.second==1 &&
         tight.second==1 &&
         bc_d0.second==1 &&
-        reliso.second==1) {
+        combined_reliso.second==1) {
       return 1;
     }
 
@@ -197,6 +204,13 @@ int Electron::passed(std::string selection, size_t i,
       electron(i).has_trk==1 ? has_trk.second=1 : has_trk.second=0;
     }
     if (cutflow!=NULL) (*cutflow).push_back(has_trk);
+    
+                
+    std::pair<std::string,int> loose("loose       ",NOVAL_I);
+    if(electron(i).loose!=NOVAL_F) {
+      electron(i).loose==1.0 ? loose.second=1 : loose.second=0;
+    }
+    if (cutflow!=NULL) (*cutflow).push_back(loose);
       
       
     std::pair<std::string,int> eta("eta         ",NOVAL_I);
@@ -227,13 +241,6 @@ int Electron::passed(std::string selection, size_t i,
       electron(i).reliso<=0.1 ? reliso.second=1 : reliso.second=0;
     }
     if (cutflow!=NULL) (*cutflow).push_back(reliso);
-            
-    
-    std::pair<std::string,int> loose("loose       ",NOVAL_I);
-    if(electron(i).loose!=NOVAL_F) {
-      electron(i).loose==1.0 ? loose.second=1 : loose.second=0;
-    }
-    if (cutflow!=NULL) (*cutflow).push_back(loose);
          
       
     if(electron(i).has_trk==NOVAL_I ||
