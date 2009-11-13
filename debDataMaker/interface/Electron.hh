@@ -113,6 +113,11 @@ int Electron::passed(std::string selection, size_t i,
   if(selection=="RefAna4JetMetMuon"){
     
     
+    std::pair<std::string,int> all("all         ",NOVAL_I);
+    all.second=1;
+    if (cutflow!=NULL) (*cutflow).push_back(all);    
+    
+    
     std::pair<std::string,int> has_trk("has_trk     ",NOVAL_I);
     if(electron(i).has_trk!=NOVAL_I) {
       electron(i).has_trk==1 ? has_trk.second=1 : has_trk.second=0;
@@ -180,7 +185,12 @@ int Electron::passed(std::string selection, size_t i,
   
     
   if(selection=="RefAna4JetMetElectron"){
-      
+    
+    
+    std::pair<std::string,int> all("all         ",NOVAL_I);
+    all.second=1;
+    if (cutflow!=NULL) (*cutflow).push_back(all);
+          
       
     std::pair<std::string,int> has_trk("has_trk     ",NOVAL_I);
     if(electron(i).has_trk!=NOVAL_I) {

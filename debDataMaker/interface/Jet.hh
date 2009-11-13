@@ -27,7 +27,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Jet.hh,v 1.15 2009/11/12 14:20:19 aranyi Exp $
+// $Id: Jet.hh,v 1.16 2009/11/12 15:54:02 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -76,6 +76,11 @@ int Jet::passed(std::string selection, size_t i,
   if (cutflow!=NULL) (*cutflow).clear();
 
   if(selection=="RefAna4JetMetMuon"){
+        
+    
+    std::pair<std::string,int> all("all         ",NOVAL_I);
+    all.second=1;
+    if (cutflow!=NULL) (*cutflow).push_back(all);
     
     
     std::pair<std::string,int> eta("eta         ",NOVAL_I);
@@ -112,6 +117,11 @@ int Jet::passed(std::string selection, size_t i,
   
   
   if(selection=="RefAna4JetMetElectron"){
+        
+    
+    std::pair<std::string,int> all("all         ",NOVAL_I);
+    all.second=1;
+    if (cutflow!=NULL) (*cutflow).push_back(all);
     
     
     std::pair<std::string,int> eta("eta         ",NOVAL_I);
@@ -148,6 +158,11 @@ int Jet::passed(std::string selection, size_t i,
   
   
   if(selection=="TopJetSelection"){
+        
+    
+    std::pair<std::string,int> all("all         ",NOVAL_I);
+    all.second=1;
+    if (cutflow!=NULL) (*cutflow).push_back(all);
     
     
     std::pair<std::string,int> eta("eta         ",NOVAL_I);
