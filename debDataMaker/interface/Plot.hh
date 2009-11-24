@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Oct 25 20:57:26 CET 2009
-// $Id$
+// $Id: Plot.hh,v 1.1 2009/11/18 14:10:51 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -23,12 +23,22 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include "Histogram.hh"
+#include "TH1.h"
+#include "TH2.h"
+#include "TCanvas.h"
+#include "TLegend.h"
+#include "TStyle.h"
+#include "TROOT.h"
+#include "TF1.h"
+#include "TFrame.h"
+#include "TPaveStats.h"
 
 namespace deb {
 
 //----------------------------- Class Definition ------------------------------
 
-template<class H> class Plot : public std::map<std::string,H> {
+template<class H> class Plot : public std::map<std::string,Histogram<H> > {
  public:
 
   // Empty plot: format=<plot name>[;<plot title>]
@@ -71,7 +81,11 @@ template<class H> class Plot : public std::map<std::string,H> {
 
  private:
   TCanvas* can_;
+  std::map<std::string,H> stack_;
+  std::vector<TLegend*> legend_;
+  std::vector<H*> frame_;
   std::string style_;
+
   std::string init(Int_t ww, Int_t wh, std::string format);
   std::vector<std::string> generateNameTitleForH(std::string format);
 
@@ -113,7 +127,9 @@ template<class H> class Plot : public std::map<std::string,H> {
 
  public:
   TCanvas& canvas() { return *can_; }
-
+  std::vector<TLegend>& legend() { return legend_; }
+  std::vector<H*> frame() { return frame_; }
+  int getNPads() { return frame_.size(); }
 
   void add(Int_t nbinsx, Double_t xlow, Double_t xup, std::string format,...);
 
@@ -137,8 +153,8 @@ template<class H> class Plot : public std::map<std::string,H> {
 	   Int_t nbinsy, const Float_t *ybins, std::string format,...);
 
 
-  H& operator()(size_t i) { return (*this)("[%d]", i); }
-  H& operator()(std::string format, ...);
+  Histogram<H>& operator()(size_t i) { return (*this)("[%d]", i); }
+  Histogram<H>& operator()(std::string format, ...);
 
   void efficiency();
 
@@ -155,9 +171,10 @@ template<class H> class Plot : public std::map<std::string,H> {
 
   void scaleMaximumTo(std::string kind="", double maximum=1.0);
   void scaleAreaTo(std::string kind="", double area=1.0);
-  
-  //void setCanvasStyle(std::string style="TDR");
-  //void setPadStyle()
+
+  void setPlotStyle(std::string);
+
+  //void setOptStat(int);
 };
 
 
@@ -188,8 +205,8 @@ std::string Plot<H>::init(Int_t ww, Int_t wh, std::string format) {
     }
   }
 
-  if (ww<0) ww=600;
-  if (wh<0) ww=600;
+  if (ww==0) ww=600;
+  if (wh==0) ww=600;
 
   can_=new TCanvas(nameTitle.first.data(), nameTitle.second.data(), ww, wh);
   can_->SetWindowSize(ww+(ww-can_->GetWw()), wh+(wh-can_->GetWh()));
@@ -427,8 +444,8 @@ template <class H> void Plot<H>::add(Int_t nbinsx, Double_t xlow, Double_t xup,
 
   std::vector<std::string> labels=generateNameTitleForH(s);
   for (size_t i=0; i<labels.size(); i+=3) {
-    (*this)[labels[i]]=H(labels[i+1].data(), labels[i+2].data(), 
-			 nbinsx, xlow, xup);
+    (*this)[labels[i]]=Histogram<H>(labels[i+1].data(), labels[i+2].data(), 
+				    nbinsx, xlow, xup);
   }
 }
 
@@ -441,7 +458,8 @@ template <class H> void Plot<H>::add(Int_t nbins, const Float_t *xbins,
   vsprintf(s, format.data(), argList);
 
   std::vector<std::string> labels=generateNameTitleForH(s);
-  (*this)[labels[0]]=H(labels[1].data(), labels[2].data(), nbins, xbins);
+  (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
+				  nbins, xbins);
 }
 
 
@@ -453,7 +471,8 @@ template <class H> void Plot<H>::add(Int_t nbins, const Double_t *xbins,
   vsprintf(s, format.data(), argList);
 
   std::vector<std::string> labels=generateNameTitleForH(s);
-  (*this)[labels[0]]=H(labels[1].data(), labels[2].data(), nbins, xbins);
+  (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
+				  nbins, xbins);
 }
 
 
@@ -466,7 +485,7 @@ template <class H> void Plot<H>::add(Int_t nbinsx, Double_t xlow, Double_t xup,
   vsprintf(s, format.data(), argList);
 
   std::vector<std::string> labels=generateNameTitleForH(s);
-  (*this)[labels[0]]=H(labels[1].data(), labels[2].data(), 
+  (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
 		       nbinsx, xlow, xup, nbinsy, ylow, yup);
 }
 
@@ -480,7 +499,7 @@ template <class H> void Plot<H>::add(Int_t nbinsx, const Double_t *xbins,
   vsprintf(s, format.data(), argList);
 
   std::vector<std::string> labels=generateNameTitleForH(s);
-  (*this)[labels[0]]=H(labels[1].data(), labels[2].data(), 
+  (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
 		       nbinsx, xbins, nbinsy, ylow, yup);
 }
 
@@ -494,7 +513,7 @@ template <class H> void Plot<H>::add(Int_t nbinsx, Double_t xlow, Double_t xup,
   vsprintf(s, format.data(), argList);
 
   std::vector<std::string> labels=generateNameTitleForH(s);
-  (*this)[labels[0]]=H(labels[1].data(), labels[2].data(), 
+  (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
 		       nbinsx, xlow, xup, nbinsy, ybins);
 }
 
@@ -508,7 +527,7 @@ template <class H> void Plot<H>::add(Int_t nbinsx, const Double_t *xbins,
   vsprintf(s, format.data(), argList);
 
   std::vector<std::string> labels=generateNameTitleForH(s);
-  (*this)[labels[0]]=H(labels[1].data(), labels[2].data(), 
+  (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
 		       nbinsx, xbins, nbinsy, ybins);
 }
 
@@ -522,7 +541,7 @@ template <class H> void Plot<H>::add(Int_t nbinsx, const Float_t *xbins,
   vsprintf(s, format.data(), argList);
 
   std::vector<std::string> labels=generateNameTitleForH(s);
-  (*this)[labels[0]]=H(labels[1].data(), labels[2].data(), 
+  (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
 		       nbinsx, xbins, nbinsy, ybins);
 }
 
@@ -530,7 +549,7 @@ template <class H> void Plot<H>::add(Int_t nbinsx, const Float_t *xbins,
 //---------------------------------- operator() -------------------------------
 
 template <class H>
-H& Plot<H>::operator()(std::string format, ...) { 
+Histogram<H>& Plot<H>::operator()(std::string format, ...) { 
   va_list argList;
   va_start(argList, format);
   char s[10000];
@@ -544,7 +563,7 @@ H& Plot<H>::operator()(std::string format, ...) {
 
 template <class H>  
 void Plot<H>::efficiency() {
-  typename std::map<std::string,H>::iterator it;
+  typename std::map<std::string,Histogram<H> >::iterator it;
   for (it=this->begin(); it!=this->end(); it++) it->second.efficiency();
 }
 
@@ -553,20 +572,20 @@ void Plot<H>::efficiency() {
 
 template <class H> 
 void Plot<H>::setColor(std::string attr, Color_t color) {
-  typename std::map<std::string,H>::iterator it;
+  typename std::map<std::string,Histogram<H> >::iterator it;
   int c=0;
   for (it=this->begin(); it!=this->end(); it++) {
     if (attr.find("Line")!=std::string::npos || 
 	attr.find("line")!=std::string::npos) {
       it->second.SetLineColor(color+c);
-      it->second.num()->SetLineColor(color+c);
-      it->second.den()->SetLineColor(color+c);
+      if (it->second.num()) it->second.num()->SetLineColor(color+c);
+      if (it->second.den()) it->second.den()->SetLineColor(color+c);
     }
     if (attr.find("Fill")!=std::string::npos || 
 	attr.find("fill")!=std::string::npos) {
       it->second.SetFillColor(color+c);
-      it->second.num()->SetFillColor(color+c);
-      it->second.den()->SetFillColor(color+c);
+      if (it->second.num()) it->second.num()->SetFillColor(color+c);
+      if (it->second.den()) it->second.den()->SetFillColor(color+c);
     }
     c++;
   }
@@ -577,7 +596,7 @@ void Plot<H>::setColor(std::string attr, Color_t color) {
 
 template <class H> 
 void Plot<H>::setStyle(std::string attr, Style_t style) {
-  typename std::map<std::string,H>::iterator it;
+  typename std::map<std::string,Histogram<H> >::iterator it;
   for (it=this->begin(); it!=this->end(); it++) {
     if (attr.find("Line")!=std::string::npos || 
 	attr.find("line")!=std::string::npos) {
@@ -599,7 +618,7 @@ void Plot<H>::setStyle(std::string attr, Style_t style) {
 
 template <class H> 
 void Plot<H>::setWidth(std::string attr, Width_t width) {
-  typename std::map<std::string,H>::iterator it;
+  typename std::map<std::string,Histogram<H> >::iterator it;
   for (it=this->begin(); it!=this->end(); it++) {
     if (attr.find("Line")!=std::string::npos || 
 	attr.find("line")!=std::string::npos) {
@@ -614,7 +633,7 @@ void Plot<H>::setWidth(std::string attr, Width_t width) {
 
 template <class H>
 void Plot<H>::setAxisRange(Double_t xmin, Double_t xmax, Option_t* axis){
-  typename std::map<std::string,H>::iterator it;
+  typename std::map<std::string,Histogram<H> >::iterator it;
   for (it=this->begin(); it!=this->end(); it++) {
     it->second.SetAxisRange(xmin, xmax, axis);
     if (it->second.num()) it->second.num()->SetAxisRange(xmin, xmax, axis);
@@ -625,26 +644,134 @@ void Plot<H>::setAxisRange(Double_t xmin, Double_t xmax, Option_t* axis){
 
 //------------------------------------ Draw() ---------------------------------
 
+// template <class H> 
+// int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
+
+//   std::vector<std::string> expList = itemizeString(hists, "\\");
+//   std::vector<std::pair<std::vector<std::string>,std::string> > pads;
+
+//   for (size_t i=0; i<expList.size(); i++) {
+//     std::pair<std::vector<std::string>,std::string> pad;
+
+//     std::pair<std::string,std::string> listOption=splitString(expList[i], ";");
+//     size_t space=listOption.first.find_first_of(" ");
+//     while (space!=std::string::npos) {
+//       listOption.first.erase(space, 1);
+//       space=listOption.first.find_first_of(" ", space);
+//     }
+//     pad.second=listOption.second;
+
+//     std::vector<std::string> items = itemizeString(listOption.first, ",");
+//     if (pad.second.find("overlay")!=std::string::npos ||
+// 	pad.second.find("stack")!=std::string::npos) {
+//       pad.first.insert(pad.first.begin(), items.begin(), items.end());
+//       pads.push_back(pad);
+//       continue;
+//     }
+
+//     for (size_t j=0; j<items.size(); j++) {
+//       pad.first.push_back(items[j]);
+//       pads.push_back(pad);
+//       pad.first.clear();
+//     }
+//   }
+
+//   if (nrows<0) nrows=pads.size()/ncols;
+//   if (ncols*nrows<int(pads.size())) nrows=pads.size()/ncols+1;
+
+//   can_->Clear();
+//   can_->Divide(ncols, nrows);
+
+//   for (size_t i=0; i<pads.size(); i++) {
+
+//     std::string option=pads[i].second;
+//     size_t posOverlay=option.find("overlay");
+//     if (posOverlay!=std::string::npos) option.erase(posOverlay, 7);
+//     size_t posStack=option.find("stack");
+//     if (posStack!=std::string::npos) option.erase(posStack, 5);
+//     std::ostringstream opt;
+//     opt << option;
+
+//     can_->cd(i+1);
+
+//     for (size_t j=0; j<pads[i].first.size(); j++) {
+//       std::string hist=pads[i].first[j];
+
+//       size_t pos=hist.find(".num");
+//       if (pos!=std::string::npos) {
+// 	hist.erase(pos, 4);
+// 	typename std::map<std::string,Histogram<H> >::iterator it=this->find(hist);
+// 	if (it!=this->end()) it->second.num()->Draw(opt.str().data());
+//       } else {
+// 	pos=hist.find(".den");
+// 	if (pos!=std::string::npos) {
+// 	  hist.erase(pos, 4);
+// 	  typename std::map<std::string,Histogram<H> >::iterator it=this->find(hist);
+// 	  if (it!=this->end()) it->second.den()->Draw(opt.str().data());
+// 	} else {
+// 	  typename std::map<std::string,Histogram<H> >::iterator it=this->find(hist);
+// 	  if (it!=this->end()) it->second.Draw(opt.str().data());
+// 	}
+//       }
+
+//       if (j==0) opt << "SAME";
+//     }
+//   }
+
+//   return pads.size();
+// }
+
+
+// template <class H> 
+// int Plot<H>::Draw(std::string hist, int ncols, int nrows) {
+//   std::vector<std::string> vhist;
+//   vhist.push_back(hist);
+//   return this->Draw(vhist, ncols, nrows);
+// }
+
+
 template <class H> 
 int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
 
+  typedef std::vector<std::string> PlotNames;
+  typedef std::vector<std::string> OptionList;
+
+  // Collect list of pads ----------------------------------------------------
+
+  std::vector<std::pair<PlotNames,OptionList> > pads;
   std::vector<std::string> expList = itemizeString(hists, "\\");
-  std::vector<std::pair<std::vector<std::string>,std::string> > pads;
+
+  std::cout<<"expanded list:\n";
+  for (size_t i=0; i<expList.size(); i++) std::cout<<expList[i]<<std::endl;
 
   for (size_t i=0; i<expList.size(); i++) {
-    std::pair<std::vector<std::string>,std::string> pad;
+    std::pair<PlotNames,OptionList> pad;
+    std::pair<std::string,std::string> split=splitString(expList[i], ";");
+    std::string names=split.first;
+    if (names=="") continue;
+    split=splitString(split.second, ";");
 
-    std::pair<std::string,std::string> listOption=splitString(expList[i], ";");
-    size_t space=listOption.first.find_first_of(" ");
-    while (space!=std::string::npos) {
-      listOption.first.erase(space, 1);
-      space=listOption.first.find_first_of(" ", space);
+    pad.second.push_back("");
+    size_t posOverlay=split.first.find("overlay");
+    if (posOverlay!=std::string::npos) {
+      split.first.erase(posOverlay, 7);
+      pad.second[0]="overlay";
     }
-    pad.second=listOption.second;
+    size_t posStack=split.first.find("stack");
+    if (posStack!=std::string::npos) {
+      split.first.erase(posStack, 5);
+      pad.second[0]="stack";
+    }
+    pad.second.push_back(split.first);
+    pad.second.push_back(split.second);
 
-    std::vector<std::string> items = itemizeString(listOption.first, ",");
-    if (pad.second.find("overlay")!=std::string::npos ||
-	pad.second.find("stack")!=std::string::npos) {
+    size_t space=names.find_first_of(" ");
+    while (space!=std::string::npos) {
+      names.erase(space, 1);
+      space=names.find_first_of(" ", space);
+    }
+    std::vector<std::string> items = itemizeString(names, ",");
+    if (pad.second[0]=="overlay" || pad.second[0]=="stack") {
       pad.first.insert(pad.first.begin(), items.begin(), items.end());
       pads.push_back(pad);
       continue;
@@ -657,48 +784,170 @@ int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
     }
   }
 
+  std::cout<<"pad list:\n";
+  for (size_t i=0; i<pads.size(); i++) {
+    for (size_t j=0; j<pads[i].first.size(); j++) std::cout<<pads[i].first[j]<<" ";
+    std::cout<<pads[i].second[0]<<" "<<pads[i].second[1]<<" "<<pads[i].second[2]<<std::endl;
+  }
+
+  // Prepare canvass ----------------------------------------------------------
+
+  for (size_t i=0; i<legend_.size(); i++) {
+    delete legend_[i];
+    delete frame_[i];
+  }
+  stack_.clear();
+  legend_.clear();
+  frame_.clear();
+  can_->Clear();
+
   if (nrows<0) nrows=pads.size()/ncols;
   if (ncols*nrows<int(pads.size())) nrows=pads.size()/ncols+1;
-
-  can_->Clear();
   can_->Divide(ncols, nrows);
 
+  // Draw pads ----------------------------------------------------------------
+
+  std::cout<<"drawing pads"<<std::endl;
   for (size_t i=0; i<pads.size(); i++) {
-
-    std::string option=pads[i].second;
-    size_t posOverlay=option.find("overlay");
-    if (posOverlay!=std::string::npos) option.erase(posOverlay, 7);
-    size_t posStack=option.find("stack");
-    if (posStack!=std::string::npos) option.erase(posStack, 5);
-    std::ostringstream opt;
-    opt << option;
-
     can_->cd(i+1);
+    double min=0, max=0;
+    std::string lastHist="";
+
+    // Drop plots if not found and calculate stack  ---------------------------
+
+    for (int j=pads[i].first.size()-1; j>=0; j--) {
+      std::pair<std::string,std::string> nameRest;
+      nameRest=splitString(pads[i].first[j], "|");
+      std::cout<<j<<" "<<nameRest.first<<" | "<<nameRest.second<<std::endl;
+      H *h=NULL;
+      
+      typename std::map<std::string,Histogram<H> >::iterator it;
+      size_t pos;
+      if ((pos=nameRest.first.find(".num"))!=std::string::npos) {
+	std::string name=nameRest.first;
+	name.erase(pos, 4);
+	if ((it=this->find(name))!=this->end()) h=it->second.num();
+      } else if ((pos=nameRest.first.find(".den"))!=std::string::npos) {
+	std::string name=nameRest.first;
+	name.erase(pos, 4);
+	if ((it=this->find(name))!=this->end()) h=it->second.den();
+      } else {
+	if ((it=this->find(nameRest.first))!=this->end()) h=&(it->second);
+      }
+
+      if (h==NULL) { pads[i].first.erase(pads[i].first.begin()+j); continue; }
+      if (j==int(pads[i].first.size())-1) {
+	max=h->GetMaximum();
+	min=h->GetMinimum();
+      }
+      if (max<h->GetMaximum()) max=h->GetMaximum();
+      if (min>h->GetMinimum()) min=h->GetMinimum();
+      std::cout<<nameRest.first<<" -> "<<h->GetName()<<std::endl;
+
+      if (pads[i].second[0]!="stack") continue;
+
+      stack_[nameRest.first]=(*h);
+      if (lastHist=="") {
+	lastHist=nameRest.first;
+      } else {
+	typename std::map<std::string,H>::iterator ith;
+	ith=stack_.find(nameRest.first);
+	ith->second.Add(&stack_[lastHist]);
+	max=ith->second.GetMaximum();
+	min=ith->second.GetMinimum();
+	lastHist=nameRest.first;
+      }
+    }
+
+    // Make record of empty pad and move on -----------------------------------
+
+    std::cout<<"Pad "<<i<<std::endl;
+    for (size_t j=0; j<pads[i].first.size(); j++) std::cout<<pads[i].first[j]<<" ";
+    std::cout<<pads[i].second[0]<<" "<<pads[i].second[1]<<" "<<pads[i].second[2]<<std::endl;
+
+    if (pads[i].first.size()==0) {
+      legend_.push_back(NULL);
+      frame_.push_back(NULL);
+      continue;
+    }
+
+    // Plot the remaining histograms in this pad  -----------------------------
+
+    std::ostringstream opt;
+    opt << pads[i].second[1];
+    std::string lastLeg="";
 
     for (size_t j=0; j<pads[i].first.size(); j++) {
-      std::string hist=pads[i].first[j];
+      std::vector<std::string> nameLegendTitle;
+      nameLegendTitle=itemizeString(pads[i].first[j], "|");
+      std::string hist=nameLegendTitle[0];
 
-      size_t pos=hist.find(".num");
-      if (pos!=std::string::npos) {
-	hist.erase(pos, 4);
-	typename std::map<std::string,H>::iterator it=this->find(hist);
-	if (it!=this->end()) it->second.num()->Draw(opt.str().data());
-      } else {
-	pos=hist.find(".den");
-	if (pos!=std::string::npos) {
+      H* h=NULL;
+      if (pads[i].second[0]!="stack") {
+	typename std::map<std::string,Histogram<H> >::iterator it;
+	size_t pos;
+	if ((pos=hist.find(".num"))!=std::string::npos) {
 	  hist.erase(pos, 4);
-	  typename std::map<std::string,H>::iterator it=this->find(hist);
-	  if (it!=this->end()) it->second.den()->Draw(opt.str().data());
+	  if ((it=this->find(hist))!=this->end()) h=it->second.num();
+	} else if ((pos=hist.find(".den"))!=std::string::npos) {
+	  hist.erase(pos, 4);
+	  if ((it=this->find(hist))!=this->end()) h=it->second.den();
 	} else {
-	  typename std::map<std::string,H>::iterator it=this->find(hist);
-	  if (it!=this->end()) it->second.Draw(opt.str().data());
+	  if ((it=this->find(hist))!=this->end()) h=(H*)&(it->second);
+	}
+      } else {
+	h=&stack_[hist];
+      }
+
+      if (j==0) {
+	H* hc=(H*)h->DrawCopy(opt.str().data());
+	opt << "SAME";
+	frame_.push_back(hc);
+	std::ostringstream ss;
+	ss << "frame_" << i;
+	frame_[i]->SetName(ss.str().data());
+	std::cout<<i<<" "<<hist<<" -> "<<frame_[i]->GetName()<<std::endl;
+	frame_[i]->SetAxisRange(min, max*1.05, "Y");
+	if (pads[i].second[2]!="") {
+	  frame_[i]->SetTitle(pads[i].second[2].data());
+	}
+	legend_.push_back(NULL);
+      }
+
+      if (legend_[i]==NULL&&nameLegendTitle.size()>1) {
+	if (nameLegendTitle.size()>2) {
+	  lastLeg=nameLegendTitle[2];
+	  legend_[i]=new TLegend(0.8, 0.75, 0.95, 0.80);
+	  legend_[i]->AddEntry((TObject*)NULL, lastLeg.data(),"h");
+	  legend_[i]->SetY1(legend_[i]->GetY1()-0.05);
+	} else {
+	  legend_[i]=new TLegend(0.8, 0.75, 0.95, 0.80);
 	}
       }
 
-      if (j==0) opt << "SAME";
+      std::cout<<hist<<" -> "<<h->GetName()<<" opt:"<<opt.str()<<std::endl;
+      h->Draw(opt.str().data());
+      if (nameLegendTitle.size()>1) {
+	if (nameLegendTitle.size()>2 && lastLeg!=nameLegendTitle[2]) {
+	  legend_[i]->AddEntry((TObject*)NULL, nameLegendTitle[2].data(),"h");
+	  legend_[i]->SetY1(legend_[i]->GetY1()-0.05);
+	}
+	legend_[i]->AddEntry(h, nameLegendTitle[1].data());
+	legend_[i]->SetY1(legend_[i]->GetY1()-0.05);
+      }
     }
+
+    frame_[i]->Draw("AXISSAME");
+    if (legend_[i]!=NULL) {
+      std::cout<<"drawing legend\n";
+      legend_[i]->Draw();
+    }
+    // End of this pad --------------------------------------------------------
+
   }
 
+  can_->Update();
+  if (style_!="") setPlotStyle(style_);
   return pads.size();
 }
 
@@ -714,7 +963,7 @@ int Plot<H>::Draw(std::string hist, int ncols, int nrows) {
 //------------------------------------ Write() --------------------------------
 
 template <class H> void Plot<H>::Write() {
-  typename std::map<std::string,H>::iterator it;
+  typename std::map<std::string,Histogram<H> >::iterator it;
   for (it=this->begin(); it!=this->end(); it++) {
     it->second.Write();
   }
@@ -726,7 +975,7 @@ template <class H> void Plot<H>::Write() {
 
 template <class H>
 void Plot<H>::scaleMaximumTo(std::string kind, double maximum) {
-  typename std::map<std::string,H>::iterator it;
+  typename std::map<std::string,Histogram<H> >::iterator it;
   int k=0;
   if (kind.find("num")!=std::string::npos) k=1;
   if (kind.find("den")!=std::string::npos) k=-1;
@@ -756,7 +1005,7 @@ void Plot<H>::scaleMaximumTo(std::string kind, double maximum) {
 
 template <class H>
 void Plot<H>::scaleAreaTo(std::string kind, double area) {
-  typename std::map<std::string,H>::iterator it;
+  typename std::map<std::string,Histogram<H> >::iterator it;
   int k=0;
   if (kind.find("num")!=std::string::npos) k=1;
   if (kind.find("den")!=std::string::npos) k=-1;
@@ -784,158 +1033,260 @@ void Plot<H>::scaleAreaTo(std::string kind, double area) {
 }
 
 
-// //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
-// template <class H> 
-// void Plot<H>::setPlotStyle(std::string style) {
+template <class H> 
+void Plot<H>::setPlotStyle(std::string style) {
 
-//   if (style.find("TDR")!=std::string::npos || 
-//       style.find("tdr")!=std::string::npos ) {
-//     // For the canvas:
-//     can_->SetBorderMode(0);
-//     can_->SetFillColor(kWhite);
-//     //can_->SetCanvasDefH(600); //Height of canvas
-//     //can_->SetCanvasDefW(600); //Width of canvas
-//     //can_->SetCanvasDefX(0);   //POsition on screen
-//     //can_->SetCanvasDefY(0);
+  if (getNPads()==0) return;
+
+  if (style.find("TDR")!=std::string::npos || 
+      style.find("tdr")!=std::string::npos ) {
+
+    // For the canvas:
+    can_->SetBorderMode(0);
+    can_->SetFillColor(kWhite);
+    can_->SetWindowSize(600+(600-can_->GetWw()), 600+(600-can_->GetWh()));    
     
-//     // For the Pad:
-//     can_->SetBorderMode(0);
-//     // can_->SetPadBorderSize(Width_t size = 1);
-//     can_->SetFramdeFillColor(kWhite);
-//     can_->SetGridx(false);
-//     can_->SetGridy(false);
-//     can_->SetGridColor(0);
-//     can_->SetGridStyle(3);
-//     can_->SetGridWidth(1);
-    
-//     // For the frame:
-//     can_->SetFrameBorderMode(0);
-//     can_->SetFrameBorderSize(1);
-//     can_->SetFrameFillColor(0);
-//     can_->SetFrameFillStyle(0);
-//     can_->SetFrameLineColor(1);
-//     can_->SetFrameLineStyle(1);
-//     can_->SetFrameLineWidth(1);
+    // For the Pad:
+    for (int i=0; i<getNPads(); i++) {
+      TVirtualPad *ipad=can_->GetPad(i+1);
+      if (ipad==NULL) continue;
+      ipad->SetBorderMode(0);
+      ipad->SetFillColor(kWhite);
+      ipad->SetBorderSize(1);
+      ipad->SetGridx(false);
+      ipad->SetGridy(true);
+      //ipad->SetGridColor(0);
+      //ipad->SetGridStyle(3);
+      //ipad->SetGridWidth(1);
+      ipad->SetTickx(1);  
+      ipad->SetTicky(1);
+
+      // Margins:
+      ipad->SetMargin(0.16, 0.02, 0.13, 0.05);
+ 
+      // For the frame:
+      TFrame *f=ipad->GetFrame();
+      if (f!=NULL) {
+	ipad->SetFrameFillColor(kWhite);
+	ipad->SetFrameBorderMode(0);
+	ipad->SetFrameBorderSize(1);
+	ipad->SetFrameFillStyle(0);
+	ipad->SetFrameLineColor(1);
+	ipad->SetFrameLineStyle(1);
+
+	f->SetFillColor(kWhite);
+	f->SetBorderMode(0);
+	f->SetBorderSize(1);
+	f->SetFillStyle(0);
+	f->SetLineColor(1);
+	f->SetLineStyle(1);
+      }
+
+      // Histo in frame:
+
+      if (int(frame_.size())>i && frame_[i]!=NULL) {
+	// Stat
+	TPaveStats *st = (TPaveStats*)frame_[i]->FindObject("stats");
+	if (st!=NULL) {
+	  st->SetOptStat(1100);
+	  st->SetFillColor(kWhite);
+	  st->SetTextFont(42);
+	  st->SetTextSize(0.04);
+	  st->SetTextColor(1);
+	  st->SetStatFormat("6.4g");
+	  st->SetBorderSize(1);
+	  st->SetY1(st->GetY1()-0.1);
+	  st->SetX1(st->GetX1()-0.2);
+	}
+
+// 	// Title:
+// 	frame_[i]->SetFillColor(kWhite); // Was 10 in tdrStyle()
+// 	frame_[i]->SetFillStyle(1001);
+// 	frame_[i]->SetTextFont(42);
+// 	frame_[i]->SetTextSize(0.05);
+// 	frame_[i]->SetTextColor(1);
+// 	frame_[i]->SetBorderSize(2);
+// 	frame_[i]->SetX1(0.1);
+// 	frame_[i]->SetY1(0.985);
+// 	frame_[i]->SetX2(0);
+// 	frame_[i]->SetY2(0);
+
+	frame_[i]->SetFillColor(kWhite);
+	frame_[i]->SetFillStyle(0);
+	frame_[i]->SetLineColor(1);
+	frame_[i]->SetLineStyle(0);
+	frame_[i]->SetLineWidth(1);
+// 	frame_[i]->SetLegoInnerR(0.5);
+// 	frame_[i]->SetNumberContours(20);
+// 	frame_[i]->SetEndErrorSize(2);
+// 	frame_[i]->SetErrorMarker(20);
+// 	frame_[i]->SetErrorX(0.);
+	frame_[i]->SetMarkerStyle(20);
+
+	std::vector<std::string> axis;
+	axis.push_back("X");
+	axis.push_back("Y");
+	axis.push_back("Z");
+	
+	for (size_t j=0; j<axis.size(); j++) {
+	  TAxis *a=NULL;
+	  if (axis[j]=="X") a=frame_[i]->GetXaxis();
+	  if (axis[j]=="Y") a=frame_[i]->GetYaxis();
+	  if (axis[j]=="Z") a=frame_[i]->GetZaxis();
+	  if (a==NULL) continue;
+
+	  // For the axis titles:
+	  a->SetTitleColor(1);
+	  a->SetTitleFont(42);
+	  a->SetTitleSize(0.06);
+	  
+	  a->SetTitleOffset(1.1);
+	  if (axis[j]=="X") a->SetTitleOffset(0.9);
+	  if (axis[j]=="Y") a->SetTitleOffset(1.25);
+	  
+	  // For the axis labels:
+	  
+	  a->SetLabelColor(1);
+	  a->SetLabelFont(42);
+	  a->SetLabelOffset(0.007);
+	  a->SetLabelSize(0.05);
+	  
+	  a->SetAxisColor(1);
+	  a->SetTickLength(0.03);
+	  a->SetNdivisions(510);
+	} // axis
+
+      } // frame
+
+      // Legend:
+
+      if (int(legend_.size())>i && legend_[i]!=NULL) {
+	legend_[i]->SetFillColor(kWhite);
+	legend_[i]->SetFillStyle(0);
+	legend_[i]->SetLineColor(1);
+	legend_[i]->SetLineStyle(0);
+	legend_[i]->SetLineWidth(1);
+	legend_[i]->SetBorderSize(0);
+	legend_[i]->SetTextFont(42);
+	legend_[i]->SetTextSize(0.06);
+      }
+
+    } // pad
     
 //     // For the histo:
-//     // can_->SetHistFillColor(1);
-//     // can_->SetHistFillStyle(0);
-//     can_->SetHistLineColor(1);
-//     can_->SetHistLineStyle(0);
-//     can_->SetHistLineWidth(1);
-//     // can_->SetLegoInnerR(Float_t rad = 0.5);
-//     // can_->SetNumberContours(Int_t number = 20);
-    
-//     can_->SetEndErrorSize(2);
-//     //can_->SetErrorMarker(20);
-//     can_->SetErrorX(0.);
-    
-//     can_->SetMarkerStyle(20);
-    
+
+//     typename std::map<std::string,Histogram<H> >::iterator it;
+//     for (it=this->begin(); it!=this->end(); it++) {
+//       Histogram<H> *h=&(it->second);
+//       //h->SetFillColor(1);
+//       h->SetFillStyle(0);
+//       //h->SetLineColor(1);
+//       h->SetLineStyle(0);
+//       h->SetLineWidth(1);
+// //       h->SetLegoInnerR(0.5);
+// //       h->SetNumberContours(20);
+// //       h->SetEndErrorSize(2);
+// //       h->SetErrorMarker(20);
+// //       h->SetErrorX(0.);
+//       h->SetMarkerStyle(20);
+
+//       std::vector<std::string> axis;
+//       axis.push_back("X");
+//       axis.push_back("Y");
+//       axis.push_back("Z");
+
+//       for (size_t j=0; j<axis.size(); j++) {
+// 	TAxis *a=NULL;
+// 	if (axis[j]=="X") a=h->GetXaxis();
+// 	if (axis[j]=="Y") a=h->GetYaxis();
+// 	if (axis[j]=="Z") a=h->GetZaxis();
+// 	if (a==NULL) continue;
+
+// 	// For the axis titles:
+// 	a->SetTitleColor(1);
+// 	a->SetTitleFont(42);
+// 	a->SetTitleSize(0.06);
+
+// 	a->SetTitleOffset(1.1);
+// 	if (axis[j]=="X") a->SetTitleOffset(0.9);
+// 	if (axis[j]=="Y") a->SetTitleOffset(1.25);
+	
+// 	// For the axis labels:
+	
+// 	a->SetLabelColor(1);
+// 	a->SetLabelFont(42);
+// 	a->SetLabelOffset(0.007);
+// 	a->SetLabelSize(0.05);
+
+// 	a->SetAxisColor(1);
+// 	a->SetTickLength(0.03);
+// 	a->SetNdivisions(510);
+
+//       } // Axis
+
+//     } // Histograms
+
+//
+// L E F T O V E R
+//
+
+
 //     //For the fit/function:
 //     can_->SetOptFit(1);
 //     can_->SetFitFormat("5.4g");
 //     can_->SetFuncColor(2);
 //     can_->SetFuncStyle(1);
 //     can_->SetFuncWidth(1);
-    
+
 //     //For the date:
 //     can_->SetOptDate(0);
 //     // can_->SetDateX(Float_t x = 0.01);
 //     // can_->SetDateY(Float_t y = 0.01);
-    
+
 //     // For the statistics box:
 //     can_->SetOptFile(0);
-//     //can_->SetOptStat(0);
-//     can_->SetOptStat("mr");
-//     can_->SetStatColor(kWhite);
-//     can_->SetStatFont(42);
-//     can_->SetStatFontSize(0.04);//---> can_->SetStatFontSize(0.025);
-//     can_->SetStatTextColor(1);
-//     can_->SetStatFormat("6.4g");
-//     can_->SetStatBorderSize(1);
-//     can_->SetStatH(0.1);
-//     can_->SetStatW(0.2);//---> can_->SetStatW(0.15);
     
-//     // can_->SetStatStyle(Style_t style = 1001);
-//     // can_->SetStatX(Float_t x = 0);
-//     // can_->SetStatY(Float_t y = 0);
+    // can_->SetStatStyle(Style_t style = 1001);
+    // can_->SetStatX(Float_t x = 0);
+    // can_->SetStatY(Float_t y = 0);
     
-//     // Margins:
-//     can_->SetPadTopMargin(0.05);
-//     can_->SetPadBottomMargin(0.13);
-//     can_->SetPadLeftMargin(0.16);
-//     can_->SetPadRightMargin(0.02);
+   
+    // For the Global title:
     
-//     // For the Global title:
     
-//     can_->SetOptTitle(0);
-//     can_->SetTitleFont(42);
-//     can_->SetTitleColor(1);
-//     can_->SetTitleTextColor(1);
-//     can_->SetTitleFillColor(10);
-//     can_->SetTitleFontSize(0.05);
-//     // can_->SetTitleH(0); // Set the height of the title box
-//     // can_->SetTitleW(0); // Set the width of the title box
-//     // can_->SetTitleX(0); // Set the position of the title box
-//     // can_->SetTitleY(0.985); // Set the position of the title box
-//     // can_->SetTitleStyle(Style_t style = 1001);
-//     // can_->SetTitleBorderSize(2);
+    // For the axis:
     
-//     // For the axis titles:
+    //can_->SetStripDecimals(kTRUE);
     
-//     can_->SetTitleColor(1, "XYZ");
-//     can_->SetTitleFont(42, "XYZ");
-//     can_->SetTitleSize(0.06, "XYZ");
-//     // can_->SetTitleXSize(Float_t size = 0.02); 
-//     // Another way to set the size?
-//     // can_->SetTitleYSize(Float_t size = 0.02);
-//     can_->SetTitleXOffset(0.9);
-//     can_->SetTitleYOffset(1.25);
-//     // can_->SetTitleOffset(1.1, "Y"); // Another way to set the Offset
-    
-//     // For the axis labels:
-    
-//     can_->SetLabelColor(1, "XYZ");
-//     can_->SetLabelFont(42, "XYZ");
-//     can_->SetLabelOffset(0.007, "XYZ");
-//     can_->SetLabelSize(0.05, "XYZ");
-    
-//     // For the axis:
-    
-//     can_->SetAxisColor(1, "XYZ");
-//     can_->SetStripDecimals(kTRUE);
-//     can_->SetTickLength(0.03, "XYZ");
-//     can_->SetNdivisions(510, "XYZ");
-//     can_->SetPadTickX(1);  
-//     // To get tick marks on the opposite side of the frame
-//     can_->SetPadTickY(1);
-    
-//     // Change for log plots:
+
+    // Change for log plots:
 //     can_->SetOptLogx(0);
 //     can_->SetOptLogy(0);
 //     can_->SetOptLogz(0);
     
-//     // Postscript options:
+    // Postscript options:
 //     can_->SetPaperSize(20.,20.);
-//     // can_->SetLineScalePS(Float_t scale = 3);
-//     // can_->SetLineStyleString(Int_t i, const char* text);
-//     // can_->SetHeaderPS(const char* header);
-//     // can_->SetTitlePS(const char* pstitle);
+    // can_->SetLineScalePS(Float_t scale = 3);
+    // can_->SetLineStyleString(Int_t i, const char* text);
+    // can_->SetHeaderPS(const char* header);
+    // can_->SetTitlePS(const char* pstitle);
     
-//     // can_->SetBarOffset(Float_t baroff = 0.5);
-//     // can_->SetBarWidth(Float_t barwidth = 0.5);
-//     // can_->SetPaintTextFormat(const char* format = "g");
-//     // can_->SetPalette(Int_t ncolors = 0, Int_t* colors = 0);
-//     // can_->SetTimeOffset(Double_t toffset);
-//     // can_->SetHistMinimumZero(kTRUE);
+    // can_->SetBarOffset(Float_t baroff = 0.5);
+    // can_->SetBarWidth(Float_t barwidth = 0.5);
+    // can_->SetPaintTextFormat(const char* format = "g");
+    // can_->SetPalette(Int_t ncolors = 0, Int_t* colors = 0);
+    // can_->SetTimeOffset(Double_t toffset);
+    // can_->SetHistMinimumZero(kTRUE);
     
-//     //   can_->cd();
+    //   can_->cd();
     
-//     //gROOT->ForceStyle();
-//   }
-// }
+    //gROOT->ForceStyle();
+
+    can_->Update();
+  }
+}
 
 
 //-----------------------------------------------------------------------------
