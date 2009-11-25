@@ -208,6 +208,7 @@ bool RA4Synchronization::filter(edm::Event& iEvent,
   
 
   // Jet Selection
+  
 
   if (nummuo==1 && numele==0) {
     
@@ -283,117 +284,195 @@ event.passed(selection,&pjet,&pmet,&pelectron,&pmuon,&trigger,&eventCutFlowMu);
 
 
   selection="RefAna4JetMetElectron";
+  
+  numele=0;
+  nummuo=0;
+  
+  
+  // Muon selection 
+  
+  
+  if(trigger.trigger("HLT_Ele15_LW_L1R").hlt==1){ 
+    
+    if (pmuon.size()>0) {
+    
+      bool first=false;
+    
+      std::vector<std::pair<std::string,int> > cutflow;
+      std::vector< int > prev;
+      prev.resize(pmuon.size());
+      for (unsigned int i=0;i<prev.size();i++){
+        prev[i]=1;
+      }
+      pmuon.passed(selection,0,&cutflow);
+    
+      if (muonCutFlowEle.size()==0) { 
+        muonCutFlowEle.resize(cutflow.size());
+        std::vector<int> axu;
+        axu.push_back(0);
+        for (unsigned int j=0;j<cutflow.size();j++){          
+          muonCutFlowEle[j].first=cutflow[j].first;
+          muonCutFlowEle[j].second=axu;
+        }
+      }
 
-  // Electron CutFlow
-  
-  
-  for (unsigned int i=0;i<pelectron.size();i++){
-    std::vector<std::pair<std::string,int> > cutflow;
-    
-    pelectron.passed(selection,i,&cutflow);     
-    
-    if (electronCutFlowEle.size()==0) { 
-      electronCutFlowEle.resize(cutflow.size());
-      std::vector<int> axu;
-      axu.push_back(0);
-      axu.push_back(0);
-      for (unsigned int j=0;j<cutflow.size();j++){          
-        electronCutFlowEle[j].first=cutflow[j].first;
-        electronCutFlowEle[j].second=axu;
+      for (unsigned int j=0;j<cutflow.size();j++){
+        first=false;
+      
+        for (unsigned int i=0;i<pmuon.size();i++){        
+          pmuon.passed(selection,i,&cutflow);
+          
+          if (j>0 && prev[i]!=0) 
+            prev[i]=cutflow[j-1].second;      
+          
+          if (prev[i]==1 && cutflow[j].second==1){
+            if ( i==0 || (i>0 && first==false) ) {
+              muonCutFlowEle[j].second[0]++;
+              first=true;
+            }
+                  
+            if (j==cutflow.size()-1)
+              nummuo++;          
+          }
+        }
+      
       }
     }
-    
-
-    int prev=1;
-    for (unsigned int j=0;j<cutflow.size();j++){        
-      if (j>0 && prev!=0){ 
-        prev=cutflow[j-1].second;
-      }          
-      if (prev==1){
-        //if (i==0)  
-          electronCutFlowEle[j].second[0]=
-              electronCutFlowEle[j].second[0]+cutflow[j].second;
-        if (i>0)  
-          electronCutFlowEle[j].second[1]=
-              electronCutFlowEle[j].second[1]+cutflow[j].second;
-      }
-    }   
-    
   }
   
   
+  // Electron selection
   
-  // Muon CutFlow   
+  
+  if (trigger.trigger("HLT_Ele15_LW_L1R").hlt==1 && nummuo==0) {
+    
+    if (pelectron.size()>0) {
+    
+      bool first=false;
+      bool second=false;
+      bool third=false;
+    
+      std::vector<std::pair<std::string,int> > cutflow;
+      std::vector< int > prev;
+      prev.resize(pelectron.size());
+      for (unsigned int i=0;i<prev.size();i++){
+        prev[i]=1;
+      }
+      pelectron.passed(selection,0,&cutflow);
+    
+      if (electronCutFlowEle.size()==0) { 
+        electronCutFlowEle.resize(cutflow.size());
+        std::vector<int> axu;
+        axu.push_back(0);
+        axu.push_back(0);
+        axu.push_back(0);
+        for (unsigned int j=0;j<cutflow.size();j++){          
+          electronCutFlowEle[j].first=cutflow[j].first;
+          electronCutFlowEle[j].second=axu;
+        }
+      }
 
-  for (unsigned int i=0;i<pmuon.size();i++){
-    std::vector<std::pair<std::string,int> > cutflow;
-    
-    pmuon.passed(selection,i,&cutflow);     
-    
-    if (muonCutFlowEle.size()==0) { 
-      muonCutFlowEle.resize(cutflow.size());
-      std::vector<int> axu;
-      axu.push_back(0);
-      axu.push_back(0);
-      for (unsigned int j=0;j<cutflow.size();j++){          
-        muonCutFlowEle[j].first=cutflow[j].first;
-        muonCutFlowEle[j].second=axu;
+      for (unsigned int j=0;j<cutflow.size();j++){
+        first=false;
+        second=false;
+        third=false;    
+      
+        for (unsigned int i=0;i<pelectron.size();i++){        
+          pelectron.passed(selection,i,&cutflow);
+        
+          if (j>0 && prev[i]!=0) 
+            prev[i]=cutflow[j-1].second;      
+          
+          if (prev[i]==1 && cutflow[j].second==1){
+            if (first==true && second==true && third==false) {
+              electronCutFlowEle[j].second[2]++;
+              third=true;            
+            }
+            if (first==true && second==false) {
+              electronCutFlowEle[j].second[1]++;
+              second=true;
+            }
+            if ( i==0 || (i>0 && first==false) ) {
+              electronCutFlowEle[j].second[0]++;
+              first=true;
+            }
+                  
+            if (j==cutflow.size()-1)
+              numele++;          
+          }
+        }
+      
       }
     }
-    
-
-    int prev=1;
-    for (unsigned int j=0;j<cutflow.size();j++){        
-      if (j>0 && prev!=0){ 
-        prev=cutflow[j-1].second;
-      }          
-      if (prev==1){
-        //if (i==0)  
-          muonCutFlowEle[j].second[0]=
-              muonCutFlowEle[j].second[0]+cutflow[j].second;
-//         if (i==1)  
-//           muonCutFlowEle[j].second[1]=
-//               muonCutFlowEle[j].second[1]+cutflow[j].second;
-      }
-    }   
-    
   }
+  
 
-  // Jet CutFlow
+  // Jet selection
 
   
-  for (unsigned int i=0;i<pjet.size();i++){
-    std::vector<std::pair<std::string,int> > cutflow;
+  if (trigger.trigger("HLT_Ele15_LW_L1R").hlt==1 && nummuo==0 && numele==1) {
+  
+    if (pjet.size()>0) {
     
-    pjet.passed(selection,i,&cutflow);     
+      bool first=false;
+      bool second=false;
+      bool third=false;
+      bool fourth=false;
     
-    if (jetCutFlowEle.size()==0) { 
-      jetCutFlowEle.resize(cutflow.size());
-      std::vector<int> axu;
-      axu.push_back(0);
-      axu.push_back(0);
-      for (unsigned int j=0;j<cutflow.size();j++){          
-        jetCutFlowEle[j].first=cutflow[j].first;
-        jetCutFlowEle[j].second=axu;
+      std::vector<std::pair<std::string,int> > cutflow;
+      std::vector< int > prev;
+      prev.resize(pjet.size());
+      for (unsigned int i=0;i<prev.size();i++){
+        prev[i]=1;
       }
-    }
+      pjet.passed(selection,0,&cutflow);
     
+      if (jetCutFlowEle.size()==0) { 
+        jetCutFlowEle.resize(cutflow.size());
+        std::vector<int> axu;
+        axu.push_back(0);
+        axu.push_back(0);
+        axu.push_back(0);
+        axu.push_back(0);
+        for (unsigned int j=0;j<cutflow.size();j++){          
+          jetCutFlowEle[j].first=cutflow[j].first;
+          jetCutFlowEle[j].second=axu;
+        }
+      }
 
-    int prev=1;
-    for (unsigned int j=0;j<cutflow.size();j++){        
-      if (j>0 && prev!=0){ 
-        prev=cutflow[j-1].second;
-      }          
-      if (prev==1){
-        //if (i==0)  
-          jetCutFlowEle[j].second[0]=
-              jetCutFlowEle[j].second[0]+cutflow[j].second;
-        if (i>0)  
-          jetCutFlowEle[j].second[1]=
-              jetCutFlowEle[j].second[1]+cutflow[j].second;
-      }
+      for (unsigned int j=0;j<cutflow.size();j++){
+        first=false;
+        second=false;
+        third=false;
+        fourth=false;     
+              
+        for (unsigned int i=0;i<pjet.size();i++){        
+          pjet.passed(selection,i,&cutflow);
+        
+          if (j>0 && prev[i]!=0) 
+            prev[i]=cutflow[j-1].second;      
+          
+          if (prev[i]==1 && cutflow[j].second==1){
+            if (first==true && second==true && third==true && fourth==false) {
+              jetCutFlowEle[j].second[3]++;
+              fourth=true;            
+            }
+            if (first==true && second==true && third==false) {
+              jetCutFlowEle[j].second[2]++;
+              third=true;            
+            }
+            if (first==true && second==false) {
+              jetCutFlowEle[j].second[1]++;
+              second=true;
+            }
+            if ( i==0 || (i>0 && first==false) ) {
+              jetCutFlowEle[j].second[0]++;
+              first=true;
+            }                        
+          }
+        }       
+      }  
     }   
-    
   } 
 
 
@@ -414,7 +493,8 @@ void RA4Synchronization::beginJob(const edm::EventSetup&) {
 void RA4Synchronization::endJob() {
   
   std::cout<<std::endl;
-  std::cout << "                   Reference Analysis 4 Jet+Met+Muon" << std::endl;
+  std::cout << "                   Reference Analysis 4 Jet+Met+Muon" 
+      << std::endl;
   std::cout<<std::endl;
   
   std::cout<<std::endl;
@@ -422,12 +502,13 @@ void RA4Synchronization::endJob() {
       "   "<<eventCutFlowMu[0].second<<std::endl;
   std::cout<<std::endl;
   
-  for (unsigned int i=0;i<eventCutFlowMu.size();i++){
+  for (unsigned int i=1;i<eventCutFlowMu.size();i++){
 
     
-    if (i==0){      
+    if (i==1){      
       std::cout<<std::endl;
-      std::cout<<"      Muon selection                         1st Muon  2nd Muon  3rd Muon"<<std::endl;
+      std::cout<<"      Muon selection                         " \
+          "1st Muon  2nd Muon  3rd Muon"<<std::endl;
       for (unsigned int j=0;j<muonCutFlowMu.size();j++){
         std::cout<<"        "<<muonCutFlowMu[j].first<<
             "   "<<muonCutFlowMu[j].second[0]<<
@@ -437,10 +518,11 @@ void RA4Synchronization::endJob() {
       std::cout<<std::endl;    
     }   
     
-    if (i==1){      
+    if (i==2){      
       std::cout<<std::endl;
 
-      std::cout<<"      Electron selection                   1st Electron"<<std::endl;
+      std::cout<<"      Electron selection                   " \
+          "1st Electron"<<std::endl;
       for (unsigned int j=0;j<electronCutFlowMu.size();j++){
         std::cout<<"        "<<electronCutFlowMu[j].first<<
             "   "<<electronCutFlowMu[j].second[0]<<std::endl;           
@@ -448,9 +530,10 @@ void RA4Synchronization::endJob() {
       std::cout<<std::endl;    
     }
     
-    if (i==2){      
+    if (i==3){      
       std::cout<<std::endl;  
-      std::cout<<"      Jet selection                          1st Jet   2nd Jet   3rd Jet   4th Jet"<<std::endl;
+      std::cout<<"      Jet selection                          " \
+          "1st Jet   2nd Jet   3rd Jet   4th Jet"<<std::endl;
       for (unsigned int j=0;j<jetCutFlowMu.size();j++){
         std::cout<<"        "<<jetCutFlowMu[j].first<<
             "   "<<jetCutFlowMu[j].second[0]<<
@@ -461,8 +544,10 @@ void RA4Synchronization::endJob() {
       std::cout<<std::endl;   
     }
     
+    std::cout<<std::endl;
     if (i>0) std::cout<<"  "<<eventCutFlowMu[i].first<<
           "   "<<eventCutFlowMu[i].second<<std::endl;
+    std::cout<<std::endl;
             
   }
   
@@ -480,44 +565,52 @@ void RA4Synchronization::endJob() {
   std::cout<<std::endl;
   
   
-  for (unsigned int i=0;i<eventCutFlowEle.size();i++){
+  for (unsigned int i=1;i<eventCutFlowEle.size();i++){
 
     
-//     if (i==1){      
-//       std::cout<<std::endl;
-//       std::cout<<"    Muon cutflow       ≥1      ≥2"<<std::endl;
-//       for (unsigned int j=0;j<muonCutFlowEle.size();j++){
-//         std::cout<<"        "<<muonCutFlowEle[j].first<<
-//             "   "<<muonCutFlowEle[j].second[0]<<
-//             "      "<<muonCutFlowEle[j].second[1]<<std::endl;           
-//       }
-//       std::cout<<std::endl;    
-//     } 
-//     
-//     if (i==2){      
-//       std::cout<<std::endl;
-//       std::cout<<"  Electron cutflow     ≥1      ≥2"<<std::endl;
-//       for (unsigned int j=0;j<electronCutFlowEle.size();j++){
-//         std::cout<<"        "<<electronCutFlowEle[j].first<<
-//             "   "<<electronCutFlowEle[j].second[0]<<
-//             "      "<<electronCutFlowEle[j].second[1]<<std::endl;           
-//       }
-//       std::cout<<std::endl;    
-//     }          
-//     
-//     if (i==3){      
-//       std::cout<<std::endl;
-//       std::cout<<"     Jet cutflow       ≥1      ≥2"<<std::endl;
-//       for (unsigned int j=0;j<jetCutFlowEle.size();j++){
-//         std::cout<<"        "<<jetCutFlowEle[j].first<<
-//             "   "<<jetCutFlowEle[j].second[0]<<
-//             "      "<<jetCutFlowEle[j].second[1]<<std::endl;           
-//       }
-//       std::cout<<std::endl;   
-//     }
+    if (i==2){      
+      std::cout<<std::endl;
+
+      std::cout<<"      Muon selection                       " \
+          "1st Muon"<<std::endl;
+      for (unsigned int j=0;j<muonCutFlowEle.size();j++){
+        std::cout<<"        "<<muonCutFlowEle[j].first<<
+            "   "<<muonCutFlowEle[j].second[0]<<std::endl;           
+      }
+      std::cout<<std::endl;    
+    }
     
+    if (i==3){      
+      std::cout<<std::endl;
+      std::cout<<"      Electron selection                     " \
+          "1st Ele   2nd Ele   3rd Ele"<<std::endl;
+      for (unsigned int j=0;j<electronCutFlowEle.size();j++){
+        std::cout<<"        "<<electronCutFlowEle[j].first<<
+            "   "<<electronCutFlowEle[j].second[0]<<
+            "      "<<electronCutFlowEle[j].second[1]<<
+            "      "<<electronCutFlowEle[j].second[2]<<std::endl;          
+      }
+      std::cout<<std::endl;    
+    }       
+    
+    if (i==4){      
+      std::cout<<std::endl;  
+      std::cout<<"      Jet selection                          " \
+          "1st Jet   2nd Jet   3rd Jet   4th Jet"<<std::endl;
+      for (unsigned int j=0;j<jetCutFlowEle.size();j++){
+        std::cout<<"        "<<jetCutFlowEle[j].first<<
+            "   "<<jetCutFlowEle[j].second[0]<<
+            "      "<<jetCutFlowEle[j].second[1]<<           
+            "      "<<jetCutFlowEle[j].second[2]<<
+            "      "<<jetCutFlowEle[j].second[3]<<std::endl;
+      }
+      std::cout<<std::endl;   
+    }
+        
+    std::cout<<std::endl;
     if (i>0) std::cout<<"  "<<eventCutFlowEle[i].first<<
         "   "<<eventCutFlowEle[i].second<<std::endl;
+    std::cout<<std::endl;
             
   }  
 
