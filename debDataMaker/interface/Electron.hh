@@ -119,40 +119,40 @@ int Electron::passed(std::string selection, size_t i,
   if(selection=="RefAna4JetMetMuon"){
     
     
-    std::pair<std::string,int> all("all         ",NOVAL_I);
+    std::pair<std::string,int> all("Number of Candidates               ",NOVAL_I);
     all.second=1;
     if (cutflow!=NULL) (*cutflow).push_back(all);    
     
     
-    std::pair<std::string,int> has_trk("has_trk     ",NOVAL_I);
+    std::pair<std::string,int> has_trk("has innerTrack                     ",NOVAL_I);
     if(electron(i).has_trk!=NOVAL_I) {
       electron(i).has_trk==1 ? has_trk.second=1 : has_trk.second=0;
     }
     if (cutflow!=NULL) (*cutflow).push_back(has_trk);
     
     
-    std::pair<std::string,int> eta("eta         ",NOVAL_I);
+    std::pair<std::string,int> eta("|eta|                     <= 2.5   ",NOVAL_I);
     if(electron(i).eta!=NOVAL_F) { 
       TMath::Abs(electron(i).eta)<=2.5 ? eta.second=1 : eta.second=0;
     }
     if (cutflow!=NULL) (*cutflow).push_back(eta);
 
 
-    std::pair<std::string,int> pt("pt          ",NOVAL_I);
+    std::pair<std::string,int> pt("pt                        >= 20 GeV",NOVAL_I);
     if(electron(i).pt!=NOVAL_F) {
       electron(i).pt>=20.0 ? pt.second=1 : pt.second=0;
     }
     if (cutflow!=NULL) (*cutflow).push_back(pt);     
     
     
-    std::pair<std::string,int> bc_d0("bc_d0       ",NOVAL_I);
+    std::pair<std::string,int> bc_d0("d0 (from primary vertex)  <  0.2 cm",NOVAL_I);
     if(electron(i).bc_d0!=NOVAL_F) {
       TMath::Abs(electron(i).bc_d0)<=0.2 ? bc_d0.second=1 : bc_d0.second=0;
     }
     if (cutflow!=NULL) (*cutflow).push_back(bc_d0);
     
-    
-    std::pair<std::string,int> combined_reliso("comb_reliso ",NOVAL_I);
+
+    std::pair<std::string,int> combined_reliso("Combined Relative isol.   <= 0.1   ",NOVAL_I);
     if(electron(i).combined_reliso!=NOVAL_F) {
       electron(i).combined_reliso<=0.1 ? 
           combined_reliso.second=1 : combined_reliso.second=0;
@@ -160,7 +160,7 @@ int Electron::passed(std::string selection, size_t i,
     if (cutflow!=NULL) (*cutflow).push_back(combined_reliso);
             
     
-    std::pair<std::string,int> tight("tight       ",NOVAL_I);
+    std::pair<std::string,int> tight("Electron Id e.g.:'eidRobustTight'  ",NOVAL_I);
     if(electron(i).tight!=NOVAL_F) {
       electron(i).tight==1.0 ? tight.second=1 : tight.second=0;
     }
@@ -194,26 +194,26 @@ int Electron::passed(std::string selection, size_t i,
   if(selection=="RefAna4JetMetElectron"){
     
     
-    std::pair<std::string,int> all("all         ",NOVAL_I);
+    std::pair<std::string,int> all("Number of Candidates               ",NOVAL_I);
     all.second=1;
     if (cutflow!=NULL) (*cutflow).push_back(all);
           
       
-    std::pair<std::string,int> has_trk("has_trk     ",NOVAL_I);
+    std::pair<std::string,int> has_trk("has innerTrack                     ",NOVAL_I);
     if(electron(i).has_trk!=NOVAL_I) {
       electron(i).has_trk==1 ? has_trk.second=1 : has_trk.second=0;
     }
     if (cutflow!=NULL) (*cutflow).push_back(has_trk);
     
                 
-    std::pair<std::string,int> loose("loose       ",NOVAL_I);
+    std::pair<std::string,int> loose("Electron Id e.g.:'eidRobustLoose'  ",NOVAL_I);
     if(electron(i).loose!=NOVAL_F) {
       electron(i).loose==1.0 ? loose.second=1 : loose.second=0;
     }
     if (cutflow!=NULL) (*cutflow).push_back(loose);
       
-      
-    std::pair<std::string,int> eta("eta         ",NOVAL_I);
+                                   
+    std::pair<std::string,int> eta("|eta|                     <= 2.5   ",NOVAL_I);
     if(electron(i).eta!=NOVAL_F) { 
       TMath::Abs(electron(i).eta)<=2.5 && 
       (TMath::Abs(electron(i).eta)<1.47 || TMath::Abs(electron(i).eta)>1.567) ? 
@@ -222,21 +222,21 @@ int Electron::passed(std::string selection, size_t i,
     if (cutflow!=NULL) (*cutflow).push_back(eta);
   
   
-    std::pair<std::string,int> pt("pt          ",NOVAL_I);
+    std::pair<std::string,int> pt("pt                        >= 20 GeV",NOVAL_I);
     if(electron(i).pt!=NOVAL_F) {
       electron(i).pt>=20.0 ? pt.second=1 : pt.second=0;
     }
     if (cutflow!=NULL) (*cutflow).push_back(pt);
     
     
-    std::pair<std::string,int> bc_d0("bc_d0       ",NOVAL_I);
+    std::pair<std::string,int> bc_d0("d0 (from primary vertex)  <  0.2 cm",NOVAL_I);
     if(electron(i).bc_d0!=NOVAL_F) {
       TMath::Abs(electron(i).bc_d0)<=0.2 ? bc_d0.second=1 : bc_d0.second=0;
     }
     if (cutflow!=NULL) (*cutflow).push_back(bc_d0);
       
-      
-    std::pair<std::string,int> reliso("reliso      ",NOVAL_I);
+    
+    std::pair<std::string,int> reliso("Relative isolation        <= 0.1   ",NOVAL_I);
     if(electron(i).reliso!=NOVAL_F) {
       electron(i).reliso<=0.1 ? reliso.second=1 : reliso.second=0;
     }
