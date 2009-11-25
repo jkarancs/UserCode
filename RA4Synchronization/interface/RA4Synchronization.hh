@@ -15,7 +15,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Mon Jun 01 17:54:26 CET 2009
-// $Id: RA4Synchronization.hh,v 1.4 2009/11/12 14:54:16 aranyi Exp $
+// $Id: RA4Synchronization.hh,v 1.5 2009/11/12 15:56:05 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -74,18 +74,19 @@ public:
 
 public:
 
-  int totaleventnum;
-
   std::vector<std::pair<std::string,std::vector<int> > > muonCutFlowMu;
   std::vector<std::pair<std::string,std::vector<int> > > electronCutFlowMu;
   std::vector<std::pair<std::string,std::vector<int> > > jetCutFlowMu;
+  
+  std::vector<std::pair<std::string,int> > eventCutFlowMu;
+  
+  
   
   std::vector<std::pair<std::string,std::vector<int> > > muonCutFlowEle;
   std::vector<std::pair<std::string,std::vector<int> > > electronCutFlowEle;
   std::vector<std::pair<std::string,std::vector<int> > > jetCutFlowEle;
   
-  std::vector<std::pair<std::string,int> > eventCutFlowMu;
-  std::vector<std::pair<std::string,int> > eventCutFlowEle;
+  std::vector<std::pair<std::string,int> > eventCutFlowEle;  
     
 private:
   virtual void beginJob(const edm::EventSetup&);
