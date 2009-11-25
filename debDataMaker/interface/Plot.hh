@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Oct 25 20:57:26 CET 2009
-// $Id: Plot.hh,v 1.1 2009/11/18 14:10:51 veszpv Exp $
+// $Id: Plot.hh,v 1.2 2009/11/24 09:51:45 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -33,6 +33,7 @@
 #include "TF1.h"
 #include "TFrame.h"
 #include "TPaveStats.h"
+#include "TDirectory.h"
 
 namespace deb {
 
@@ -644,92 +645,6 @@ void Plot<H>::setAxisRange(Double_t xmin, Double_t xmax, Option_t* axis){
 
 //------------------------------------ Draw() ---------------------------------
 
-// template <class H> 
-// int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
-
-//   std::vector<std::string> expList = itemizeString(hists, "\\");
-//   std::vector<std::pair<std::vector<std::string>,std::string> > pads;
-
-//   for (size_t i=0; i<expList.size(); i++) {
-//     std::pair<std::vector<std::string>,std::string> pad;
-
-//     std::pair<std::string,std::string> listOption=splitString(expList[i], ";");
-//     size_t space=listOption.first.find_first_of(" ");
-//     while (space!=std::string::npos) {
-//       listOption.first.erase(space, 1);
-//       space=listOption.first.find_first_of(" ", space);
-//     }
-//     pad.second=listOption.second;
-
-//     std::vector<std::string> items = itemizeString(listOption.first, ",");
-//     if (pad.second.find("overlay")!=std::string::npos ||
-// 	pad.second.find("stack")!=std::string::npos) {
-//       pad.first.insert(pad.first.begin(), items.begin(), items.end());
-//       pads.push_back(pad);
-//       continue;
-//     }
-
-//     for (size_t j=0; j<items.size(); j++) {
-//       pad.first.push_back(items[j]);
-//       pads.push_back(pad);
-//       pad.first.clear();
-//     }
-//   }
-
-//   if (nrows<0) nrows=pads.size()/ncols;
-//   if (ncols*nrows<int(pads.size())) nrows=pads.size()/ncols+1;
-
-//   can_->Clear();
-//   can_->Divide(ncols, nrows);
-
-//   for (size_t i=0; i<pads.size(); i++) {
-
-//     std::string option=pads[i].second;
-//     size_t posOverlay=option.find("overlay");
-//     if (posOverlay!=std::string::npos) option.erase(posOverlay, 7);
-//     size_t posStack=option.find("stack");
-//     if (posStack!=std::string::npos) option.erase(posStack, 5);
-//     std::ostringstream opt;
-//     opt << option;
-
-//     can_->cd(i+1);
-
-//     for (size_t j=0; j<pads[i].first.size(); j++) {
-//       std::string hist=pads[i].first[j];
-
-//       size_t pos=hist.find(".num");
-//       if (pos!=std::string::npos) {
-// 	hist.erase(pos, 4);
-// 	typename std::map<std::string,Histogram<H> >::iterator it=this->find(hist);
-// 	if (it!=this->end()) it->second.num()->Draw(opt.str().data());
-//       } else {
-// 	pos=hist.find(".den");
-// 	if (pos!=std::string::npos) {
-// 	  hist.erase(pos, 4);
-// 	  typename std::map<std::string,Histogram<H> >::iterator it=this->find(hist);
-// 	  if (it!=this->end()) it->second.den()->Draw(opt.str().data());
-// 	} else {
-// 	  typename std::map<std::string,Histogram<H> >::iterator it=this->find(hist);
-// 	  if (it!=this->end()) it->second.Draw(opt.str().data());
-// 	}
-//       }
-
-//       if (j==0) opt << "SAME";
-//     }
-//   }
-
-//   return pads.size();
-// }
-
-
-// template <class H> 
-// int Plot<H>::Draw(std::string hist, int ncols, int nrows) {
-//   std::vector<std::string> vhist;
-//   vhist.push_back(hist);
-//   return this->Draw(vhist, ncols, nrows);
-// }
-
-
 template <class H> 
 int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
 
@@ -766,9 +681,21 @@ int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
     pad.second.push_back(split.second);
 
     size_t space=names.find_first_of(" ");
+    size_t pipe=names.find_last_of("|", space);
+    size_t coma=names.find_last_of(",", space);
     while (space!=std::string::npos) {
-      names.erase(space, 1);
-      space=names.find_first_of(" ", space);
+      if (pipe==std::string::npos ) {
+	names.erase(space, 1);
+	space=names.find_first_of(" ", space);
+      }
+      else if (coma!=std::string::npos && coma>pipe) {
+	names.erase(space, 1);
+	space=names.find_first_of(" ", space);
+      } else {
+	space=names.find_first_of(" ", space+1);
+      }
+      pipe=names.find_last_of("|", space);
+      coma=names.find_last_of(",", space);
     }
     std::vector<std::string> items = itemizeString(names, ",");
     if (pad.second[0]=="overlay" || pad.second[0]=="stack") {
@@ -835,7 +762,11 @@ int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
 	if ((it=this->find(nameRest.first))!=this->end()) h=&(it->second);
       }
 
-      if (h==NULL) { pads[i].first.erase(pads[i].first.begin()+j); continue; }
+      if (h==NULL) { 
+	std::cout << "Histogram "<<nameRest.first<<" not found\n";
+	pads[i].first.erase(pads[i].first.begin()+j); 
+	continue; 
+      }
       if (j==int(pads[i].first.size())-1) {
 	max=h->GetMaximum();
 	min=h->GetMinimum();
@@ -963,10 +894,18 @@ int Plot<H>::Draw(std::string hist, int ncols, int nrows) {
 //------------------------------------ Write() --------------------------------
 
 template <class H> void Plot<H>::Write() {
+  std::ostringstream sdir;
+  sdir<<can_->GetName()<<"_HIST";
+  TDirectory *dir=gDirectory->GetDirectory(sdir.str().data());
+  if (!dir) dir=gDirectory->mkdir(sdir.str().data(), sdir.str().data());
+  dir->cd();
+
   typename std::map<std::string,Histogram<H> >::iterator it;
   for (it=this->begin(); it!=this->end(); it++) {
     it->second.Write();
   }
+
+  gDirectory->cd("../");
   can_->Write();
 }
 
