@@ -78,30 +78,35 @@ int Jet::passed(std::string selection, size_t i,
   if(selection=="RefAna4JetMetMuon"){
         
     
-    std::pair<std::string,int> all("Number of Candidates               ",NOVAL_I);
+    std::pair<std::string,int> 
+        all("Number of Candidates               ",NOVAL_I);
     all.second=1;
     if (cutflow!=NULL) (*cutflow).push_back(all);
     
     
-    std::pair<std::string,int> eta("|eta|                     <= 2.4   ",NOVAL_I);
+    std::pair<std::string,int> 
+        eta("|eta|                     <= 2.4   ",NOVAL_I);
     if (jet(i).eta!=NOVAL_F) TMath::Abs(jet(i).eta)<=2.4 ? 
           eta.second=1 : eta.second=0;
     if (cutflow!=NULL) (*cutflow).push_back(eta);
     
     
-    std::pair<std::string,int> pt("pt                        >= 30    ",NOVAL_I);
+    std::pair<std::string,int> 
+        pt("pt                        >= 30 GeV",NOVAL_I);
     if (jet(i).pt!=NOVAL_F) jet(i).pt>=30.0 ? 
           pt.second=1 : pt.second=0;
     if (cutflow!=NULL) (*cutflow).push_back(pt);
     
                                        
-    std::pair<std::string,int> hadfrac("Hadronic Energy Fraction  >= 0.1   ",NOVAL_I);
+    std::pair<std::string,int> 
+        hadfrac("Hadronic Energy Fraction  >= 0.1   ",NOVAL_I);
     if (jet(i).hadfrac!=NOVAL_F) jet(i).hadfrac>=0.1 ? 
           hadfrac.second=1 : hadfrac.second=0;
     if (cutflow!=NULL) (*cutflow).push_back(hadfrac);
     
 
-    std::pair<std::string,int> ptOnlySync("pt (for synchronization)  >= 50    ",NOVAL_I);
+    std::pair<std::string,int> 
+        ptOnlySync("pt (for synchronization)  >= 50 GeV",NOVAL_I);
     if (jet(i).pt!=NOVAL_F) jet(i).pt>=50.0 ? 
           ptOnlySync.second=1 : ptOnlySync.second=0;
     if (cutflow!=NULL) (*cutflow).push_back(ptOnlySync);
@@ -125,24 +130,28 @@ int Jet::passed(std::string selection, size_t i,
   if(selection=="RefAna4JetMetElectron"){
         
     
-    std::pair<std::string,int> all("Number of Candidates               ",NOVAL_I);
+    std::pair<std::string,int> 
+        all("Number of Candidates               ",NOVAL_I);
     all.second=1;
     if (cutflow!=NULL) (*cutflow).push_back(all);
     
     
-    std::pair<std::string,int> eta("|eta|                     <= 3.0   ",NOVAL_I);
+    std::pair<std::string,int> 
+        eta("|eta|                     <= 3.0   ",NOVAL_I);
     if (jet(i).eta!=NOVAL_F) TMath::Abs(jet(i).eta)<=3.0 ? 
           eta.second=1 : eta.second=0;
     if (cutflow!=NULL) (*cutflow).push_back(eta);
     
     
-    std::pair<std::string,int> pt("pt                        >= 50    ",NOVAL_I);
+    std::pair<std::string,int> 
+        pt("pt                        >= 50 GeV",NOVAL_I);
     if (jet(i).pt!=NOVAL_F) jet(i).pt>=50.0 ? 
           pt.second=1 : pt.second=0;
     if (cutflow!=NULL) (*cutflow).push_back(pt);
     
                                       
-    std::pair<std::string,int> emfrac("EM Energy Fraction        <= 0.9   ",NOVAL_I);
+    std::pair<std::string,int> 
+        emfrac("EM Energy Fraction        <= 0.9   ",NOVAL_I);
     if (jet(i).emfrac!=NOVAL_F) jet(i).emfrac<=0.9 ? 
           emfrac.second=1 : emfrac.second=0;
     if (cutflow!=NULL) (*cutflow).push_back(emfrac);
@@ -166,24 +175,28 @@ int Jet::passed(std::string selection, size_t i,
   if(selection=="TopJetSelection"){
         
     
-    std::pair<std::string,int> all("Number of Candidates               ",NOVAL_I);
+    std::pair<std::string,int> 
+        all("Number of Candidates               ",NOVAL_I);
     all.second=1;
     if (cutflow!=NULL) (*cutflow).push_back(all);
     
     
-    std::pair<std::string,int> eta("|eta|                     <= 2.7   ",NOVAL_I);
+    std::pair<std::string,int> 
+        eta("|eta|                     <= 2.7   ",NOVAL_I);
     if (jet(i).eta!=NOVAL_F) TMath::Abs(jet(i).eta)<=2.7 ? 
           eta.second=1 : eta.second=0;
     if (cutflow!=NULL) (*cutflow).push_back(eta);
     
     
-    std::pair<std::string,int> pt("pt                        >= 20    ",NOVAL_I);
+    std::pair<std::string,int> 
+        pt("pt                        >= 20 GeV",NOVAL_I);
     if (jet(i).pt!=NOVAL_F) jet(i).pt>=20.0 ? 
           pt.second=1 : pt.second=0;
     if (cutflow!=NULL) (*cutflow).push_back(pt);
     
     
-    std::pair<std::string,int> emfrac("EM Energy Fraction        <= 0.9   ",NOVAL_I);
+    std::pair<std::string,int> 
+        emfrac("EM Energy Fraction        <= 0.9   ",NOVAL_I);
     if (jet(i).emfrac!=NOVAL_F) jet(i).emfrac<=0.9 ? 
           emfrac.second=1 : emfrac.second=0;
     if (cutflow!=NULL) (*cutflow).push_back(emfrac);

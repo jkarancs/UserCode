@@ -161,15 +161,20 @@ int Event::passed(std::string selection,
     }
     
     if (eventCutFlow!=NULL && (*eventCutFlow).size()==0){
-      std::pair<std::string,int> totEventNum("Total Event Number:                 ",0);
+      std::pair<std::string,int> totEventNum("Total Event Number:           " \
+          "      ",0);
       (*eventCutFlow).push_back(totEventNum);
-      std::pair<std::string,int> exactlyOneMuon("Event Selection: Exactly One Muon   ",0);
+      std::pair<std::string,int> exactlyOneMuon("Event Selection: Exactly " \
+          "One Muon   ",0);
       (*eventCutFlow).push_back(exactlyOneMuon);
-      std::pair<std::string,int> zeroElectrons("Event Selection: Zero Electrons     ",0);                                               
+      std::pair<std::string,int> zeroElectrons("Event Selection: Zero " \
+          "Electrons     ",0);                                               
       (*eventCutFlow).push_back(zeroElectrons);
-      std::pair<std::string,int> jetCuts("Event Selection: >= 3 Jets          ",0);
+      std::pair<std::string,int> jetCuts("Event Selection: >= 3 Jets     " \
+          "     ",0);
       (*eventCutFlow).push_back(jetCuts);
-      std::pair<std::string,int> met100 ("Event Selection: MET > 100          ",0);
+      std::pair<std::string,int> met100 ("Event Selection: MET > 100 GeV " \
+          "     ",0);
       (*eventCutFlow).push_back(met100);
     }
     
@@ -255,24 +260,28 @@ int Event::passed(std::string selection,
     
     
     if (eventCutFlow!=NULL && (*eventCutFlow).size()==0){ 
-      std::pair<std::string,int> totEventNum("Total Event Number:                 ",0);
+      std::pair<std::string,int> totEventNum("Total Event Number:       " \
+          "          ",0);
       (*eventCutFlow).push_back(totEventNum);
-         
-      std::pair<std::string,int> electronTrigger("single electron " \
-          "trigger   ",0);
+
+      std::pair<std::string,int> electronTrigger("Event Selection: Electron" \
+          " Trigger   ",0);
       (*eventCutFlow).push_back(electronTrigger);
       
-      std::pair<std::string,int> zeroMuons("no good muons             ",0);
+      std::pair<std::string,int> zeroMuons("Event Selection: Zero Muons  " \
+          "       ",0);
       (*eventCutFlow).push_back(zeroMuons);
-      
-      std::pair<std::string,int> exactlyOneElectron("exactly one " \
-          "good electron ",0);
+                                                    
+      std::pair<std::string,int> exactlyOneElectron("Event Selection: " \
+          "Exactly 1 Electron ",0);
       (*eventCutFlow).push_back(exactlyOneElectron);
 
-      std::pair<std::string,int> jetCuts("≥ 3 good jets             ",0);
+      std::pair<std::string,int> jetCuts("Event Selection: >= 3 Jets    " \
+          "      ",0);
       (*eventCutFlow).push_back(jetCuts);
       
-      std::pair<std::string,int> met100("MET > 100                 ",0);
+      std::pair<std::string,int> met100("Event Selection: MET > 100 GeV " \
+          "     ",0);
       (*eventCutFlow).push_back(met100);
     }
     
