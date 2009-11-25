@@ -55,7 +55,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Event.hh,v 1.16 2009/11/12 14:19:04 aranyi Exp $
+// $Id: Event.hh,v 1.17 2009/11/12 15:53:26 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -161,13 +161,15 @@ int Event::passed(std::string selection,
     }
     
     if (eventCutFlow!=NULL && (*eventCutFlow).size()==0){
-      std::pair<std::string,int> exactlyOneMuon("exactly one good muon   ",0);
+      std::pair<std::string,int> totEventNum("Total Event Number:                 ",0);
+      (*eventCutFlow).push_back(totEventNum);
+      std::pair<std::string,int> exactlyOneMuon("Event Selection: Exactly One Muon   ",0);
       (*eventCutFlow).push_back(exactlyOneMuon);
-      std::pair<std::string,int> zeroElectrons("zero electrons          ",0);
+      std::pair<std::string,int> zeroElectrons("Event Selection: Zero Electrons     ",0);                                               
       (*eventCutFlow).push_back(zeroElectrons);
-      std::pair<std::string,int> jetCuts("≥ 3 jets                ",0);
+      std::pair<std::string,int> jetCuts("Event Selection: >= 3 Jets          ",0);
       (*eventCutFlow).push_back(jetCuts);
-      std::pair<std::string,int> met100 ("MET > 100               ",0);
+      std::pair<std::string,int> met100 ("Event Selection: MET > 100          ",0);
       (*eventCutFlow).push_back(met100);
     }
     
@@ -214,18 +216,18 @@ int Event::passed(std::string selection,
     }
     
         
-    
+    if(eventCutFlow!=NULL) (*eventCutFlow)[0].second++;
     if(nummuo==1){
-      if(eventCutFlow!=NULL) (*eventCutFlow)[0].second++;
+      if(eventCutFlow!=NULL) (*eventCutFlow)[1].second++;
       
       if(numele==0){
-        if(eventCutFlow!=NULL) (*eventCutFlow)[1].second++;
+        if(eventCutFlow!=NULL) (*eventCutFlow)[2].second++;
         
         if(numjetpt50>=3){
-          if(eventCutFlow!=NULL) (*eventCutFlow)[2].second++;
+          if(eventCutFlow!=NULL) (*eventCutFlow)[3].second++;
           
           if((*pmet).met("uncorrMAXN").et>100.0){
-            if(eventCutFlow!=NULL) (*eventCutFlow)[3].second++;
+            if(eventCutFlow!=NULL) (*eventCutFlow)[4].second++;
             return 1;
             
           }
@@ -253,6 +255,8 @@ int Event::passed(std::string selection,
     
     
     if (eventCutFlow!=NULL && (*eventCutFlow).size()==0){ 
+      std::pair<std::string,int> totEventNum("Total Event Number:                 ",0);
+      (*eventCutFlow).push_back(totEventNum);
          
       std::pair<std::string,int> electronTrigger("single electron " \
           "trigger   ",0);
@@ -320,20 +324,22 @@ int Event::passed(std::string selection,
       return NOVAL_I;    
     }
     
+    
+    if(eventCutFlow!=NULL) (*eventCutFlow)[0].second++;
     if((*trigger).trigger("HLT_Ele15_LW_L1R").hlt==1){
-      if(eventCutFlow!=NULL) (*eventCutFlow)[0].second++;
+      if(eventCutFlow!=NULL) (*eventCutFlow)[1].second++;
       
       if(nummuo==0){
-        if(eventCutFlow!=NULL) (*eventCutFlow)[1].second++;
+        if(eventCutFlow!=NULL) (*eventCutFlow)[2].second++;
         
         if(numele==1){
-          if(eventCutFlow!=NULL) (*eventCutFlow)[2].second++;
+          if(eventCutFlow!=NULL) (*eventCutFlow)[3].second++;
           
           if(numjetpt50eta3emfrac09>=3){
-            if(eventCutFlow!=NULL) (*eventCutFlow)[3].second++;
+            if(eventCutFlow!=NULL) (*eventCutFlow)[4].second++;
             
             if((*pmet).met("uncorrMAXN").et>100.0){
-              if(eventCutFlow!=NULL) (*eventCutFlow)[4].second++;
+              if(eventCutFlow!=NULL) (*eventCutFlow)[5].second++;
               return 1;
               
             }
