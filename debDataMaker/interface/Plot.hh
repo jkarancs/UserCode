@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Oct 25 20:57:26 CET 2009
-// $Id: Plot.hh,v 1.3 2009/11/25 21:08:50 veszpv Exp $
+// $Id: Plot.hh,v 1.4 2009/11/29 20:37:37 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -224,21 +224,34 @@ template<class H> class Plot : public std::map<std::string,Histogram<H> > {
 
   void setColor(std::string regexpr, std::string attr, 
 		Color_t color, int step=0);
-  void setColor(std::vector<iterator> list, std::string attr, 
-		Color_t color, int step=0);
+  void setColor(std::vector<iterator> list, std::string what="", 
+		std::string attr, Color_t color, int step=0);
 
 
   void setStyle(std::string regexpr, std::string attr, Style_t style);
-  void setStyle(std::vector<iterator> list, std::string attr, Style_t style);
+  void setStyle(std::vector<iterator> list, std::string what="", 
+		std::string attr, Style_t style);
+
 
   void setWidth(std::string regexpr, std::string attr, Width_t width);
-  void setWidth(std::vector<iterator> list, std::string attr, Width_t width);
+  void setWidth(std::vector<iterator> list, std::string what="",
+		std::string attr, Width_t width);
 
 
   void setAxisRange(std::string regexpr, Double_t xmin, Double_t xmax, 
 		    Option_t* axis = "X");
-  void setAxisRange(std::vector<iterator> list, Double_t xmin, Double_t xmax, 
-		    Option_t* axis = "X");
+  void setAxisRange(std::vector<iterator> list, std::string what="",
+		    Double_t xmin, Double_t xmax, Option_t* axis = "X");
+
+
+  void scaleMaximumTo(std::string regexpr, double maximum=1.0);
+  void scaleMaximumTo(std::vector<iterator> list, std::string what="", 
+		      double maximum=1.0);
+
+
+  void scaleAreaTo(std::string regexpr, double area=1.0);
+  void scaleAreaTo(std::vector<iterator> list, std::string what="", 
+		   double area=1.0);
 
 
   int  Draw(std::vector<std::string> hists, int ncols=1, int nrows=-1);
@@ -246,9 +259,6 @@ template<class H> class Plot : public std::map<std::string,Histogram<H> > {
   int  Draw(std::vector<iterator>, int ncols=1, int nrows=-1);
 
   void Write();
-
-  void scaleMaximumTo(std::string kind="", double maximum=1.0);
-  void scaleAreaTo(std::string kind="", double area=1.0);
 
   void setPlotStyle(std::string);
 
@@ -738,36 +748,59 @@ void Plot<H>::efficiency(std::vector<typename Plot<H>::iterator> list) {
 
 template <class H> 
 void Plot<H>::setColor(std::vector<typename Plot<H>::iterator> list, 
+		       std::string what, 
 		       std::string attr, Color_t color, int step) {
+  int k=0;
+  if (what.find("num")!=std::string::npos) k=1;
+  if (what.find("den")!=std::string::npos) k=-1;
+  
   for (size_t i=0; i<list.size(); i++) {
     if (attr.find("Line")!=std::string::npos || 
 	attr.find("line")!=std::string::npos) {
-      list[i]->second.SetLineColor(color+step*i);
-      if (list[i]->second.num()) {
-	list[i]->second.num()->SetLineColor(color+step*i);
-      }
-      if (list[i]->second.den()) {
-	list[i]->second.den()->SetLineColor(color+step*i);
+      if (k) {
+	if (k>0) {
+	  if (list[i]->second.num()) {
+	    list[i]->second.num()->SetLineColor(color+step*i);
+	  }
+	} else {
+	  if (list[i]->second.den()) {
+	    list[i]->second.den()->SetLineColor(color+step*i);
+	  }
+	}
+      } else {
+	list[i]->second.SetLineColor(color+step*i);
       }
     }
     if (attr.find("Fill")!=std::string::npos || 
 	attr.find("fill")!=std::string::npos) {
-      list[i]->second.SetFillColor(color+step*i);
-      if (list[i]->second.num()) {
-	list[i]->second.num()->SetFillColor(color+step*i);
-      }
-      if (list[i]->second.den()) {
-	list[i]->second.den()->SetFillColor(color+step*i);
+      if (k) {
+	if (k>0) {
+	  if (list[i]->second.num()) {
+	    list[i]->second.num()->SetFillColor(color+step*i);
+	  }
+	} else {
+	  if (list[i]->second.den()) {
+	    list[i]->second.den()->SetFillColor(color+step*i);
+	  }
+	}
+      } else {
+	list[i]->second.SetFillColor(color+step*i);
       }
     }
     if (attr.find("Marker")!=std::string::npos || 
 	attr.find("marker")!=std::string::npos) {
-      list[i]->second.SetMarkerColor(color+step*i);
-      if (list[i]->second.num()) {
-	list[i]->second.num()->SetMarkerColor(color+step*i);
-      }
-      if (list[i]->second.den()) {
-	list[i]->second.den()->SetMarkerColor(color+step*i);
+      if (k) {
+	if (k>0) {
+	  if (list[i]->second.num()) {
+	    list[i]->second.num()->SetMarkerColor(color+step*i);
+	  }
+	} else {
+	  if (list[i]->second.den()) {
+	    list[i]->second.den()->SetMarkerColor(color+step*i);
+	  }
+	}
+      } else {
+	list[i]->second.SetMarkerColor(color+step*i);
       }
     }
   }
@@ -777,7 +810,16 @@ void Plot<H>::setColor(std::vector<typename Plot<H>::iterator> list,
 template <class H> 
 void Plot<H>::setColor(std::string regexpr, std::string attr, 
 		       Color_t color, int step) {
-  setColor(locate(regexpr), attr, color, step);
+  if (regexpr.size()>4) {
+    std::string ext=regexpr.substr(regexpr.size()-4, 4);
+    if (ext!=".den" && ext!=".num") {
+      ext="";
+    }
+    setColor(locate(regexpr), ext, attr, color, step);
+    return;
+  }
+  setColor(locate(regexpr), "", attr, color, step);
+  return;
 }
 
 
@@ -785,27 +827,44 @@ void Plot<H>::setColor(std::string regexpr, std::string attr,
 
 template <class H> 
 void Plot<H>::setStyle(std::vector<typename Plot<H>::iterator> list, 
+		       std::string what,
 		       std::string attr, Style_t style) {
+
+  int k=0;
+  if (what.find("num")!=std::string::npos) k=1;
+  if (what.find("den")!=std::string::npos) k=-1;
 
   for (size_t i=0; i<list.size(); i++) {
     if (attr.find("Line")!=std::string::npos || 
 	attr.find("line")!=std::string::npos) {
-      list[i]->second.SetLineStyle(style);
-      if (list[i]->second.num()) {
-	list[i]->second.num()->SetLineStyle(style);
-      }
-      if (list[i]->second.den()) {
-	list[i]->second.den()->SetLineStyle(style);
+      if (k) {
+	if (k>0) {
+	  if (list[i]->second.num()) {
+	    list[i]->second.num()->SetLineStyle(style);
+	  }
+	} else {
+	  if (list[i]->second.den()) {
+	    list[i]->second.den()->SetLineStyle(style);
+	  }
+	}
+      } else {
+	list[i]->second.SetLineStyle(style);
       }
     }
     if (attr.find("Fill")!=std::string::npos || 
 	attr.find("fill")!=std::string::npos) {
-      list[i]->second.SetFillStyle(style);
-      if (list[i]->second.num()) {
-	list[i]->second.num()->SetFillStyle(style);
-      }
-      if (list[i]->second.den()) {
-	list[i]->second.den()->SetFillStyle(style);
+      if (k) {
+	if (k>0) {
+	  if (list[i]->second.num()) {
+	    list[i]->second.num()->SetFillStyle(style);
+	  }
+	} else {
+	  if (list[i]->second.den()) {
+	    list[i]->second.den()->SetFillStyle(style);
+	  }
+	}
+      } else {
+	list[i]->second.SetFillStyle(style);
       }
     }
   }
@@ -814,7 +873,16 @@ void Plot<H>::setStyle(std::vector<typename Plot<H>::iterator> list,
 
 template <class H> 
 void Plot<H>::setStyle(std::string regexpr, std::string attr, Style_t style) {
-  setStyle(locate(regexpr), attr, style);
+  if (regexpr.size()>4) {
+    std::string ext=regexpr.substr(regexpr.size()-4, 4);
+    if (ext!=".den" && ext!=".num") {
+      ext="";
+    }
+    setStyle(locate(regexpr), ext, attr, style);
+    return;
+  }
+  setStyle(locate(regexpr), "", attr, style);
+  return;
 }
 
 
@@ -822,25 +890,46 @@ void Plot<H>::setStyle(std::string regexpr, std::string attr, Style_t style) {
 
 template <class H> 
 void Plot<H>::setWidth(std::vector<typename Plot<H>::iterator> list, 
+		       std::string what,
 		       std::string attr, Width_t width) {
 
+  int k=0;
+  if (what.find("num")!=std::string::npos) k=1;
+  if (what.find("den")!=std::string::npos) k=-1;
+  
   for (size_t i=0; i<list.size(); i++) {
     if (attr.find("Line")!=std::string::npos || 
 	attr.find("line")!=std::string::npos) {
-      list[i]->second.SetLineWidth(width);
-      if (list[i]->second.num()) {
-	list[i]->second.num()->SetLineWidth(width);
-      }
-      if (list[i]->second.den()) {
-	list[i]->second.den()->SetLineWidth(width);
+      if (k) {
+	if (k>0) {
+	  if (list[i]->second.num()) {
+	    list[i]->second.num()->SetLineWidth(width);
+	  }
+	} else {
+	  if (list[i]->second.den()) {
+	    list[i]->second.den()->SetLineWidth(width);
+	  }
+	}
+      } else {
+	list[i]->second.SetLineWidth(width);
       }
     }
   }
 }
 
+
 template <class H> 
 void Plot<H>::setWidth(std::string regexpr, std::string attr, Width_t width) {
-  setWidth(locate(regexpr), attr, width);
+  if (regexpr.size()>4) {
+    std::string ext=regexpr.substr(regexpr.size()-4, 4);
+    if (ext!=".den" && ext!=".num") {
+      ext="";
+    }
+    setWidth(locate(regexpr), ext, attr, width);
+    return;
+  }
+  setWidth(locate(regexpr), "", attr, width);
+  return;
 }
 
 
@@ -848,22 +937,137 @@ void Plot<H>::setWidth(std::string regexpr, std::string attr, Width_t width) {
 
 template <class H>
 void Plot<H>::setAxisRange(std::vector<typename Plot<H>::iterator> list, 
+			   std::string what,
 			   Double_t xmin, Double_t xmax, Option_t* axis){
+  int k=0;
+  if (what.find("num")!=std::string::npos) k=1;
+  if (what.find("den")!=std::string::npos) k=-1;
+
   for (size_t i=0; i<list.size(); i++) {
-    list[i]->second.SetAxisRange(xmin, xmax, axis);
-    if (list[i]->second.num()) {
-      list[i]->second.num()->SetAxisRange(xmin, xmax, axis);
-    }
-    if (list[i]->second.den()) {
-      list[i]->second.den()->SetAxisRange(xmin, xmax, axis);
+    if (k) {
+      if (k>0) {
+	if (list[i]->second.num()) {
+	  list[i]->second.num()->SetAxisRange(xmin, xmax, axis);
+	}
+      } else {
+	if (list[i]->second.den()) {
+	  list[i]->second.den()->SetAxisRange(xmin, xmax, axis);
+	}
+      }
+    } else {
+      list[i]->second.SetAxisRange(xmin, xmax, axis);
     }
   }
 }
 
+
 template <class H>
 void Plot<H>::setAxisRange(std::string regexpr, 
 			   Double_t xmin, Double_t xmax, Option_t* axis){
-  setAxisRange(locate(regexpr), xmin, xmax, axis);
+  if (regexpr.size()>4) {
+    std::string ext=regexpr.substr(regexpr.size()-4, 4);
+    if (ext!=".den" && ext!=".num") {
+      ext="";
+    }
+    setAxisRange(locate(regexpr), ext, xmin, xmax, axis);
+    return;
+  }
+  setAxisRange(locate(regexpr), "", xmin, xmax, axis);
+  return;
+}
+
+
+//------------------------------------ Scale() --------------------------------
+
+template <class H>
+void Plot<H>::scaleMaximumTo(std::vector<iterator> list, std::string what,
+			     double maximum) {
+
+  int k=0;
+  if (what.find("num")!=std::string::npos) k=1;
+  if (what.find("den")!=std::string::npos) k=-1;
+
+  for (size_t i=0; i<list.size(); i++) {
+    double max;
+    if (k) {
+      if (k>0) {
+	if (list[i]->second.num()) {
+	  max=list[i]->second.num()->GetMaximum();
+	  if (max!=0.) list[i]->second.num()->Scale(maximum/max);
+	}
+      } else {
+	if (list[i]->second.den()) {
+	  max=list[i]->second.den()->GetMaximum();
+	  if (max!=0.) list[i]->second.den()->Scale(maximum/max);
+	}
+      }
+    } else {
+      max=list[i]->second.GetMaximum();
+      if (max!=0.) list[i]->second.Scale(maximum/max);
+    }
+  }
+  return;
+}
+
+
+template <class H>
+void Plot<H>::scaleMaximumTo(std::string regexpr, double maximum) {
+  if (regexpr.size()>4) {
+    std::string ext=regexpr.substr(regexpr.size()-4, 4);
+    if (ext!=".den" && ext!=".num") {
+      ext="";
+    }
+    scaleMaximumTo(locate(regexpr), ext, maximum);
+    return;
+  }
+  scaleMaximumTo(locate(regexpr), "", maximum);
+  return;
+}
+
+
+template <class H>
+void Plot<H>::scaleAreaTo(std::vector<iterator> list, std::string what, 
+			  double area) {
+
+  int k=0;
+  if (what.find("num")!=std::string::npos) k=1;
+  if (what.find("den")!=std::string::npos) k=-1;
+
+  for (size_t i=0; i<list.size(); i++) {
+    double integral;
+    if (k) {
+      if (k>0) {
+	if (list[i]->second.num()) {
+	  integral=list[i]->second.num()->Integral();
+	  if (integral!=0.) list[i]->second.num()->Scale(area/integral);
+	}
+      } else {
+	if (list[i]->second.den()) {
+	  integral=list[i]->second.den()->Integral();
+	  if (integral!=0.) list[i]->second.den()->Scale(area/integral);
+	}
+      }
+    } else {
+      integral=list[i]->second.Integral();
+      if (integral!=0.) list[i]->second.Scale(area/integral);
+    }
+  }
+  return;
+}
+
+
+template <class H>
+void Plot<H>::scaleAreaTo(std::string regexpr, double area) {
+  if (regexpr.size()>4) {
+    std::string ext=regexpr.substr(regexpr.size()-4, 4);
+    if (ext!=".den" && ext!=".num") {
+      ext="";
+    }
+    scaleAreaTo(locate(regexpr), ext, area);
+    return;
+  }
+  scaleAreaTo(locate(regexpr), "", area);
+  return;
 }
 
 
@@ -1211,68 +1415,6 @@ template <class H> void Plot<H>::Write() {
     gDirectory->cd("../");
     can_->Write();
   }
-}
-
-
-//------------------------------------ Scale() --------------------------------
-
-template <class H>
-void Plot<H>::scaleMaximumTo(std::string kind, double maximum) {
-  typename std::map<std::string,Histogram<H> >::iterator it;
-  int k=0;
-  if (kind.find("num")!=std::string::npos) k=1;
-  if (kind.find("den")!=std::string::npos) k=-1;
-
-  for (it=this->begin(); it!=this->end(); it++) {
-    double max;
-    if (k) {
-      if (k>0) {
-	if (it->second.num()) {
-	  max=it->second.num()->GetMaximum();
-	  if (max!=0.) it->second.num()->Scale(maximum/max);
-	}
-      } else {
-	if (it->second.den()) {
-	  max=it->second.den()->GetMaximum();
-	  if (max!=0.) it->second.den()->Scale(maximum/max);
-	}
-      }
-    } else {
-      max=it->second.GetMaximum();
-      if (max!=0.) it->second.Scale(maximum/max);
-    }
-  }
-  return;
-}
-
-
-template <class H>
-void Plot<H>::scaleAreaTo(std::string kind, double area) {
-  typename std::map<std::string,Histogram<H> >::iterator it;
-  int k=0;
-  if (kind.find("num")!=std::string::npos) k=1;
-  if (kind.find("den")!=std::string::npos) k=-1;
-
-  for (it=this->begin(); it!=this->end(); it++) {
-    double integral;
-    if (k) {
-      if (k>0) {
-	if (it->second.num()) {
-	  integral=it->second.num()->Integral();
-	  if (integral!=0.) it->second.num()->Scale(area/integral);
-	}
-      } else {
-	if (it->second.den()) {
-	  integral=it->second.den()->Integral();
-	  if (integral!=0.) it->second.den()->Scale(area/integral);
-	}
-      }
-    } else {
-      integral=it->second.Integral();
-      if (integral!=0.) it->second.Scale(area/integral);
-    }
-  }
-  return;
 }
 
 
