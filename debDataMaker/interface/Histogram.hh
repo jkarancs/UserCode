@@ -7,15 +7,31 @@
 // 
 /**\class Histogram Histogram.hh debDataMaker/interface/Histogram.hh
 
- Description: <one line class summary>
+ Description: Extension to root TH1 and derived classes
 
  Implementation:
+  - TH1 constructors are available to ensure backward compatibility
+
+  - New constructor format: same as TH1 constructors, but name/title/etc
+  string is the last parameter instead of being the first, which makes it
+  possible to use variable number of parameters following the format of  
+  printf("format string", variables...)
+  
+  Format defines names and lables in the histogram such as:
+
+   <name>[!<legend>[!<legend head>]][;<title>[;<Xlabel>[;<Ylabel>[;<Zlabel>]]]]
+
+  Note: - name and legend define individual objects linked to each other, these
+          are separated by "!"
+	- title, axis labels are parameters of the histogram defined by name,
+          these are separated by ";"
+   
 
 */
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Oct 25 20:57:26 CET 2009
-// $Id$
+// $Id: Histogram.hh,v 1.1 2009/11/18 14:10:51 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -37,6 +53,8 @@ template<class H> class Histogram : public H {
   Histogram(const Histogram<H> &h) : H(h) {
     num_ = (h.num()!=NULL) ? (H*)h.num()->Clone() : NULL;
     den_ = (h.den()!=NULL) ? (H*)h.den()->Clone() : NULL;
+    legend_ = h.legend_;
+    legendHead_ = h.legendHead_;
   };
 
   //
@@ -52,6 +70,7 @@ template<class H> class Histogram : public H {
 	    const Double_t *xbins) : H(name, title, nbins, xbins) { init(); };
 
   // New types:
+  // In format: name[!legend[!legend head]][;title[;Xlabel[;Ylabel[;Zlabel]]]]
   Histogram(Int_t nbinsx, Double_t xlow, Double_t xup, std::string format,...);
   Histogram(Int_t nbins, const Float_t *xbins, std::string format,...);
   Histogram(Int_t nbins, const Double_t *xbins, std::string format,...);
@@ -81,6 +100,7 @@ template<class H> class Histogram : public H {
     H(name, title, nbinsx, xbins, nbinsy, ybins) { init(); };
 
   // New types:
+  // In format: name[!legend[!legend head]][;title[;Xlabel[;Ylabel[;Zlabel]]]]
   Histogram(Int_t nbinsx, Double_t xlow, Double_t xup, 
 	    Int_t nbinsy, Double_t ylow, Double_t yup, std::string format,...);
 
@@ -104,21 +124,38 @@ template<class H> class Histogram : public H {
  private:
   H* num_;
   H* den_;
+  std::string legend_;
+  std::string legendHead_;
   void init() {
     num_=NULL;
     den_=NULL;
+    legend_="";
+    legendHead_="";
   }
 
 
  protected:
   std::vector<std::string> getNameTitle(char *nameTitle) {
+    std::cout<<"getNameTitle(\""<<nameTitle<<"\"\n";
     std::string name=nameTitle;
     std::string title="";
     size_t posTitle=name.find_first_of(";");
     if (posTitle!=std::string::npos) {
       title=name.substr(posTitle+1);
       name.erase(posTitle);
-    };
+    }
+    size_t posLegends=name.find_first_of("!");
+    if (posLegends!=std::string::npos) {
+      legend_=name.substr(posLegends+1);
+      name.erase(posLegends);
+      posLegends=legend_.find_first_of("!");
+      if (posLegends!=std::string::npos) {
+	legendHead_=legend_.substr(posLegends+1);
+	legend_.erase(posLegends);
+      }
+    }
+    std::cout<<"name "<<name<<" title "<<title<<std::endl;
+    std::cout<<"legend "<<legend_<<" head "<<legendHead_<<std::endl;
     std::vector<std::string> ret;
     ret.push_back(name);
     ret.push_back(title);
@@ -135,6 +172,13 @@ template<class H> class Histogram : public H {
   void        efficiency();
   H*          num() const { return num_; }
   H*          den() const { return den_; }
+  void        setLegend(std::string legend, std::string legendHead="") { 
+    legend_=legend; 
+    legendHead_=legendHead;
+  }
+  std::string getLegend() { return legend_; }
+  void        setLegendHead(std::string legendHead) { legendHead_=legendHead; }
+  std::string getLegendHead() { return legendHead_; }
   Int_t       Write(const char*, Int_t, Int_t);
   void        setStyle(std::string style) { };
 
