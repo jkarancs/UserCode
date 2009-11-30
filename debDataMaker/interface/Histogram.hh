@@ -31,7 +31,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Oct 25 20:57:26 CET 2009
-// $Id: Histogram.hh,v 1.1 2009/11/18 14:10:51 veszpv Exp $
+// $Id: Histogram.hh,v 1.2 2009/11/29 20:37:37 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -390,7 +390,7 @@ std::string Histogram<H>::getLabel(std::string param,
 template <class H> 
 void Histogram<H>::efficiency() {
 
-  if (num_!=NULL && den_!=NULL && den_->Integral()!=0.) {
+  if (num_!=NULL && den_!=NULL ) { // && den_->Integral()!=0.) {
     std::string name=this->GetName();
     *(H*)this=*num_;
     this->SetName(name.data());
