@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Oct 25 20:57:26 CET 2009
-// $Id: Plot.hh,v 1.4 2009/11/29 20:37:37 veszpv Exp $
+// $Id: Plot.hh,v 1.5 2009/11/29 22:03:51 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -1343,7 +1343,8 @@ int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
 	frame_[i]->SetName(ss.str().data());
 	if (debug) 
 	  std::cout<<i<<" "<<hist<<" -> "<<frame_[i]->GetName()<<std::endl;
-	frame_[i]->SetAxisRange(min*0.9, max*1.05, "Y");
+	if (h->GetDimension()==1) 
+	  frame_[i]->SetAxisRange(min*0.9, max*1.05, "Y");
 	if (pads[i].second[2]!="") {
 	  frame_[i]->SetTitle(pads[i].second[2].data());
 	}
@@ -1561,6 +1562,88 @@ void Plot<H>::setPlotStyle(std::string style) {
 
     } // pad
     
+
+    // For the histo:
+    
+    typename std::map<std::string,Histogram<H> >::iterator it;
+    for (it=this->begin(); it!=this->end(); it++) {
+      Histogram<H> *h=&(it->second);
+      
+      // Stat
+      TPaveStats *st = (TPaveStats*)h->FindObject("stats");
+      if (st!=NULL) {
+	st->SetOptStat(1100);
+	st->SetFillColor(kWhite);
+	st->SetTextFont(42);
+	st->SetTextSize(0.04);
+	st->SetTextColor(1);
+	st->SetStatFormat("6.4g");
+	st->SetBorderSize(1);
+	st->SetY1(st->GetY1()-0.1);
+	st->SetX1(st->GetX1()-0.2);
+      }
+      
+      // 	// Title:
+      // 	h->SetFillColor(kWhite); // Was 10 in tdrStyle()
+      // 	h->SetFillStyle(1001);
+      // 	h->SetTextFont(42);
+      // 	h->SetTextSize(0.05);
+      // 	h->SetTextColor(1);
+      // 	h->SetBorderSize(2);
+      // 	h->SetX1(0.1);
+      // 	h->SetY1(0.985);
+      // 	h->SetX2(0);
+      // 	h->SetY2(0);
+      
+      h->SetFillColor(kWhite);
+      h->SetFillStyle(0);
+      //h->SetLineColor(1);
+      h->SetLineStyle(0);
+      h->SetLineWidth(1);
+      // 	h->SetLegoInnerR(0.5);
+      // 	h->SetNumberContours(20);
+      // 	h->SetEndErrorSize(2);
+      // 	h->SetErrorMarker(20);
+      // 	h->SetErrorX(0.);
+      h->SetMarkerStyle(20);
+      
+      std::vector<std::string> axis;
+      axis.push_back("X");
+      axis.push_back("Y");
+      axis.push_back("Z");
+      
+      for (size_t j=0; j<axis.size(); j++) {
+	TAxis *a=NULL;
+	if (axis[j]=="X") a=h->GetXaxis();
+	if (axis[j]=="Y") a=h->GetYaxis();
+	if (axis[j]=="Z") a=h->GetZaxis();
+	if (a==NULL) continue;
+	
+	// For the axis titles:
+	a->SetTitleColor(1);
+	a->SetTitleFont(42);
+	a->SetTitleSize(0.06);
+	
+	a->SetTitleOffset(1.1);
+	if (axis[j]=="X") a->SetTitleOffset(0.9);
+	if (axis[j]=="Y") a->SetTitleOffset(1.25);
+	
+	// For the axis labels:
+	
+	a->SetLabelColor(1);
+	a->SetLabelFont(42);
+	a->SetLabelOffset(0.007);
+	a->SetLabelSize(0.05);
+	
+	a->SetAxisColor(1);
+	a->SetTickLength(0.03);
+	a->SetNdivisions(510);
+      } // axis
+      
+    } // frame
+    
+    
+
 //     // For the histo:
 
 //     typename std::map<std::string,Histogram<H> >::iterator it;
@@ -1671,7 +1754,9 @@ void Plot<H>::setPlotStyle(std::string style) {
     //gROOT->ForceStyle();
 
     can_->Update();
+
   }
+
 }
 
 
