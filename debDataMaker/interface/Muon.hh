@@ -27,7 +27,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Muon.hh,v 1.22 2009/11/13 12:04:15 aranyi Exp $
+// $Id: Muon.hh,v 1.24 2009/11/25 13:43:32 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -51,10 +51,16 @@ class Muon : public VContainer<MuonData> {
 
   // Inherited functions to be overloaded
   void calculate (Beamspot<reco::BeamSpot> *beamspot=NULL);
+  
   int passed(std::string selection, size_t i) {
-    return passed(selection, i, NULL);
+    return passed(selection, i, NULL, NULL);
   };
-  int passed(std::string, size_t, std::vector<std::pair<std::string,int> >*);
+  int passed(std::string selection, size_t i, 
+             std::vector<std::pair<std::string,int> >* cutflow) {
+    return passed(selection, i, cutflow, NULL);
+  };
+  int passed(std::string, size_t, std::vector<std::pair<std::string,int> >*,
+             std::vector<float> *);
 
 };
   
@@ -95,11 +101,13 @@ void Muon::calculate (Beamspot<reco::BeamSpot>  *beamspot){
 //--------------------------------- passed() ----------------------------------  
 
 int Muon::passed(std::string selection, size_t i, 
-                 std::vector<std::pair<std::string,int> > *cutflow) { 
+                 std::vector<std::pair<std::string,int> > *cutflow,
+                 std::vector<float> *cutValue) { 
 
   if (!isValid()) return NOVAL_I;
   
   if (cutflow!=NULL) (*cutflow).clear();
+  if (cutValue!=NULL) (*cutValue).clear();
 
   if(selection=="RefAna4JetMetMuon"){
     
@@ -107,29 +115,35 @@ int Muon::passed(std::string selection, size_t i,
     std::pair<std::string,int> 
         all("Number of Candidates               ",NOVAL_I);
     all.second=1;
-    if (cutflow!=NULL) (*cutflow).push_back(all);
+    if (cutflow!=NULL) (*cutflow).push_back(all);    
+    if (cutValue!=NULL) (*cutValue).push_back(all.second);
 
                                                                      
     std::pair<std::string,int> 
-        has_trk("has innerTrack                     ",NOVAL_I);
+        has_trk("has innerTrack                     ",NOVAL_I);    
     if (muon(i).has_trk!=NOVAL_I) {
-      muon(i).has_trk==1 ? has_trk.second=1 : has_trk.second=0;
+      muon(i).has_trk==1 ? has_trk.second=1 : has_trk.second=0;      
     }
     if (cutflow!=NULL) (*cutflow).push_back(has_trk);
+    if (cutValue!=NULL) (*cutValue).push_back(muon(i).has_trk);
 
                                     
     std::pair<std::string,int> 
         hits("Number of innerTrack hits >= 11    ",NOVAL_I);
-    if (muon(i).hits!=NOVAL_I) muon(i).hits>=11 ? 
-          hits.second=1 : hits.second=0;
+    if (muon(i).hits!=NOVAL_I) {
+      muon(i).hits>=11 ? hits.second=1 : hits.second=0;
+    }
     if (cutflow!=NULL) (*cutflow).push_back(hits);
+    if (cutValue!=NULL) (*cutValue).push_back(muon(i).hits);
     
                                                                  
     std::pair<std::string,int> 
         eta("|eta|                     <= 2.1   ",NOVAL_I);
-    if (muon(i).eta!=NOVAL_F) TMath::Abs(muon(i).eta)<=2.1 ? 
-          eta.second=1 : eta.second=0;
+    if (muon(i).eta!=NOVAL_F) {
+      TMath::Abs(muon(i).eta)<=2.1 ? eta.second=1 : eta.second=0;
+    }
     if (cutflow!=NULL) (*cutflow).push_back(eta);
+    if (cutValue!=NULL) (*cutValue).push_back(TMath::Abs(muon(i).eta));
 
                                            
     std::pair<std::string,int> 
@@ -138,59 +152,76 @@ int Muon::passed(std::string selection, size_t i,
       muon(i).is_combined==1 ? is_combined.second=1 : is_combined.second=0;
     }
     if (cutflow!=NULL) (*cutflow).push_back(is_combined);
+    if (cutValue!=NULL) (*cutValue).push_back(muon(i).is_combined);
 
                                                         
     std::pair<std::string,int> 
         pt("pt                        >= 10 GeV",NOVAL_I);
-    if (muon(i).pt!=NOVAL_F) muon(i).pt>=10.0 ? 
-          pt.second=1 : pt.second=0;
+    if (muon(i).pt!=NOVAL_F) {
+      muon(i).pt>=10.0 ? pt.second=1 : pt.second=0;
+    }
     if (cutflow!=NULL) (*cutflow).push_back(pt);
+    if (cutValue!=NULL) (*cutValue).push_back(muon(i).pt);
 
                                               
-    std::pair<std::string,int> 
-        tight("GlobalMuonPromptTight              ",NOVAL_I);
-    if (muon(i).tight!=NOVAL_I) muon(i).tight==1 ? 
-          tight.second=1 : tight.second=0;    
-    if (cutflow!=NULL) (*cutflow).push_back(tight);
-  
-                                                          
     std::pair<std::string,int> 
         chi2_ndof("globalTrack fit chi2/ndof <  10    ",NOVAL_I);            
     if (muon(i).is_combined==1 && 
         muon(i).chi2!=NOVAL_F && muon(i).ndof!=NOVAL_F && 
         muon(i).ndof!=0) {
       muon(i).chi2/muon(i).ndof<10.0 ? chi2_ndof.second=1 : chi2_ndof.second=0;
+      if (cutValue!=NULL) (*cutValue).push_back(muon(i).chi2/muon(i).ndof);
     }
-    if (muon(i).is_combined==0) chi2_ndof.second=0;
-    if (cutflow!=NULL) (*cutflow).push_back(chi2_ndof);	  
+    if (muon(i).is_combined==0) {
+      chi2_ndof.second=0;
+      if (cutValue!=NULL) (*cutValue).push_back(0.0);
+    }
+    if (cutflow!=NULL) (*cutflow).push_back(chi2_ndof);
+    
+    
+    std::pair<std::string,int> 
+        tight("GlobalMuonPromptTight              ",NOVAL_I);
+    if (muon(i).tight!=NOVAL_I) {
+      muon(i).tight==1 ? tight.second=1 : tight.second=0;
+    }    
+    if (cutflow!=NULL) (*cutflow).push_back(tight);
+    if (cutValue!=NULL) (*cutValue).push_back(muon(i).tight);
+    	  
   
-                                     
     std::pair<std::string,int> 
         bc_d0("d0 (from primary vertex)  <  0.2 cm",NOVAL_I);
-    if (muon(i).bc_d0!=NOVAL_F) TMath::Abs(muon(i).bc_d0)<0.2 ? 
-          bc_d0.second=1 : bc_d0.second=0;
+    if (muon(i).bc_d0!=NOVAL_F) {
+      TMath::Abs(muon(i).bc_d0)<0.2 ? bc_d0.second=1 : bc_d0.second=0;
+    }
     if (cutflow!=NULL) (*cutflow).push_back(bc_d0);
+    if (cutValue!=NULL) (*cutValue).push_back(TMath::Abs(muon(i).bc_d0));
     
                                           
     std::pair<std::string,int> 
         isoR03_trk("Tracker Isolation         <  6 GeV ",NOVAL_I);
-    if (muon(i).isoR03_trk!=NOVAL_F) muon(i).isoR03_trk<6.0 ? 
-			    isoR03_trk.second=1 : isoR03_trk.second=0;
+    if (muon(i).isoR03_trk!=NOVAL_F) {
+      muon(i).isoR03_trk<6.0 ? isoR03_trk.second=1 : isoR03_trk.second=0;
+    }
     if (cutflow!=NULL) (*cutflow).push_back(isoR03_trk);
+    if (cutValue!=NULL) (*cutValue).push_back(muon(i).isoR03_trk);
     
                                          
     std::pair<std::string,int> 
         isoR03_hcal("HCAL Isolation            <  6 GeV ",NOVAL_I);
-    if (muon(i).isoR03_hcal!=NOVAL_F) muon(i).isoR03_hcal<6.0 ? 
-			    isoR03_hcal.second=1 : isoR03_hcal.second=0;
+    if (muon(i).isoR03_hcal!=NOVAL_F) { 
+      muon(i).isoR03_hcal<6.0 ? isoR03_hcal.second=1 : isoR03_hcal.second=0;
+    }
     if (cutflow!=NULL) (*cutflow).push_back(isoR03_hcal);
+    if (cutValue!=NULL) (*cutValue).push_back(muon(i).isoR03_hcal);
     
                                            
     std::pair<std::string,int> 
         isoR03_ecal("ECAL Isolation            <  6 GeV ",NOVAL_I);
-    if (muon(i).isoR03_ecal!=NOVAL_F) muon(i).isoR03_ecal<6.0 ? 
-			    isoR03_ecal.second=1 : isoR03_ecal.second=0;
-    if (cutflow!=NULL) (*cutflow).push_back(isoR03_ecal);           
+    if (muon(i).isoR03_ecal!=NOVAL_F) {
+      muon(i).isoR03_ecal<6.0 ? isoR03_ecal.second=1 : isoR03_ecal.second=0;
+    }
+    if (cutflow!=NULL) (*cutflow).push_back(isoR03_ecal);
+    if (cutValue!=NULL) (*cutValue).push_back(muon(i).isoR03_ecal);       
         
 
     if (muon(i).ndof==0.0){
