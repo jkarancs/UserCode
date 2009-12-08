@@ -7,7 +7,7 @@ process.source = cms.Source("PoolSource",
 
 
       "file:/home/veszpv/CMSSW_2_2_9/data/LM0/patLayer1_1.root",
-#       "file:/home/veszpv/CMSSW_2_2_9/data/LM0/patLayer1_2.root",
+       "file:/home/veszpv/CMSSW_2_2_9/data/LM0/patLayer1_2.root",
 #       "file:/home/veszpv/CMSSW_2_2_9/data/LM0/patLayer1_3.root",
 #       "file:/home/veszpv/CMSSW_2_2_9/data/LM0/patLayer1_4.root"
 
@@ -19,9 +19,10 @@ process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(100)
 )
 
-#SimpleMemoryCheck = cms.Service("SimpleMemoryCheck",
-#                                ignoreTotal = cms.untracked.int32(1)
-#)
+process.TFileService = cms.Service("TFileService",
+    fileName = cms.string('RA4Synchronization.root')
+)
+
 
 process.RA4SynchronizationMod = cms.EDFilter(
     "RA4Synchronization",
@@ -105,7 +106,7 @@ process.RA4SynchronizationMod = cms.EDFilter(
     TriggerConfig = cms.PSet(
         name = cms.string("trigger"),
         triggerTag = cms.InputTag("TriggerResults","","HLT"),
-        storeList = cms.vstring("HLT_Ele15_LW_L1R","brr"),
+        storeList = cms.vstring("HLT_Ele15_LW_L1R"),
         selectionType = cms.string("RefAna4JetMetMuon") 
     )
     

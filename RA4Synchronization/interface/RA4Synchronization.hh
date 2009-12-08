@@ -15,7 +15,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Mon Jun 01 17:54:26 CET 2009
-// $Id: RA4Synchronization.hh,v 1.5 2009/11/12 15:56:05 aranyi Exp $
+// $Id: RA4Synchronization.hh,v 1.7 2009/11/25 13:43:12 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -63,6 +63,8 @@ class RA4Synchronization : public edm::EDFilter {
 public:
   explicit RA4Synchronization(const edm::ParameterSet&);
   ~RA4Synchronization();
+  
+  edm::Service<TFileService> fs;
 
   TriggerProducer<edm::TriggerResults> trigger;
   Beamspot<reco::BeamSpot> beamspot;
@@ -72,9 +74,10 @@ public:
   MuonProducer<pat::Muon> pmuon;
   EventProducer event;
 
-public:
+//public:
 
   std::vector<std::pair<std::string,std::vector<int> > > muonCutFlowMu;
+  std::vector<std::vector<TH1F*> > muonCutHistMu;
   std::vector<std::pair<std::string,std::vector<int> > > electronCutFlowMu;
   std::vector<std::pair<std::string,std::vector<int> > > jetCutFlowMu;
   

@@ -4,29 +4,14 @@ process = cms.Process("RA4SynchronizationProc")
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
-##    "/SUSY_LM1-sftsht/susy-SUSY_LM1_229_SUSYPAT_V5_v2-00a24c1fa2b61c755cc684c50e9bc48c/USER"
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_9.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_8.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_7.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_6.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_5.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_4.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_3.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_22.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_21.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_20.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_2.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_19.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_18.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_17.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_16.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_15.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_14.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_13.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_12.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_11.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_10.root",
-    "/store/group/user/susy/walten/SUSY_LM1-sftsht/SUSY_LM1_229_SUSYPAT_V5_v2/00a24c1fa2b61c755cc684c50e9bc48c/patLayer1_1.root"
+
+
+      "file:/home/veszpv/CMSSW_2_2_9/data/LM0/patLayer1_1.root",
+       "file:/home/veszpv/CMSSW_2_2_9/data/LM0/patLayer1_2.root",
+#       "file:/home/veszpv/CMSSW_2_2_9/data/LM0/patLayer1_3.root",
+#       "file:/home/veszpv/CMSSW_2_2_9/data/LM0/patLayer1_4.root"
+
+
     )
 )
 
@@ -34,15 +19,16 @@ process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(-1)
 )
 
-#SimpleMemoryCheck = cms.Service("SimpleMemoryCheck",
-#                                ignoreTotal = cms.untracked.int32(1)
-#)
+process.TFileService = cms.Service("TFileService",
+    fileName = cms.string('LM1_RA4Synchronization.root')
+)
 
 process.RA4SynchronizationMod = cms.EDFilter(
     "RA4Synchronization",
 
     patJetConfig = cms.PSet(
-        storeNJets = cms.int32(4),
+        name = cms.string("pjet"),
+        storeNJets = cms.uint32(4),
         jetTag = cms.InputTag("allLayer1JetsSC5"),
         selectionType = cms.string("RefAna4JetMetMuon"),
         correction = cms.vstring("RAW", "NONE"),
@@ -65,61 +51,62 @@ process.RA4SynchronizationMod = cms.EDFilter(
         sortBy = cms.string("pt")
     ),
     patMetConfig = cms.PSet(
+        name = cms.string("pmet"),
         metTag = cms.InputTag("allLayer1METsSC5"),
         selectionType = cms.string("RefAna4JetMetMuon"),
-        corrections = cms.vstring("uncorrMAXN") ## index 0
+        corrections = cms.vstring("uncorrMAXN"),
+        storeList = cms.vstring("uncorrMAXN", "uncorrALL")
+ ## index 0
         #uncorrALL = 0, //! uncorrect to bare bones
         #uncorrJES,     //! uncorrect for JES only
         #uncorrMUON,    //! uncorrect for MUON only
         #uncorrMAXN     //"none"
     ),
     patElectronConfig = cms.PSet(
+        name = cms.string("pele"),
         storeNElectrons = cms.int32(1),
         electronTag = cms.InputTag("allLayer1Electrons"),
         selectionType = cms.string("RefAna4JetMetMuon")
     ),
-    patMuonConfig = cms.PSet(
+    patMuonConfig = cms.PSet(  
+        name = cms.string("pmuon"),
         storeNMuons = cms.int32(1),
         muonTag = cms.InputTag("allLayer1Muons"),
         selectionType = cms.string("RefAna4JetMetMuon")
     ),
-    EventConfig = cms.PSet(
+     EventConfig = cms.PSet(
         eventNumber = cms.double(104800.0),
         eventCrossSec = cms.double(16.06),
-        luminosity = cms.double(100.0),
-        #w=0.015324427
+        luminosity = cms.double(6525.0),
+#         #w=0.05427
         procIdx = cms.int32(1),    # genEventProcID invalid: <0
-                                   # LM0: 0
-                                   # LM1: 1
-                                   # LM2: 2
-                                   # LM3: 3
-                                   # LM4: 4
-                                   # LM5: 5
-                                   # LM6: 6
-                                   # LM7: 7
-                                   # LM8: 8
-                                   # LM9: 9
-                                   # LM10: 10
-                                   # LM11: 11
-                                   # W+Jet: 20
-                                   # TTbar+Jet: 30
-                                   # Z+Jet: 40
-                                   # QCD: 50
-       selectionType = cms.vstring(
-                        "RefAna4JetMetMuon",
-                        "RefAna4JetMetElectron"
-        )
-       # RefAna4JetMetMuon:
-       # https://twiki.cern.ch/twiki/bin/view/CMS/SusyRA4SingleMuonProjectTable
-       # RefAna4JetMetElectron:
-       # https://twiki.cern.ch/twiki/bin/view/CMS/SusyRA4SingleElectronProjectTable   
-    ),
+#                                    # LM0: 0
+#                                    # LM1: 1
+#                                    # LM2: 2
+#                                    # LM3: 3
+#                                    # LM4: 4
+#                                    # LM5: 5
+#                                    # LM6: 6
+#                                    # LM7: 7
+#                                    # LM8: 8
+#                                    # LM9: 9
+#                                    # LM10: 10
+#                                    # LM11: 11
+#                                    # W+Jet: 20
+#                                    # TTbar+Jet: 30
+#                                    # Z+Jet: 40
+#                                    # QCD: 50
+#        # RefAna4JetMetMuon:
+#        # https://twiki.cern.ch/twiki/bin/view/CMS/SusyRA4SingleMuonProjectTable
+#        # RefAna4JetMetElectron:
+#        # https://twiki.cern.ch/twiki/bin/view/CMS/SusyRA4SingleElectronProjectTable   
+     ),
     
     TriggerConfig = cms.PSet(
-        triggerResults = cms.InputTag("TriggerResults","","HLT"),
-        pathNames = cms.vstring(
-        'HLT_Ele15_LW_L1R'
-    )
+        name = cms.string("trigger"),
+        triggerTag = cms.InputTag("TriggerResults","","HLT"),
+        storeList = cms.vstring("HLT_Ele15_LW_L1R"),
+        selectionType = cms.string("RefAna4JetMetMuon") 
     )
     
 )
