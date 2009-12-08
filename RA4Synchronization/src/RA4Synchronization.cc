@@ -13,7 +13,7 @@
 //
 // Original Author:  Anita KAPUSI
 //         Created:  Mon Jun 01 17:54:26 CET 2009
-// $Id: RA4Synchronization.cc,v 1.6 2009/11/12 16:17:24 aranyi Exp $
+// $Id: RA4Synchronization.cc,v 1.8 2009/11/25 13:43:24 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -33,6 +33,70 @@ RA4Synchronization::RA4Synchronization(const edm::ParameterSet& iConfig) :
   
   eventCutFlowMu.clear();
   eventCutFlowEle.clear();
+  
+  muonCutHistMu.clear();   
+  
+  std::vector<TH1F*> axuHisto;
+      
+  for (unsigned int k=0;k<3;k++){ 
+        
+    axuHisto.clear();
+    
+    std::string axuName;
+    std::string name;    
+                            
+    if (k==0) axuName="RA4 Jet+Met+Muon  1st Muon  ";
+    if (k==1) axuName="RA4 Jet+Met+Muon  2nd Muon  ";
+    if (k==2) axuName="RA4 Jet+Met+Muon  3rd Muon  "; 
+        
+    name=axuName+"Number of Candidates";
+    axuHisto.push_back(fs->make<TH1F>(name.c_str(),name.c_str(),1,0,1));
+        
+    name=axuName+"has innerTrack";
+    axuHisto.push_back(fs->make<TH1F>(name.c_str(),name.c_str(),1,0,1));        
+          
+    name=axuName+"Number of innerTrack hits >= 11";
+    axuHisto.push_back(fs->make<TH1F>(name.c_str(),name.c_str(),
+                       35,0,35));    // nbinx, xlow, xup       
+        
+    name=axuName+"|eta| <= 2.1";
+    axuHisto.push_back(fs->make<TH1F>(name.c_str(),name.c_str(),
+                       150,0.0,3.0));    // nbinx, xlow, xup      
+        
+    name=axuName+"Combined muon";
+    axuHisto.push_back(fs->make<TH1F>(name.c_str(),name.c_str(),1,0,1));
+        
+    name=axuName+"pt >= 10 GeV";
+    axuHisto.push_back(fs->make<TH1F>(name.c_str(),name.c_str(),
+                       200,0.0,100.0));    // nbinx, xlow, xup      
+        
+    name=axuName+"globalTrack fit chi2_ndof < 10";
+    axuHisto.push_back(fs->make<TH1F>(name.c_str(),name.c_str(),
+                       200,0.0,20.0));    // nbinx, xlow, xup    
+        
+    name=axuName+"GlobalMuonPromptTight";
+    axuHisto.push_back(fs->make<TH1F>(name.c_str(),name.c_str(),1,0,1));  
+        
+    name=axuName+"d0 (from primary vertex) < 0.2 cm";
+    axuHisto.push_back(fs->make<TH1F>(name.c_str(),name.c_str(),
+                       500,0.0,0.5));    // nbinx, xlow, xup      
+        
+    name=axuName+"Tracker Isolation < 6 GeV";
+    axuHisto.push_back(fs->make<TH1F>(name.c_str(),name.c_str(),
+                       200,0.0,20.0));    // nbinx, xlow, xup      
+        
+    name=axuName+"HCAL Isolation < 6 GeV";
+    axuHisto.push_back(fs->make<TH1F>(name.c_str(),name.c_str(),
+                       200,0.0,20.0));    // nbinx, xlow, xup      
+        
+    name=axuName+"ECAL Isolation < 6 GeV";
+    axuHisto.push_back(fs->make<TH1F>(name.c_str(),name.c_str(),
+                       200,0.0,20.0));    // nbinx, xlow, xup   
+        
+           
+    muonCutHistMu.push_back(axuHisto);
+    
+  } 
   
 }
 
@@ -96,12 +160,13 @@ bool RA4Synchronization::filter(edm::Event& iEvent,
     bool third=false;
     
     std::vector<std::pair<std::string,int> > cutflow;
+    std::vector<float> cutValue;
     std::vector< int > prev;
     prev.resize(pmuon.size());
     for (unsigned int i=0;i<prev.size();i++){
       prev[i]=1;
     }
-    pmuon.passed(selection,0,&cutflow);
+    pmuon.passed(selection,0,&cutflow,&cutValue);
     
     if (muonCutFlowMu.size()==0) { 
       muonCutFlowMu.resize(cutflow.size());
@@ -113,7 +178,8 @@ bool RA4Synchronization::filter(edm::Event& iEvent,
         muonCutFlowMu[j].first=cutflow[j].first;
         muonCutFlowMu[j].second=axu;
       }
-    }
+    }    
+       
 
     for (unsigned int j=0;j<cutflow.size();j++){
       first=false;
@@ -124,25 +190,36 @@ bool RA4Synchronization::filter(edm::Event& iEvent,
 //      std::cout<<cutflow[j].first<<" ";
       
       for (unsigned int i=0;i<pmuon.size();i++){        
-        pmuon.passed(selection,i,&cutflow);
+        pmuon.passed(selection,i,&cutflow,&cutValue);
         
-//        std::cout<<cutflow[j].second<<" ";
+//         std::cout<<cutflow[j].second<<" ";
+//         std::cout<<cutValue[j]<<"             ";
+        
         
         if (j>0 && prev[i]!=0) 
           prev[i]=cutflow[j-1].second;      
           
         if (prev[i]==1 && cutflow[j].second==1){
           if (first==true && second==true && third==false) {
-            muonCutFlowMu[j].second[2]++;
-            third=true;            
+            muonCutFlowMu[j].second[2]++;            
+            third=true; 
+            if (j<cutflow.size()-1) {
+              muonCutHistMu[2][j+1]->Fill(cutValue[j+1]);
+            }
           }
           if (first==true && second==false) {
             muonCutFlowMu[j].second[1]++;
             second=true;
+            if (j<cutflow.size()-1) {
+              muonCutHistMu[1][j+1]->Fill(cutValue[j+1]);
+            }
           }
           if ( i==0 || (i>0 && first==false) ) {
             muonCutFlowMu[j].second[0]++;
             first=true;
+            if (j<cutflow.size()-1) {
+              muonCutHistMu[0][j+1]->Fill(cutValue[j+1]);
+            }
           }
                   
           if (j==cutflow.size()-1) {
@@ -152,7 +229,7 @@ bool RA4Synchronization::filter(edm::Event& iEvent,
       }
       
     }
-//    std::cout<<std::endl;
+//     std::cout<<std::endl;
     
     
   }
