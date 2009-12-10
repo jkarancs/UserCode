@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: debNtupleMaker.hh,v 1.6 2009/07/29 10:01:43 veszpv Exp $
+// $Id: debNtupleMaker.hh,v 1.7 2009/08/24 18:34:19 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -66,9 +66,9 @@
 #include "SusyAnalysis/debDataMaker/interface/MuonProducer.hh"
 #include "SusyAnalysis/debDataMaker/interface/McProcessProducer.hh"
 #include "SusyAnalysis/debDataMaker/interface/McParticleProducer.hh"
-#include "SusyAnalysis/debDataMaker/interface/Event.hh"
+#include "SusyAnalysis/debDataMaker/interface/EventProducer.hh"
 #include "SusyAnalysis/debDataMaker/interface/Beamspot.hh"
-#include "SusyAnalysis/debDataMaker/interface/Trigger.hh"
+#include "SusyAnalysis/debDataMaker/interface/TriggerProducer.hh"
 
 using namespace deb;
 
@@ -77,7 +77,7 @@ public:
   explicit debNtupleMaker(const edm::ParameterSet&);
   ~debNtupleMaker();
 
-  Trigger<edm::TriggerResults> trigger;
+  TriggerProducer<edm::TriggerResults> trigger;
   Beamspot<reco::BeamSpot> beamspot;
   //Jet<reco::GenJet> gjet; // genJet
   JetProducer<pat::Jet> pjet;
@@ -86,7 +86,7 @@ public:
   MuonProducer<pat::Muon> pmuon;
   McProcessProducer<reco::Candidate,2> promptmuon;
   McParticleProducer<reco::Candidate,1> mcmuon;
-  Event event;
+  EventProducer event;
 
   deb::DeltaR<Jet,Met> dr_pjet_pmet;
   //DeltaR<Jet<pat::Jet>,Jet<pat::Jet> > dr_pjet;  

@@ -145,10 +145,10 @@ process.debNtupleMakerMod = cms.EDFilter(
     ),
     
     TriggerConfig = cms.PSet(
-        triggerResults = cms.InputTag("TriggerResults","","HLT"),
-        pathNames = cms.vstring(
-        'HLT_Ele15_LW_L1R'
-    )
+        name = cms.string("trigger"), 
+                triggerTag = cms.InputTag("TriggerResults","","HLT"),
+        storeList = cms.vstring("HLT_Ele15_LW_L1R"),
+        selectionType = cms.string("RefAna4JetMetMuon")
     ),
 
     drPatJetPatMetConfig = cms.PSet(

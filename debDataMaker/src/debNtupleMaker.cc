@@ -13,7 +13,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: debNtupleMaker.cc,v 1.11 2009/07/29 13:35:47 veszpv Exp $
+// $Id: debNtupleMaker.cc,v 1.12 2009/08/24 18:34:30 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -57,9 +57,9 @@ debNtupleMaker::debNtupleMaker(const edm::ParameterSet& iConfig) :
   pmuon.addBranch(tree);
   promptmuon.addBranch(tree);
   mcmuon.addBranch(tree);
-  event.addBranch(tree,"event");
+  event.addBranch(tree);
   beamspot.addBranch(tree,"beamspot");
-  trigger.addBranch(tree,"trigger");
+  trigger.addBranch(tree);
   dr_pjet_pmet.addBranch(tree);
   dr_pjet.addBranch(tree);
   dr_pjet.setMode(1);
