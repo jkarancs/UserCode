@@ -7,7 +7,15 @@ TH1F *first_muon_Zjets;
 
 double max;
 int fillcolor;
+int save2pdf;
 
+
+double x_cross;
+double num_events;
+double max_events;
+double luminosity;
+
+double isolation_xrange;
 
 void RA4MuonStudy()
 
@@ -18,6 +26,13 @@ void RA4MuonStudy()
   
       
   fillcolor=0;
+  save2pdf=0;
+  
+  luminosity=100.0; //pb^-1
+  
+  
+  isolation_xrange=10.0;
+  
   
 ///____________________________________________________________________________
 ///                                  hits
@@ -37,32 +52,32 @@ void RA4MuonStudy()
 
 
 
-  TCanvas *c1 = new TCanvas("c1","hits");
+  TCanvas *c1 = new TCanvas("c1","hits");  
 
     if (normalization=="xsec") {
       
-      Double_t x_cross=110.0;       // cross section [pb]
-      Double_t num_events=202686.0; // number of events were used in the calculation
-      Double_t max_events=202686.0; // maximum number of events
-      first_muon_LM0->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=110.0;       // cross section [pb]
+      num_events=202686.0; // number of events were used in the calculation
+      max_events=202686.0; // maximum number of events
+      first_muon_LM0->Scale((x_cross*luminosity/num_events));         
       
       
-      Double_t x_cross=317.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=946644.0; // maximum number of events
-      first_muon_TTbar->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=317.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=946644.0; // maximum number of events
+      first_muon_TTbar->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=40000.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=9745661.0; // maximum number of events
-      first_muon_Wjets_1->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=40000.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=9745661.0; // maximum number of events
+      first_muon_Wjets_1->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=3700.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=1262816.0; // maximum number of events
-      first_muon_Zjets->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=3700.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=1262816.0; // maximum number of events
+      first_muon_Zjets->Scale((x_cross*luminosity/num_events));
     
     }
     
@@ -82,7 +97,18 @@ void RA4MuonStudy()
     
     }
     
-    drawHist(first_muon_LM0,first_muon_TTbar,first_muon_Wjets_1,first_muon_Zjets,fillcolor);
+    first_muon_LM0->SetXTitle("Number of innerTrack hits");
+    
+    drawHist(first_muon_LM0,first_muon_TTbar,first_muon_Wjets_1,first_muon_Zjets,fillcolor);     
+    
+    TCanvas *c1_b=c1->Clone();
+    c1_b->SetName("hits (log)");               
+    
+    c1_b->SetLogy(1);
+    c1_b->Draw();
+    
+    if (save2pdf==1) c1->Print("test/scripts/hits.pdf");             
+    if (save2pdf==1) c1_b->Print("test/scripts/hits_log.pdf");
 
     
 
@@ -108,28 +134,28 @@ void RA4MuonStudy()
 
     if (normalization=="xsec") {
       
-      Double_t x_cross=110.0;       // cross section [pb]
-      Double_t num_events=202686.0; // number of events were used in the calculation
-      Double_t max_events=202686.0; // maximum number of events
-      first_muon_LM0->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=110.0;       // cross section [pb]
+      num_events=202686.0; // number of events were used in the calculation
+      max_events=202686.0; // maximum number of events
+      first_muon_LM0->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=317.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=946644.0; // maximum number of events
-      first_muon_TTbar->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=317.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=946644.0; // maximum number of events
+      first_muon_TTbar->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=40000.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=9745661.0; // maximum number of events
-      first_muon_Wjets_1->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=40000.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=9745661.0; // maximum number of events
+      first_muon_Wjets_1->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=3700.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=1262816.0; // maximum number of events
-      first_muon_Zjets->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=3700.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=1262816.0; // maximum number of events
+      first_muon_Zjets->Scale((x_cross*luminosity/num_events));
     
     }
     
@@ -149,9 +175,18 @@ void RA4MuonStudy()
     
     }
     
+    first_muon_LM0->SetXTitle("|eta|");
+    
     drawHist(first_muon_LM0,first_muon_TTbar,first_muon_Wjets_1,first_muon_Zjets,fillcolor);
     
-
+    TCanvas *c2_b=c2->Clone();
+    c2_b->SetName("eta (log)");               
+    
+    c2_b->SetLogy(1);
+    c2_b->Draw();
+    
+    if (save2pdf==1) c2->Print("test/scripts/eta.pdf");             
+    if (save2pdf==1) c2_b->Print("test/scripts/eta_log.pdf");
     
 
 ///____________________________________________________________________________
@@ -176,28 +211,28 @@ void RA4MuonStudy()
 
     if (normalization=="xsec") {
       
-      Double_t x_cross=110.0;       // cross section [pb]
-      Double_t num_events=202686.0; // number of events were used in the calculation
-      Double_t max_events=202686.0; // maximum number of events
-      first_muon_LM0->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=110.0;       // cross section [pb]
+      num_events=202686.0; // number of events were used in the calculation
+      max_events=202686.0; // maximum number of events
+      first_muon_LM0->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=317.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=946644.0; // maximum number of events
-      first_muon_TTbar->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=317.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=946644.0; // maximum number of events
+      first_muon_TTbar->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=40000.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=9745661.0; // maximum number of events
-      first_muon_Wjets_1->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=40000.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=9745661.0; // maximum number of events
+      first_muon_Wjets_1->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=3700.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=1262816.0; // maximum number of events
-      first_muon_Zjets->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=3700.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=1262816.0; // maximum number of events
+      first_muon_Zjets->Scale((x_cross*luminosity/num_events));
     
     }
     
@@ -217,9 +252,18 @@ void RA4MuonStudy()
     
     }
     
+    first_muon_LM0->SetXTitle("GeV");
     drawHist(first_muon_LM0,first_muon_TTbar,first_muon_Wjets_1,first_muon_Zjets,fillcolor);
     
-
+    TCanvas *c3_b=c3->Clone();
+    c3_b->SetName("pt (log)");               
+    
+    c3_b->SetLogy(1);
+    c3_b->Draw();
+    
+    if (save2pdf==1) c3->Print("test/scripts/pt.pdf");             
+    if (save2pdf==1) c3_b->Print("test/scripts/pt_log.pdf");
+    
 ///____________________________________________________________________________
 ///                                  chi2_ndof
 
@@ -242,28 +286,28 @@ void RA4MuonStudy()
 
     if (normalization=="xsec") {
       
-      Double_t x_cross=110.0;       // cross section [pb]
-      Double_t num_events=202686.0; // number of events were used in the calculation
-      Double_t max_events=202686.0; // maximum number of events
-      first_muon_LM0->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=110.0;       // cross section [pb]
+      num_events=202686.0; // number of events were used in the calculation
+      max_events=202686.0; // maximum number of events
+      first_muon_LM0->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=317.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=946644.0; // maximum number of events
-      first_muon_TTbar->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=317.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=946644.0; // maximum number of events
+      first_muon_TTbar->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=40000.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=9745661.0; // maximum number of events
-      first_muon_Wjets_1->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=40000.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=9745661.0; // maximum number of events
+      first_muon_Wjets_1->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=3700.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=1262816.0; // maximum number of events
-      first_muon_Zjets->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=3700.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=1262816.0; // maximum number of events
+      first_muon_Zjets->Scale((x_cross*luminosity/num_events));
     
     }
     
@@ -283,8 +327,22 @@ void RA4MuonStudy()
     
     }
     
+    first_muon_LM0->SetAxisRange(0,8);
+    first_muon_TTbar->SetAxisRange(0,8);
+    first_muon_Wjets_1->SetAxisRange(0,8);
+    first_muon_Zjets->SetAxisRange(0,8); 
+    
+    
     drawHist(first_muon_LM0,first_muon_TTbar,first_muon_Wjets_1,first_muon_Zjets,fillcolor);
     
+    TCanvas *c4_b=c4->Clone();
+    c4_b->SetName("chi2/ndof (log)");               
+    
+    c4_b->SetLogy(1);
+    c4_b->Draw();
+    
+    if (save2pdf==1) c4->Print("test/scripts/chi2_ndof.pdf");             
+    if (save2pdf==1) c4_b->Print("test/scripts/chi2_ndof_log.pdf");
         
 
 ///____________________________________________________________________________
@@ -309,28 +367,28 @@ void RA4MuonStudy()
 
     if (normalization=="xsec") {
       
-      Double_t x_cross=110.0;       // cross section [pb]
-      Double_t num_events=202686.0; // number of events were used in the calculation
-      Double_t max_events=202686.0; // maximum number of events
-      first_muon_LM0->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=110.0;       // cross section [pb]
+      num_events=202686.0; // number of events were used in the calculation
+      max_events=202686.0; // maximum number of events
+      first_muon_LM0->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=317.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=946644.0; // maximum number of events
-      first_muon_TTbar->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=317.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=946644.0; // maximum number of events
+      first_muon_TTbar->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=40000.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=9745661.0; // maximum number of events
-      first_muon_Wjets_1->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=40000.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=9745661.0; // maximum number of events
+      first_muon_Wjets_1->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=3700.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=1262816.0; // maximum number of events
-      first_muon_Zjets->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=3700.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=1262816.0; // maximum number of events
+      first_muon_Zjets->Scale((x_cross*luminosity/num_events));
     
     }
     
@@ -350,8 +408,23 @@ void RA4MuonStudy()
     
     }
     
+    first_muon_LM0->SetAxisRange(0,0.05);
+    first_muon_TTbar->SetAxisRange(0,0.05);
+    first_muon_Wjets_1->SetAxisRange(0,0.05);
+    first_muon_Zjets->SetAxisRange(0,0.05);  
+    
+    first_muon_LM0->SetXTitle("cm");
+    
     drawHist(first_muon_LM0,first_muon_TTbar,first_muon_Wjets_1,first_muon_Zjets,fillcolor);
     
+    TCanvas *c5_b=c5->Clone();
+    c5_b->SetName("d0 (log)");               
+    
+    c5_b->SetLogy(1);
+    c5_b->Draw();
+    
+    if (save2pdf==1) c5->Print("test/scripts/d0.pdf");             
+    if (save2pdf==1) c5_b->Print("test/scripts/d0_log.pdf");
  
 ///____________________________________________________________________________
 ///                                isoR03_trk
@@ -375,28 +448,28 @@ void RA4MuonStudy()
 
     if (normalization=="xsec") {
       
-      Double_t x_cross=110.0;       // cross section [pb]
-      Double_t num_events=202686.0; // number of events were used in the calculation
-      Double_t max_events=202686.0; // maximum number of events
-      first_muon_LM0->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=110.0;       // cross section [pb]
+      num_events=202686.0; // number of events were used in the calculation
+      max_events=202686.0; // maximum number of events
+      first_muon_LM0->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=317.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=946644.0; // maximum number of events
-      first_muon_TTbar->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=317.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=946644.0; // maximum number of events
+      first_muon_TTbar->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=40000.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=9745661.0; // maximum number of events
-      first_muon_Wjets_1->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=40000.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=9745661.0; // maximum number of events
+      first_muon_Wjets_1->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=3700.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=1262816.0; // maximum number of events
-      first_muon_Zjets->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=3700.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=1262816.0; // maximum number of events
+      first_muon_Zjets->Scale((x_cross*luminosity/num_events));
     
     }
     
@@ -416,7 +489,23 @@ void RA4MuonStudy()
     
     }
     
+    first_muon_LM0->SetAxisRange(0,isolation_xrange);
+    first_muon_TTbar->SetAxisRange(0,isolation_xrange);
+    first_muon_Wjets_1->SetAxisRange(0,isolation_xrange);
+    first_muon_Zjets->SetAxisRange(0,isolation_xrange);  
+    
+    first_muon_LM0->SetXTitle("GeV");
+    
     drawHist(first_muon_LM0,first_muon_TTbar,first_muon_Wjets_1,first_muon_Zjets,fillcolor);
+    
+    TCanvas *c6_b=c6->Clone();
+    c6_b->SetName("isoR03_trk (log)");               
+    
+    c6_b->SetLogy(1);
+    c6_b->Draw();
+    
+    if (save2pdf==1) c6->Print("test/scripts/isoR03_trk.pdf");             
+    if (save2pdf==1) c6_b->Print("test/scripts/isoR03_trk_log.pdf");
     
  
 ///____________________________________________________________________________
@@ -441,28 +530,28 @@ void RA4MuonStudy()
 
     if (normalization=="xsec") {
       
-      Double_t x_cross=110.0;       // cross section [pb]
-      Double_t num_events=202686.0; // number of events were used in the calculation
-      Double_t max_events=202686.0; // maximum number of events
-      first_muon_LM0->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=110.0;       // cross section [pb]
+      num_events=202686.0; // number of events were used in the calculation
+      max_events=202686.0; // maximum number of events
+      first_muon_LM0->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=317.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=946644.0; // maximum number of events
-      first_muon_TTbar->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=317.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=946644.0; // maximum number of events
+      first_muon_TTbar->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=40000.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=9745661.0; // maximum number of events
-      first_muon_Wjets_1->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=40000.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=9745661.0; // maximum number of events
+      first_muon_Wjets_1->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=3700.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=1262816.0; // maximum number of events
-      first_muon_Zjets->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=3700.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=1262816.0; // maximum number of events
+      first_muon_Zjets->Scale((x_cross*luminosity/num_events));
     
     }
     
@@ -482,8 +571,23 @@ void RA4MuonStudy()
     
     }
     
+    first_muon_LM0->SetAxisRange(0,isolation_xrange);
+    first_muon_TTbar->SetAxisRange(0,isolation_xrange);
+    first_muon_Wjets_1->SetAxisRange(0,isolation_xrange);
+    first_muon_Zjets->SetAxisRange(0,isolation_xrange);  
+    
+    first_muon_LM0->SetXTitle("GeV");
+    
     drawHist(first_muon_LM0,first_muon_TTbar,first_muon_Wjets_1,first_muon_Zjets,fillcolor);
     
+    TCanvas *c7_b=c7->Clone();
+    c7_b->SetName("isoR03_hcal (log)");               
+    
+    c7_b->SetLogy(1);
+    c7_b->Draw();
+    
+    if (save2pdf==1) c7->Print("test/scripts/isoR03_hcal.pdf");             
+    if (save2pdf==1) c7_b->Print("test/scripts/isoR03_hcal_log.pdf");
   
 ///____________________________________________________________________________
 ///                                isoR03_ecal
@@ -508,28 +612,28 @@ void RA4MuonStudy()
 
     if (normalization=="xsec") {
       
-      Double_t x_cross=110.0;       // cross section [pb]
-      Double_t num_events=202686.0; // number of events were used in the calculation
-      Double_t max_events=202686.0; // maximum number of events
-      first_muon_LM0->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=110.0;       // cross section [pb]
+      num_events=202686.0; // number of events were used in the calculation
+      max_events=202686.0; // maximum number of events
+      first_muon_LM0->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=317.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=946644.0; // maximum number of events
-      first_muon_TTbar->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=317.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=946644.0; // maximum number of events
+      first_muon_TTbar->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=40000.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=9745661.0; // maximum number of events
-      first_muon_Wjets_1->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=40000.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=9745661.0; // maximum number of events
+      first_muon_Wjets_1->Scale((x_cross*luminosity/num_events));
       
       
-      Double_t x_cross=3700.0;       // cross section [pb]
-      Double_t num_events=200000.0; // number of events were used in the calculation
-      Double_t max_events=1262816.0; // maximum number of events
-      first_muon_Zjets->Scale( (1/x_cross) * (max_events/num_events) );
+      x_cross=3700.0;       // cross section [pb]
+      num_events=200000.0; // number of events were used in the calculation
+      max_events=1262816.0; // maximum number of events
+      first_muon_Zjets->Scale((x_cross*luminosity/num_events));
     
     }
     
@@ -547,12 +651,25 @@ void RA4MuonStudy()
       Double_t norm=first_muon_Zjets->Integral();
       first_muon_Zjets->Scale(1/norm);
     
-    }
+    }        
     
+    first_muon_LM0->SetAxisRange(0,isolation_xrange);
+    first_muon_TTbar->SetAxisRange(0,isolation_xrange);
+    first_muon_Wjets_1->SetAxisRange(0,isolation_xrange);
+    first_muon_Zjets->SetAxisRange(0,isolation_xrange);    
     
+    first_muon_LM0->SetXTitle("GeV");
+        
     drawHist(first_muon_LM0,first_muon_TTbar,first_muon_Wjets_1,first_muon_Zjets,fillcolor);
   
+    TCanvas *c8_b=c8->Clone();
+    c8_b->SetName("isoR03_ecal (log)");               
     
+    c8_b->SetLogy(1);
+    c8_b->Draw();
+    
+    if (save2pdf==1) c8->Print("test/scripts/isoR03_ecal.pdf");             
+    if (save2pdf==1) c8_b->Print("test/scripts/isoR03_ecal_log.pdf");
       
 }   
 
@@ -618,4 +735,4 @@ void drawHist(TH1F *LM0,TH1F *TTbar,TH1F *Wjets_1,TH1F *Zjets,int fillcolor){
 };
     
 
-//c19b->Print("pt_all.pdf");                             
+//c19b->Print("test/scripts/pt_all.pdf");                             
