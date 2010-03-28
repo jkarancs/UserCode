@@ -11,14 +11,46 @@
 
  Implementation:
 
+ File handling: 
+   - Write() writes selected histograms on the file+path given in the argument.
+   This is the recommended method to use.
+   - Another possibility to write the histograms into file is to add them to
+   a ROOT TDirectory inside the file, and call TFile::Write(). In order to use
+   this feature, you need to call setDirectory on the selected histograms
+   IMPORTANT: closing the file without removing the directory assignment of
+   the histograms in the Plot will crash your code. To sort it out, you are on
+   your own.
+   - All the above applies to TCanvas, too.
+
+ ROOT TDirectory handling: 
+   - all Histograms are created in the memory directory independent. If you 
+   want to add selected histograms to a TDirectory, call 
+   setDirectory(std::string regexp=""). This will not write the histograms to
+   file, just "assigns" them to the TDirectory. 
+   - Every copy/clone of the Plot is also put in the memory regardless where 
+   the original is located.
+   - Operator= does not relocate a Plot, the content of the STL container is
+   still created in the memory.
+
+ Histo naming:
+   - every histo bears the name of the plot itself (in canName_) and its key
+   used in the map separated by an underscore.
+   - add() uses the plot name and key to construct the histo name
+   - write() saves histos with their full name
+   - load() loads histograms into the plot from a plot of given name, the name
+   of the original plot is replaced by this plot, the key is kept
+   - setName() replaces the plot name in canName_ and renames all histograms in
+   the plot (leaves the keys untouched)
+
 */
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Oct 25 20:57:26 CET 2009
-// $Id: Plot.hh,v 1.5 2009/11/29 22:03:51 veszpv Exp $
+// $Id: Plot.hh,v 1.6 2009/12/02 14:27:21 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
+
 
 #include <iostream>
 #include <fstream>
@@ -34,92 +66,124 @@
 #include "TFrame.h"
 #include "TPaveStats.h"
 #include "TDirectory.h"
+#include "TList.h"
+#include "TKey.h"
 #include <boost/regex.hpp>
 
+
 namespace deb {
+
 
 //----------------------------- Class Definition ------------------------------
 
 template<class H> class Plot : public std::map<std::string,Histogram<H> > {
  public:
 
-  typedef Histogram<H> HType;
-  typedef std::map<std::string,Histogram<H> > PlotBase;
-  typedef typename PlotBase::iterator iterator;
-  typedef typename PlotBase::const_iterator const_iterator;
-  // Empty plot: format=<plot name>[;<plot title>]
+  typedef           Histogram<H>                         HType;
+  typedef           std::map<std::string,Histogram<H> >  PlotBase;
+  typedef typename  PlotBase::iterator                   iterator;
+  typedef typename  PlotBase::const_iterator             const_iterator;
 
-  Plot(Int_t ww, Int_t wh, std::string format,...);
 
   //
-  // Copy constructor
+  // Default Constructor
+  // 
+  Plot () { init(0, 0, ""); }
+
+
   //
-  Plot(const Plot<H> &h) : PlotBase(h) {
-    //can_ = (h.can_!=NULL) ? (TCanvas*)h.can_->Clone() : NULL;
-    can_=NULL;
-    ww_=h.ww_; wh_=h.wh_;
-    canName_=h.canName_;
-    canTitle_=h.canTitle_;
-    ntiles_=0;
-    style_ = h.style_;
-  }
+  // Copy Constructor
+  //
+  Plot (const Plot<H> &plot) { *this=plot; }
+    
+
+  //
+  // Empty Plot Constructor: format=<plot name>[;<plot title>]
+  //
+
+  Plot (Int_t ww, Int_t wh, std::string format,...);
+
 
   //
   // TH1 constructors: format=<plot name>[;<plot title>[;<histo name>[;...]]]
   //
 
-  Plot(Int_t ww, Int_t wh,
-       Int_t nbinsx, Double_t xlow, Double_t xup, std::string format,...);
+  Plot (Int_t ww, Int_t wh,
+	Int_t nbinsx, Double_t xlow, Double_t xup, 
+	std::string format,...);
 
-  Plot(Int_t ww, Int_t wh,
-       Int_t nbins, const Float_t *xbins, std::string format,...);
+  Plot (Int_t ww, Int_t wh,
+	Int_t nbins, const Float_t *xbins, 
+	std::string format,...);
 
-  Plot(Int_t ww, Int_t wh,
-       Int_t nbins, const Double_t *xbins, std::string format,...);
+  Plot (Int_t ww, Int_t wh,
+	Int_t nbins, const Double_t *xbins, 
+	std::string format,...);
+
 
   //
   // TH2 constructors: format=<plot name>[;<plot title>[;<histo name>[;...]]]
   //
 
-  Plot(Int_t ww, Int_t wh, Int_t nbinsx, Double_t xlow, Double_t xup, 
-       Int_t nbinsy, Double_t ylow, Double_t yup, std::string format,...);
+  Plot (Int_t ww, Int_t wh, 
+	Int_t nbinsx, Double_t xlow, Double_t xup, 
+	Int_t nbinsy, Double_t ylow, Double_t yup, 
+	std::string format,...);
 
-  Plot(Int_t ww, Int_t wh, Int_t nbinsx, const Double_t *xbins, 
-       Int_t nbinsy, Double_t ylow, Double_t yup, std::string format,...);
+  Plot (Int_t ww, Int_t wh, 
+	Int_t nbinsx, const Double_t *xbins, 
+	Int_t nbinsy, Double_t ylow, Double_t yup, 
+	std::string format,...);
+  
+  Plot (Int_t ww, Int_t wh, 
+	Int_t nbinsx, Double_t xlow, Double_t xup, 
+	Int_t nbinsy, const Double_t *ybins, 
+	std::string format,...);
 
-  Plot(Int_t ww, Int_t wh, Int_t nbinsx, Double_t xlow, Double_t xup, 
-       Int_t nbinsy, const Double_t *ybins, std::string format,...);
+  Plot (Int_t ww, Int_t wh, 
+	Int_t nbinsx, const Double_t *xbins, 
+	Int_t nbinsy, const Double_t *ybins, 
+	std::string format,...);
 
-  Plot(Int_t ww, Int_t wh, Int_t nbinsx, const Double_t *xbins, 
-       Int_t nbinsy, const Double_t *ybins, std::string format,...);
+  Plot (Int_t ww, Int_t wh, 
+	Int_t nbinsx, const Float_t *xbins, 
+	Int_t nbinsy, const Float_t *ybins, 
+	std::string format,...);
 
-  Plot(Int_t ww, Int_t wh, Int_t nbinsx, const Float_t *xbins, 
-       Int_t nbinsy, const Float_t *ybins, std::string format,...);
 
-  ~Plot() {
-    for(size_t i=0; i<frame_.size(); i++) {
-      if (frame_[i]!=NULL) delete frame_[i];
-    }
-    frame_.clear();
-    for(size_t i=0; i<legend_.size(); i++) {
-      if (legend_[i]!=NULL) delete legend_[i];
-    }
-    legend_.clear();
-    if (can_!=NULL) delete can_;
-  }
+  //
+  // Destructor
+  //
+  ~Plot() { this->deleteCanvas(); }
+  
+
+  //
+  // Private data members and fuctions
+  //
 
  private:
-  TCanvas* can_;
+  //
+  // Variables
+  //
+  TCanvas* can_;                        // The canvas drawn by Draw()
   Int_t ww_, wh_;
   std::string canName_, canTitle_;
   int ntiles_;
-  
-  std::map<std::string,H> stack_; // Iportant!
-  std::vector<TLegend*> legend_;  // These three variables are meant to be
-  std::vector<H*> frame_;         // filled simultaneously !!!
+
+  std::vector<std::string> lastDrawFormat_; // Iportant!!! : 
+  int lastDrawNCols_, lastDrawNRows_;      // ---------------------------------
+  std::map<std::string,H> stack_;         // These five variables are meant to
+  std::vector<TLegend*> legend_;         // be filled simultaneously by Draw()!
+  std::vector<H*> frame_;               // ------------------------------------
+
   std::string style_;
 
+  
+  //
+  // Functions
+  //
   std::string init(Int_t ww, Int_t wh, std::string format);
+
   std::vector<std::string> generateNameTitleForH(std::string format);
   std::vector<std::string> generateNameTitleForHNew(std::string format);
 
@@ -159,22 +223,94 @@ template<class H> class Plot : public std::map<std::string,Histogram<H> > {
     return ret;
   }
 
+  // general
+  inline std::string histNameFromKey(std::string key, std::string pname) {
+    return (pname=="") ? key : key.insert(0, pname+"_");
+  }
+
+  // applied to this object
+  inline std::string histNameFromKey(std::string key) {
+    return histNameFromKey(key, canName_);
+  }
+
+  // general
+  inline std::string keyFromHistName(std::string hname, std::string pname) {
+    return (pname=="") ? hname : hname.erase(0, pname.size()+1);
+  }
+
+  // applied to this object
+  inline std::string keyFromHistName(std::string hname) {
+    return keyFromHistName(hname, canName_);
+  }
+
+  // general
+  inline std::string replacePlotNameInHistName(std::string hname, 
+					       std::string newplotname,
+					       std::string oldplotname) {
+    return histNameFromKey(keyFromHistName(hname, oldplotname), newplotname);
+  }
+
+  // applied to this object
+  inline std::string replacePlotNameInHistName(std::string hname, 
+					       std::string newplotname) {
+    return histNameFromKey(keyFromHistName(hname, canName_), newplotname);
+  }
+
+  //
+  // Public functions
+  //
+
  public:
 
-  Plot<H>& operator= (const Plot<H> &h) {
-    can_ = (h.can_!=NULL) ? (TCanvas*)h.can_->Clone() : NULL;
-    style_ = h.style_;
-    *((PlotBase*)(this)) = PlotBase(h);
-    return (*this);
+  // delete canvas
+  //
+  void deleteCanvas() {
+    std::cout << "Deleting canvas\n";
+    for(size_t i=0; i<frame_.size(); i++) {
+      if (frame_[i]!=NULL) delete frame_[i];
+    }
+    frame_.clear();
+    for(size_t i=0; i<legend_.size(); i++) {
+      if (legend_[i]!=NULL) delete legend_[i];
+    }
+    legend_.clear();
+    stack_.clear();
+
+    if (can_!=NULL) delete can_;    
+    can_=NULL;
   }
+
+
+  // Assignment operator
+  //
+  Plot<H>& operator= (const Plot<H> &plot) {
+    *dynamic_cast<PlotBase*>(this) = dynamic_cast<const PlotBase&>(plot);
+    this->setDirectory(0);
+    can_ = NULL;
+    ww_ = plot.ww_; 
+    wh_ = plot.wh_;
+    canName_ = plot.canName_;
+    canTitle_ = plot.canTitle_;
+    ntiles_ = 0;
+    lastDrawFormat_ = plot.lastDrawFormat_;
+    lastDrawNCols_ = plot.lastDrawNCols_;
+    lastDrawNRows_ = plot.lastDrawNRows_;
+    style_ = plot.style_;
+    return *this;
+  }
+
 
   // Canvas operations
   bool                   isDrawn()     { return (can_==NULL) ? false : true; }
   TCanvas*               canvas()      { return can_; }
   std::vector<TLegend>   legend()      { return legend_; }
-  std::vector<H*>        frame()       { return frame_; }
+  std::vector<H*>        frames()      { return frame_; }
   int                    getNPads()    { return frame_.size(); }
   int                    getMaxNPads() { return ntiles_; }
+
+  std::vector<std::string> getLastDrawFormat() { return lastDrawFormat_; }
+  std::string              getLastDrawNCols()  { return lastDrawNCols_;  }
+  std::string              getLastDrawNRows()  { return lastDrawNRows_;  }
 
   // Add histograms to plot
   void add(Int_t nbinsx, Double_t xlow, Double_t xup, std::string format,...);
@@ -200,32 +336,45 @@ template<class H> class Plot : public std::map<std::string,Histogram<H> > {
 
   // Accessors
   Histogram<H>& operator()(size_t i) { return (*this)("[%d]", i); }
+
   Histogram<H>& operator()(size_t i, size_t j) { 
     return (*this)("[%d][%d]", i, j); 
   }
+
   Histogram<H>& operator()(size_t i, size_t j, size_t k) { 
     return (*this)("[%d][%d][%d]", i, j, k); 
   }
+
   // NOTE: operator() does not use regular expression
   Histogram<H>& operator()(std::string format, ...);
 
-  // NOTE: "[" and "]" need to be escaped by "\" for locate()
-  std::vector<iterator> locate(std::string format_regexpr, ...);
+
+  // NOTE: "[" and "]" need to be escaped by "\" for search()
+  std::vector<iterator> search(std::string format_regexpr, ...);
 
 
   // Compound operations on histograms (for individuals use operators (), [])
   // by regular expressions. Most of the time using variable parameters in when
   // constructing the regular expression would be an overcomplication. For 
-  // such effect, functions should be combined with locate(format_regexpr, ...)
+  // such effect, functions should be combined with search(format_regexpr, ...)
 
   void efficiency(std::string format_regexpr="", ...);
   void efficiency(std::vector<iterator> list);
+
+
+  void setSumw2(std::string format_regexpr="", ...);
+  void setSumw2(std::vector<iterator> list);
 
 
   void setColor(std::string regexpr, std::string attr, 
 		Color_t color, int step=0);
   void setColor(std::vector<iterator> list, std::string what="", 
 		std::string attr, Color_t color, int step=0);
+
+
+  void setDirectory(TDirectory *dir=NULL);
+  void setDirectory(std::string regexpr, TDirectory *dir);
+  void setDirectory(std::vector<iterator> list, TDirectory *dir);
 
 
   void setStyle(std::string regexpr, std::string attr, Style_t style);
@@ -255,16 +404,88 @@ template<class H> class Plot : public std::map<std::string,Histogram<H> > {
 
 
   int  Draw(std::vector<std::string> hists, int ncols=1, int nrows=-1);
-  int  Draw(std::string regexpr, int ncols=1, int nrows=-1);
-  int  Draw(std::vector<iterator>, int ncols=1, int nrows=-1);
+  int  Draw(std::string hist, int ncols=1, int nrows=-1);
+  //Not implemented: int Draw(std::string regexpr, int ncols=1,int nrows=-1);
+  //Not implemented: int Draw(std::vector<iterator>, int ncols=1,int nrows=-1);
 
+
+  int redraw() {
+    deleteCanvas();
+    if (lastDrawFormat_.size()) {
+      return this->Draw(lastDrawFormat_, lastDrawNCols_, lastDrawNRows_);
+    }
+    return 0;
+  }
+
+
+  // Plot level operations
   void Write();
+
+  int  load(std::string name=""); // returns 0 if no error occured
+
+  int  load(std::string name, std::string format_regexpr, ...) { // 0: no error
+    va_list argList;
+    va_start(argList, format_regexpr);
+    char s[10000];
+    vsprintf(s, format_regexpr.data(), argList);
+    va_end(argList);
+    Plot<H> temp;
+    int ret=temp.load(name);
+    append(temp, temp.search(s));
+    return ret;
+  }
+
+
+  void setName(std::string name);
+  std::string getName() const          { return canName_; }
+
+  void print();
+
+  void append(const Plot<H>& plot) {
+    Plot<H> temp(plot);
+    temp.setName(canName_);
+    this->insert(temp.begin(), temp.end());    
+    this->setDirectory(0);
+  }
+
+  void append(const Plot<H>& plot, std::vector<iterator> list) {
+    for (size_t i=0; i<list.size(); i++) {
+      (*this)[list[i]->first]=list[i]->second;
+      iterator it=this->find(list[i]->first);
+      it->second.setDirectory(0);
+      it->second.setName(replacePlotNameInHistName(it->second.GetName(),
+						   canName_, plot.getName()));
+    }
+  }
 
   void setPlotStyle(std::string);
 
   //void setOptStat(int);
 
+//   void addText(float x1, float y1, float x2, float y2, std::string text) {
+//     TPaveText text(0.3, 0.3, 0.5, 0.8)
+//       text.AddText("Valami")
+//       root [15] text.SetFillColor(0)
+//       root [16] text.SetBorderSize(0)
+//       root [17] text.Draw()
+//       root [18] text.SetFillStyle(0)
+//       root [19] text.SetTextSize(0.06)
+//       root [20] text.SetTextFont(42)
+//       root [21] text.Draw()
+      
+//       }
+
+
 };
+
+
+
+
+//-----------------------------------------------------------------------------
+//------------------------------ Implementations  -----------------------------
+//-----------------------------------------------------------------------------
+
+
 
 
 //--------------------------------- init --------------------------------------
@@ -294,16 +515,17 @@ std::string Plot<H>::init(Int_t ww, Int_t wh, std::string format) {
     }
   }
 
-  if (ww==0) ww=600;
-  if (wh==0) ww=600;
+  if (ww==0) ww = 600;
+  if (wh==0) wh = 600;
 
-  //  can_=new TCanvas(nameTitle.first.data(), nameTitle.second.data(), ww, wh);
-  //  can_->SetWindowSize(ww+(ww-can_->GetWw()), wh+(wh-can_->GetWh()));
-  can_=NULL;
-  ww_=ww; wh_=wh;
-  canName_=nameTitle.first;
-  canTitle_=nameTitle.second;
-  ntiles_=0;
+  can_ = NULL;
+  ww_ = ww; 
+  wh_ = wh;
+  canName_ = nameTitle.first;
+  canTitle_ = nameTitle.second;
+  ntiles_ = 0;
+  lastDrawNCols_= 0;
+  lastDrawNRows_= 0;
 
   return histNameTitle.str();
 }
@@ -474,12 +696,13 @@ std::vector<std::string> Plot<H>::generateNameTitleForHNew(std::string format){
   if (count.size()==0) {
     if (nameRest.first=="") return ret;
     
-    std::ostringstream fullname;
+    std::string fullname;
     //    fullname << can_->GetName() << "_" << nameRest.first;
-    fullname << canName_ << "_" << nameRest.first;
-    
+    // fullname << canName_ << "_" << nameRest.first;
+    fullname=histNameFromKey(nameRest.first);
+
     ret.push_back(nameRest.first);
-    ret.push_back(fullname.str());
+    ret.push_back(fullname);
     ret.push_back(format.find_first_of(";")!=std::string::npos ?
 		  nameRest.second : canTitle_);
     //		  nameRest.second : can_->GetTitle());
@@ -493,9 +716,10 @@ std::vector<std::string> Plot<H>::generateNameTitleForHNew(std::string format){
 	std::ostringstream index;
 	index << (k<0 ? nameRest.first : ret[k]) << "[" << j << "]";
 	
-	std::ostringstream fullname;
+	std::string fullname;
 	//	fullname << can_->GetName() << "_" << index.str();
-	fullname << canName_ << "_" << index.str();
+	//fullname << canName_ << "_" << index.str();
+	fullname=histNameFromKey(nameRest.first);
 
 	std::string title;
 	if (k<0) {
@@ -517,10 +741,11 @@ std::vector<std::string> Plot<H>::generateNameTitleForHNew(std::string format){
 	  pos=title.find(cref.str(), pos+idx.str().size());
 	}
 
-	std::cout << "i,j,k = " << i << " " << j << " " << k << " " << fullname.str() << " " << title << std::endl;
+	std::cout << "i,j,k = " << i << " " << j << " " << k << " " << fullname
+		  << " " << title << std::endl;
 	
 	ret.push_back(index.str());
-	ret.push_back(fullname.str());      
+	ret.push_back(fullname);      
 	ret.push_back(title);
       }
     }
@@ -544,9 +769,9 @@ std::vector<std::string> Plot<H>::generateNameTitleForH(std::string format){
   if (nameLegend.first=="") return ret;
   ret.push_back(nameLegend.first);
 
-  std::ostringstream fullname;
-  fullname << canName_ << "_" << nameLegend.first;
-  ret.push_back(fullname.str());
+//   std::ostringstream fullname;
+//   fullname << canName_ << "_" << nameLegend.first;
+  ret.push_back(histNameFromKey(nameLegend.first));
 
   ret.push_back(format.find_first_of(";")!=std::string::npos ?
 		nameTitle.second : canTitle_);
@@ -573,111 +798,113 @@ template <class H> void Plot<H>::add(Int_t nbinsx, Double_t xlow, Double_t xup,
   for (size_t i=0; i<labels.size(); i+=5) {
     (*this)[labels[i]]=Histogram<H>(labels[i+1].data(), labels[i+2].data(), 
 				    nbinsx, xlow, xup);
+    (*this)[labels[i]].setDirectory(0);
     (*this)[labels[i]].setLegend(labels[i+3], labels[i+4]);
   }
 }
 
+  // NEED TO REVISE IMPLEMENTATIONS (USE THE ONE ABOVE AS AN EXAMPLE)
 
-template <class H> void Plot<H>::add(Int_t nbins, const Float_t *xbins, 
-				     std::string format,...) { 
-  va_list argList;
-  va_start(argList, format);
-  char s[10000];
-  vsprintf(s, format.data(), argList);
+// template <class H> void Plot<H>::add(Int_t nbins, const Float_t *xbins, 
+// 				     std::string format,...) { 
+//   va_list argList;
+//   va_start(argList, format);
+//   char s[10000];
+//   vsprintf(s, format.data(), argList);
 
-  std::vector<std::string> labels=generateNameTitleForH(s);
-  (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
-				  nbins, xbins);
-  (*this)[labels[0]].setLegend(labels[3], labels[4]);
-}
-
-
-template <class H> void Plot<H>::add(Int_t nbins, const Double_t *xbins,
-				     std::string format,...) { 
-  va_list argList;
-  va_start(argList, format);
-  char s[10000];
-  vsprintf(s, format.data(), argList);
-
-  std::vector<std::string> labels=generateNameTitleForH(s);
-  (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
-				  nbins, xbins);
-  (*this)[labels[0]].setLegend(labels[3], labels[4]);
-}
+//   std::vector<std::string> labels=generateNameTitleForH(s);
+//   (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
+// 				  nbins, xbins);
+//   (*this)[labels[0]].setLegend(labels[3], labels[4]);
+// }
 
 
-template <class H> void Plot<H>::add(Int_t nbinsx, Double_t xlow, Double_t xup,
-				     Int_t nbinsy, Double_t ylow, Double_t yup,
-				     std::string format,...) { 
-  va_list argList;
-  va_start(argList, format);
-  char s[10000];
-  vsprintf(s, format.data(), argList);
+// template <class H> void Plot<H>::add(Int_t nbins, const Double_t *xbins,
+// 				     std::string format,...) { 
+//   va_list argList;
+//   va_start(argList, format);
+//   char s[10000];
+//   vsprintf(s, format.data(), argList);
 
-  std::vector<std::string> labels=generateNameTitleForH(s);
-  (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
-				  nbinsx, xlow, xup, nbinsy, ylow, yup);
-  (*this)[labels[0]].setLegend(labels[3], labels[4]);
-}
-
-
-template <class H> void Plot<H>::add(Int_t nbinsx, const Double_t *xbins, 
-				     Int_t nbinsy, Double_t ylow, Double_t yup,
-				     std::string format,...) { 
-  va_list argList;
-  va_start(argList, format);
-  char s[10000];
-  vsprintf(s, format.data(), argList);
-
-  std::vector<std::string> labels=generateNameTitleForH(s);
-  (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
-		       nbinsx, xbins, nbinsy, ylow, yup);
-}
+//   std::vector<std::string> labels=generateNameTitleForH(s);
+//   (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
+// 				  nbins, xbins);
+//   (*this)[labels[0]].setLegend(labels[3], labels[4]);
+// }
 
 
-template <class H> void Plot<H>::add(Int_t nbinsx, Double_t xlow, Double_t xup,
-				     Int_t nbinsy, const Double_t *ybins, 
-				     std::string format,...) { 
-  va_list argList;
-  va_start(argList, format);
-  char s[10000];
-  vsprintf(s, format.data(), argList);
+// template <class H> void Plot<H>::add(Int_t nbinsx, Double_t xlow, Double_t xup,
+// 				     Int_t nbinsy, Double_t ylow, Double_t yup,
+// 				     std::string format,...) { 
+//   va_list argList;
+//   va_start(argList, format);
+//   char s[10000];
+//   vsprintf(s, format.data(), argList);
 
-  std::vector<std::string> labels=generateNameTitleForH(s);
-  (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
-				  nbinsx, xlow, xup, nbinsy, ybins);
-  (*this)[labels[0]].setLegend(labels[3], labels[4]);
-}
-
-
-template <class H> void Plot<H>::add(Int_t nbinsx, const Double_t *xbins, 
-				     Int_t nbinsy, const Double_t *ybins, 
-				     std::string format,...) { 
-  va_list argList;
-  va_start(argList, format);
-  char s[10000];
-  vsprintf(s, format.data(), argList);
-
-  std::vector<std::string> labels=generateNameTitleForH(s);
-  (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
-				  nbinsx, xbins, nbinsy, ybins);
-  (*this)[labels[0]].setLegend(labels[3], labels[4]);
-}
+//   std::vector<std::string> labels=generateNameTitleForH(s);
+//   (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
+// 				  nbinsx, xlow, xup, nbinsy, ylow, yup);
+//   (*this)[labels[0]].setLegend(labels[3], labels[4]);
+// }
 
 
-template <class H> void Plot<H>::add(Int_t nbinsx, const Float_t *xbins, 
-				     Int_t nbinsy, const Float_t *ybins, 
-				     std::string format,...) { 
-  va_list argList;
-  va_start(argList, format);
-  char s[10000];
-  vsprintf(s, format.data(), argList);
+// template <class H> void Plot<H>::add(Int_t nbinsx, const Double_t *xbins, 
+// 				     Int_t nbinsy, Double_t ylow, Double_t yup,
+// 				     std::string format,...) { 
+//   va_list argList;
+//   va_start(argList, format);
+//   char s[10000];
+//   vsprintf(s, format.data(), argList);
 
-  std::vector<std::string> labels=generateNameTitleForH(s);
-  (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
-				  nbinsx, xbins, nbinsy, ybins);
-  (*this)[labels[0]].setLegend(labels[3], labels[4]);
-}
+//   std::vector<std::string> labels=generateNameTitleForH(s);
+//   (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
+// 		       nbinsx, xbins, nbinsy, ylow, yup);
+// }
+
+
+// template <class H> void Plot<H>::add(Int_t nbinsx, Double_t xlow, Double_t xup,
+// 				     Int_t nbinsy, const Double_t *ybins, 
+// 				     std::string format,...) { 
+//   va_list argList;
+//   va_start(argList, format);
+//   char s[10000];
+//   vsprintf(s, format.data(), argList);
+
+//   std::vector<std::string> labels=generateNameTitleForH(s);
+//   (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
+// 				  nbinsx, xlow, xup, nbinsy, ybins);
+//   (*this)[labels[0]].setLegend(labels[3], labels[4]);
+// }
+
+
+// template <class H> void Plot<H>::add(Int_t nbinsx, const Double_t *xbins, 
+// 				     Int_t nbinsy, const Double_t *ybins, 
+// 				     std::string format,...) { 
+//   va_list argList;
+//   va_start(argList, format);
+//   char s[10000];
+//   vsprintf(s, format.data(), argList);
+
+//   std::vector<std::string> labels=generateNameTitleForH(s);
+//   (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
+// 				  nbinsx, xbins, nbinsy, ybins);
+//   (*this)[labels[0]].setLegend(labels[3], labels[4]);
+// }
+
+
+// template <class H> void Plot<H>::add(Int_t nbinsx, const Float_t *xbins, 
+// 				     Int_t nbinsy, const Float_t *ybins, 
+// 				     std::string format,...) { 
+//   va_list argList;
+//   va_start(argList, format);
+//   char s[10000];
+//   vsprintf(s, format.data(), argList);
+
+//   std::vector<std::string> labels=generateNameTitleForH(s);
+//   (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
+// 				  nbinsx, xbins, nbinsy, ybins);
+//   (*this)[labels[0]].setLegend(labels[3], labels[4]);
+// }
 
 
 //---------------------------------- operator() -------------------------------
@@ -693,11 +920,11 @@ Histogram<H>& Plot<H>::operator()(std::string format, ...) {
 }
 
 
-//---------------------------------- locate() ---------------------------------
+//---------------------------------- search() ---------------------------------
 
 template <class H>
 std::vector<typename Plot<H>::iterator> 
-Plot<H>::locate(std::string format_regexpr, ...) {
+Plot<H>::search(std::string format_regexpr, ...) {
 
   va_list argList;
   va_start(argList, format_regexpr);
@@ -734,13 +961,38 @@ void Plot<H>::efficiency(std::string format_regexpr, ...) {
   va_start(argList, format_regexpr);
   char s[10000];
   vsprintf(s, format_regexpr.data(), argList);
-  this->efficiency(locate(s));
+  this->efficiency(search(s));
 }
 
 
 template <class H>  
 void Plot<H>::efficiency(std::vector<typename Plot<H>::iterator> list) {
   for (size_t i=0; i<list.size(); i++) list[i]->second.efficiency();
+}
+
+
+//------------------------------- setSumw2() ----------------------------------
+
+template <class H>  
+void Plot<H>::setSumw2(std::string format_regexpr, ...) {
+
+  if (format_regexpr=="") {
+    typename std::map<std::string,Histogram<H> >::iterator it;
+    for (it=this->begin(); it!=this->end(); it++) it->second.Sumw2();
+    return;
+  }
+
+  va_list argList;
+  va_start(argList, format_regexpr);
+  char s[10000];
+  vsprintf(s, format_regexpr.data(), argList);
+  this->setSumw2(search(s));
+}
+
+
+template <class H>  
+void Plot<H>::setSumw2(std::vector<typename Plot<H>::iterator> list) {
+  for (size_t i=0; i<list.size(); i++) list[i]->second.Sumw2();
 }
 
 
@@ -815,11 +1067,39 @@ void Plot<H>::setColor(std::string regexpr, std::string attr,
     if (ext!=".den" && ext!=".num") {
       ext="";
     }
-    setColor(locate(regexpr), ext, attr, color, step);
+    setColor(search(regexpr), ext, attr, color, step);
     return;
   }
-  setColor(locate(regexpr), "", attr, color, step);
+  setColor(search(regexpr), "", attr, color, step);
   return;
+}
+
+
+//-------------------------------- setDirectory() -----------------------------
+
+template <class H> 
+void Plot<H>::setDirectory(std::vector<typename Plot<H>::iterator> list, 
+			   TDirectory* dir) {
+  
+  for (size_t i=0; i<list.size(); i++) list[i]->second.setDirectory(dir);
+}
+
+
+template <class H> 
+void Plot<H>::setDirectory(std::string regexpr, TDirectory* dir) {
+
+  setDirectory(search(regexpr), dir);
+
+}
+
+
+template <class H> 
+void Plot<H>::setDirectory(TDirectory* dir) {  
+    
+  for (iterator it=this->begin(); it!=this->end(); it++) {
+    it->second.setDirectory(dir);
+  }
+  
 }
 
 
@@ -878,10 +1158,10 @@ void Plot<H>::setStyle(std::string regexpr, std::string attr, Style_t style) {
     if (ext!=".den" && ext!=".num") {
       ext="";
     }
-    setStyle(locate(regexpr), ext, attr, style);
+    setStyle(search(regexpr), ext, attr, style);
     return;
   }
-  setStyle(locate(regexpr), "", attr, style);
+  setStyle(search(regexpr), "", attr, style);
   return;
 }
 
@@ -925,10 +1205,10 @@ void Plot<H>::setWidth(std::string regexpr, std::string attr, Width_t width) {
     if (ext!=".den" && ext!=".num") {
       ext="";
     }
-    setWidth(locate(regexpr), ext, attr, width);
+    setWidth(search(regexpr), ext, attr, width);
     return;
   }
-  setWidth(locate(regexpr), "", attr, width);
+  setWidth(search(regexpr), "", attr, width);
   return;
 }
 
@@ -969,10 +1249,10 @@ void Plot<H>::setAxisRange(std::string regexpr,
     if (ext!=".den" && ext!=".num") {
       ext="";
     }
-    setAxisRange(locate(regexpr), ext, xmin, xmax, axis);
+    setAxisRange(search(regexpr), ext, xmin, xmax, axis);
     return;
   }
-  setAxisRange(locate(regexpr), "", xmin, xmax, axis);
+  setAxisRange(search(regexpr), "", xmin, xmax, axis);
   return;
 }
 
@@ -1017,10 +1297,10 @@ void Plot<H>::scaleMaximumTo(std::string regexpr, double maximum) {
     if (ext!=".den" && ext!=".num") {
       ext="";
     }
-    scaleMaximumTo(locate(regexpr), ext, maximum);
+    scaleMaximumTo(search(regexpr), ext, maximum);
     return;
   }
-  scaleMaximumTo(locate(regexpr), "", maximum);
+  scaleMaximumTo(search(regexpr), "", maximum);
   return;
 }
 
@@ -1063,10 +1343,10 @@ void Plot<H>::scaleAreaTo(std::string regexpr, double area) {
     if (ext!=".den" && ext!=".num") {
       ext="";
     }
-    scaleAreaTo(locate(regexpr), ext, area);
+    scaleAreaTo(search(regexpr), ext, area);
     return;
   }
-  scaleAreaTo(locate(regexpr), "", area);
+  scaleAreaTo(search(regexpr), "", area);
   return;
 }
 
@@ -1077,7 +1357,7 @@ template <class H>
 int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
 
   int debug=0;
-
+  
   typedef std::vector<std::string> PlotNames; // list of names
   typedef std::vector<std::string> OptionList; // 0:pad op, 1:draw op, 2:title 
 
@@ -1150,7 +1430,7 @@ int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
 	  nameLegend.first.erase(nameLegend.first.size()-4, 4);
 	}
       }
-      std::vector<iterator> candidates=locate(nameLegend.first);
+      std::vector<iterator> candidates=search(nameLegend.first);
       if (candidates.size()==0) {
 	items.erase(items.begin()+j--);
 	continue;
@@ -1213,21 +1493,13 @@ int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
   }
 
   // Prepare canvass ----------------------------------------------------------
-  //  can_->Clear();
-  for (size_t i=0; i<legend_.size(); i++) {
-    if (legend_[i]!=NULL) delete legend_[i];
-    if (frame_[i]!=NULL) delete frame_[i];
-  }
-  stack_.clear();
-  legend_.clear();
-  frame_.clear();
-  if (can_!=NULL) delete can_;
+  deleteCanvas();
   can_=new TCanvas(canName_.data(), canTitle_.data(), ww_, wh_);
   ntiles_=0;
 
   if (nrows<0) nrows=pads.size()/ncols;
   if (ncols*nrows<int(pads.size())) nrows=pads.size()/ncols+1;
-  can_->Divide(ncols, nrows);
+  if (ncols*nrows) can_->Divide(ncols, nrows);
   ntiles_=ncols*nrows;
 
   // Draw pads ----------------------------------------------------------------
@@ -1280,6 +1552,8 @@ int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
       if (pads[i].second[0]!="stack") continue;
 
       stack_[nameRest.first]=(*h);
+      stack_[nameRest.first].SetDirectory(0);
+
       if (lastHist=="") {
 	lastHist=nameRest.first;
       } else {
@@ -1336,6 +1610,8 @@ int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
 
       if (j==0) {
 	H* hc=(H*)h->DrawCopy(opt.str().data());
+	hc->Reset();
+	hc->SetDirectory(0);
 	opt << "SAME";
 	frame_.push_back(hc);
 	std::ostringstream ss;
@@ -1375,7 +1651,7 @@ int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
       }
     }
 
-    frame_[i]->Draw("AXISSAME");
+    //frame_[i]->Draw("AXISSAME");
     if (legend_[i]!=NULL) {
       if (debug) std::cout<<"drawing legend\n";
       legend_[i]->Draw();
@@ -1386,6 +1662,11 @@ int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
 
   can_->Update();
   if (style_!="") setPlotStyle(style_);
+
+  lastDrawFormat_ = hists;
+  lastDrawNCols_ = ncols;
+  lastDrawNRows_ = nrows;
+
   return pads.size();
 }
 
@@ -1401,25 +1682,140 @@ int Plot<H>::Draw(std::string hist, int ncols, int nrows) {
 //------------------------------------ Write() --------------------------------
 
 template <class H> void Plot<H>::Write() {
+  std::cout<<"Writting "<<canName_<<std::endl;
   std::ostringstream sdir;
-  if (can_!=NULL) {
-    sdir<<can_->GetName()<<"_HIST";
+  if (canName_!="") {
+    sdir<<canName_<<"_HIST";
     TDirectory *dir=gDirectory->GetDirectory(sdir.str().data());
     if (!dir) dir=gDirectory->mkdir(sdir.str().data(), sdir.str().data());
     dir->cd();
   }
-  typename std::map<std::string,Histogram<H> >::iterator it;
-  for (it=this->begin(); it!=this->end(); it++) {
+  for (iterator it=this->begin(); it!=this->end(); it++) {
+    std::cout << "Writting "<<it->second.GetName()<<std::endl;
     it->second.Write();
   }
-  if (can_!=NULL) {
+  if (canName_!="") {
     gDirectory->cd("../");
-    can_->Write();
+    if (can_!=NULL) can_->Write();
+  } else {
+    if (can_!=NULL) std::cout<<"*** Write: Canvas with no name! Skipped.\n";
   }
 }
 
 
-//-----------------------------------------------------------------------------
+//------------------------------------ load() ---------------------------------
+
+template <class H> int Plot<H>::load(std::string name) {
+  std::cout << "===========================================================\n";
+  std::cout << "Current dir: ";
+  gDirectory->pwd();
+
+  if (name=="") name=canName_;
+  std::string dirname=name;
+  dirname+="_HIST";
+  TDirectory tDir;
+  TDirectory *dir=(TDirectory *) gDirectory->GetObjectChecked(dirname.c_str(),
+							      tDir.IsA());
+  if (dir==NULL) return 1;
+  std::cout << "Reading from dir: ";
+  dir->pwd();
+  //dir->ls();
+
+  TIter next(dir->GetListOfKeys());
+  TKey *key;
+  while (key=(TKey*)next()) {
+    std::cout<<"Key "<<key->GetName()<<std::endl;
+    std::string hname=key->GetName();
+    std::string htype=hname.substr(hname.length()-4, 4);
+    if (htype=="_num" || htype=="_den") continue;
+    H *obj=NULL;
+    dir->GetObject(hname.c_str(), obj);
+    if (obj==NULL) continue; // make sure it's an "H" object, should do smarter
+    Histogram<H> h;
+    h.load(hname, dir);
+    h.print();
+    //hname.erase(0, name.length()+1);
+    std::string hkey=keyFromHistName(hname, name);
+    (*this)[hkey]=h;
+    (*this)[hkey].setDirectory(0);
+    (*this)[hkey].setName(histNameFromKey(hkey));
+    std::cout<<"Plot "<<canName_<<"["<<hkey<<"]=\n";
+    (*this)[hkey].print();		     
+    std::cout<<"Added histogram "<<(*this)[hkey].GetName()<<std::endl;
+  }
+  std::cout<<" End of loading plot"<<std::endl;
+  gDirectory->pwd();
+  gDirectory->ls();
+
+  return 0;
+}
+
+
+
+//----------------------------- setName() -------------------------------------
+
+// Set name, or rename, or what?
+template <class H> 
+void Plot<H>::setName(std::string name) { 
+
+  for (iterator it=this->begin(); it!=this->end(); it++) {
+    it->second.setName(replacePlotNameInHistName(it->second.GetName(), name));
+  }
+
+  if (can_!=NULL) can_->SetName(name.c_str());
+  canName_=name;
+}
+
+
+
+//----------------------------- print() -------------------------------------
+//   TCanvas* can_;                        // The canvas drawn by Draw()
+//   Int_t ww_, wh_;
+//   std::string canName_, canTitle_;
+//   int ntiles_;
+
+//   std::vector<std::string> lastDrawFormat_; // Iportant!!! : 
+//   int lastDrawNCols_, lastDrawNRows_;      // ---------------------------------
+//   std::map<std::string,H> stack_;         // These five variables are meant to
+//   std::vector<TLegend*> legend_;         // be filled simultaneously by Draw()!
+//   std::vector<H*> frame_;               // ------------------------------------
+
+//   std::string style_;
+
+
+template <class H> 
+void Plot<H>::print() { 
+
+  std::cout<<"\n-----------------------------------------------------------\n";
+  std::cout<<"Plot name: "<<canName_<<"\n     title: "<<canTitle_<<std::endl;
+  std::cout<<"Size: "<<ww_<<"x"<<wh_<<std::endl;
+  if (can_!=NULL) {
+    std::cout<<"Canvas: "<<can_->GetName()<<std::endl;
+    std::cout<<"Number of pads: "<<ntiles_<<std::endl;
+  }
+
+  if (lastDrawFormat_.size()!=0) {
+    std::cout<<"Last drawn plot in arrangement (columns by rows): ";
+    std::cout<<lastDrawNCols_<<"x"<<lastDrawNRows_<<std::endl;
+    std::cout<<"Drawing options for pads:\n";
+    for (size_t i=0; i<lastDrawFormat_.size(); i++) {
+      std::cout<<"\t\""<<lastDrawFormat_[i]<<"\""<<std::endl;
+    }
+  }
+  
+  if (this->size()!=0) {
+    std::cout<<"List of histograms stored in this plot:\n";
+    for (iterator it=this->begin(); it!=this->end(); it++) {
+      it->second.print();
+    }
+  }
+
+  std::cout<<"-----------------------------------------------------------\n\n";
+}
+
+
+
+//------------------------------ setPlotStyle ---------------------------------
 
 template <class H> 
 void Plot<H>::setPlotStyle(std::string style) {
@@ -1443,7 +1839,7 @@ void Plot<H>::setPlotStyle(std::string style) {
       ipad->SetFillColor(kWhite);
       ipad->SetBorderSize(1);
       ipad->SetGridx(false);
-      ipad->SetGridy(true);
+      ipad->SetGridy(false);
       //ipad->SetGridColor(0);
       //ipad->SetGridStyle(3);
       //ipad->SetGridWidth(1);
@@ -1599,7 +1995,7 @@ void Plot<H>::setPlotStyle(std::string style) {
       h->SetFillStyle(0);
       //h->SetLineColor(1);
       h->SetLineStyle(0);
-      h->SetLineWidth(1);
+      //h->SetLineWidth(1);
       // 	h->SetLegoInnerR(0.5);
       // 	h->SetNumberContours(20);
       // 	h->SetEndErrorSize(2);

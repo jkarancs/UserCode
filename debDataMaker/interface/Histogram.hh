@@ -31,7 +31,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Oct 25 20:57:26 CET 2009
-// $Id: Histogram.hh,v 1.3 2009/11/30 14:39:38 veszpv Exp $
+// $Id: Histogram.hh,v 1.4 2009/12/05 09:42:07 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -45,17 +45,14 @@ namespace deb {
 
 template<class H> class Histogram : public H {
  public:
+
   Histogram() : H() { init(); };
 
   //
-  // Copy constructor
+  // Copy constructor - creates "this" histo in the current TDirectory
   //
-  Histogram(const Histogram<H> &h) : H(h) {
-    num_ = (h.num()!=NULL) ? (H*)h.num()->Clone() : NULL;
-    den_ = (h.den()!=NULL) ? (H*)h.den()->Clone() : NULL;
-    legend_ = h.legend_;
-    legendHead_ = h.legendHead_;
-  };
+  //Histogram(const Histogram<H> &h) : H(h) { *this=h; }
+  Histogram(const Histogram<H> &h) { init(); *this=h; }
 
   //
   // TH1 constructors
@@ -69,7 +66,7 @@ template<class H> class Histogram : public H {
   Histogram(const char *name, const char *title, Int_t nbins, 
 	    const Double_t *xbins) : H(name, title, nbins, xbins) { init(); };
 
-  // New types:
+  // New types for TH1:
   // In format: name[!legend[!legend head]][;title[;Xlabel[;Ylabel[;Zlabel]]]]
   Histogram(Int_t nbinsx, Double_t xlow, Double_t xup, std::string format,...);
   Histogram(Int_t nbins, const Float_t *xbins, std::string format,...);
@@ -99,7 +96,7 @@ template<class H> class Histogram : public H {
 	    const Float_t *xbins , Int_t nbinsy, const Float_t *ybins) :
     H(name, title, nbinsx, xbins, nbinsy, ybins) { init(); };
 
-  // New types:
+  // New types of TH2:
   // In format: name[!legend[!legend head]][;title[;Xlabel[;Ylabel[;Zlabel]]]]
   Histogram(Int_t nbinsx, Double_t xlow, Double_t xup, 
 	    Int_t nbinsy, Double_t ylow, Double_t yup, std::string format,...);
@@ -122,10 +119,10 @@ template<class H> class Histogram : public H {
   }
 
  private:
-  H* num_;
-  H* den_;
-  std::string legend_;
-  std::string legendHead_;
+  H* num_;                              // the numerator if efficiency is set
+  H* den_;                              // the denominator if efficiency is set
+  std::string legend_;                  // legend of this histogram when drawn
+  std::string legendHead_;              // head on the legend (category)
   void init() {
     num_=NULL;
     den_=NULL;
@@ -133,9 +130,19 @@ template<class H> class Histogram : public H {
     legendHead_="";
   }
 
+  // Creates the clones in the current TDirectory
+  inline H* makeCloneInGDirectory(H* target, std::string newname="") {
+    H* duplicate=NULL;
+    if (target!=NULL) duplicate = new H(*target);
+    if (duplicate!=NULL && newname!="") duplicate->SetName(newname.c_str());
+    return duplicate;
+  }
 
  protected:
   std::vector<std::string> getNameTitle(char *nameTitle) {
+  // In format: name[!legend[!legend head]][;title[;Xlabel[;Ylabel[;Zlabel]]]]
+  // Returns strings: name, title (containing axis labels in ROOT format)
+  // Set variables: legend_, legendHead_
     std::cout<<"getNameTitle(\""<<nameTitle<<"\"\n";
     std::string name=nameTitle;
     std::string title="";
@@ -167,11 +174,47 @@ template<class H> class Histogram : public H {
 
 
  public:
+  Histogram<H>& operator= (const Histogram<H> &h) {
+    * dynamic_cast<H*>(this) = dynamic_cast<const H&>(h);
+    if (num_!=NULL) {
+      if (h.num()!=NULL) {
+	*num_ = *h.num();
+      } else {
+	delete num_;
+	num_=NULL;
+      }
+    } else {
+      num_ = makeCloneInGDirectory(h.num());
+    }
+    if (den_!=NULL) {
+      if (h.den()!=NULL) {
+	*den_ = *h.den();
+      } else {
+	delete den_;
+	den_=NULL;
+      }
+    } else {
+      den_ = makeCloneInGDirectory(h.den());
+    }
+    legend_ = h.legend_;
+    legendHead_ = h.legendHead_;
+    return *this; 
+  }
+
   void        setLabel(std::string, std::string, ...);  
   std::string getLabel(std::string, std::string, ...);
   void        efficiency();
+
   H*          num() const { return num_; }
   H*          den() const { return den_; }
+  H*          index(std::string ext) {
+    if (ext==".num") return num();
+    else if (ext==".den") return den();
+    return this;
+  }
+  std::string getExtensions() { return std::string(".num .den"); }
+  int         getExtLen() { return 4; }
+
   void        setLegend(std::string legend, std::string legendHead="") { 
     legend_=legend; 
     legendHead_=legendHead;
@@ -179,8 +222,13 @@ template<class H> class Histogram : public H {
   std::string getLegend() { return legend_; }
   void        setLegendHead(std::string legendHead) { legendHead_=legendHead; }
   std::string getLegendHead() { return legendHead_; }
+  void        setDirectory(TDirectory *dir=0);
   Int_t       Write(const char*, Int_t, Int_t);
+  int         load(std::string name="", TDirectory *dir=NULL);
+  void        print();
   void        setStyle(std::string style) { };
+  void        SetName(const char* name);
+  void        setName(std::string name) { this->SetName(name.c_str()); }
 
   // Only for 2-D histograms
   // No safeguard when compiling with 1-D histograms. It just won't compile.
@@ -392,58 +440,181 @@ void Histogram<H>::efficiency() {
 
   if (num_!=NULL && den_!=NULL ) { // && den_->Integral()!=0.) {
     this->Divide(num_, den_, 1., 1., "B");
-    //std::string name=this->GetName();
-    //*(H*)this=*num_;
-    //this->SetName(name.data());
-    //this->Divide(den_);
     return;
   }
+
+  this->Sumw2();
 
   if (num_==NULL) {
     std::ostringstream name_num;
     name_num << this->GetName() << "_num";
-    num_=(H*)this->Clone(name_num.str().data());
-    num_->Sumw2();
+    num_ = makeCloneInGDirectory(this, name_num.str()); 
+    // Move the new histo into the same directory as "this" is located
+    if (num_!=NULL) num_->SetDirectory(this->GetDirectory());
   }
 
   if (den_==NULL) {
     std::ostringstream name_den;
     name_den << this->GetName() << "_den";
-    den_=(H*)this->Clone(name_den.str().data());
-    den_->Sumw2();
+    den_ = makeCloneInGDirectory(this, name_den.str());
+    // Move the new histo into the same directory as "this" is located
+    if (den_!=NULL) den_->SetDirectory(this->GetDirectory());
   }
-
-  this->Sumw2();
 
 }
 
 
 template <class H> 
+void Histogram<H>::setDirectory(TDirectory *dir) {
+  this->SetDirectory(dir);
+  if (num_!=NULL) num_->SetDirectory(dir);
+  if (den_!=NULL) den_->SetDirectory(dir);
+}
+ 
+
+template <class H> 
 Int_t Histogram<H>::Write(const char* name = 0, Int_t option = 0, 
 			  Int_t bufsize = 0) {
-  if (num_!=NULL) num_->Write();
-  if (den_!=NULL) den_->Write();
+  if (num_!=NULL) {
+    std::string name_num=num_->GetName();
+    if (name!=NULL) {
+      name_num=name;
+      name_num+="_num";
+    }
+    num_->Write(name_num.c_str(), option, bufsize);
+  }
+  if (den_!=NULL) {
+    std::string name_den=den_->GetName();
+    if (name!=NULL) {
+      name_den=name;
+      name_den+="_den";
+    }
+    den_->Write(name_den.c_str(), option, bufsize);
+  }
   return H::Write(name, option, bufsize);
+}
+
+
+template <class H>
+int Histogram<H>::load(std::string namecycle, TDirectory* dir) {
+
+  if (namecycle=="") namecycle=this->GetName();
+  if (dir==NULL) dir=gDirectory;
+  H* h=NULL;
+
+  h = (H*) dir->GetObjectChecked(namecycle.c_str(), this->IsA());
+  if (h!=NULL) {
+    (*(H*)this)=*h;
+    delete h;
+    std::cout<<"Loaded "<<this->GetName()<<std::endl;
+  }
+
+  std::string num=namecycle;
+  size_t pos=num.find_first_of(";"); // the cyclenumber part
+  num.insert((pos!=std::string::npos) ? pos : num.length(), "_num");
+  h=NULL;
+
+  h = (H*) dir->GetObjectChecked(num.c_str(), this->IsA());
+  if (h!=NULL) {
+    if (num_==NULL) {
+      num_ = h;
+    } else {
+      *num_=*h;
+      delete h;
+    }
+    num_->SetDirectory(this->GetDirectory());
+    std::cout<<"Loaded "<<num_->GetName()<<std::endl;
+  }
+
+  std::string den=namecycle;
+  pos=den.find_first_of(";"); // the cyclenumber part
+  den.insert((pos!=std::string::npos) ? pos : den.length(), "_den");
+  h=NULL;
+
+  h = (H*) dir->GetObjectChecked(den.c_str(), this->IsA());
+  if (h!=NULL) {
+    if (den_==NULL) {
+      den_ = h;
+    } else {
+      *den_=*h;
+      delete h;
+    }
+    den_->SetDirectory(this->GetDirectory());
+    std::cout<<"Loaded "<<den_->GetName()<<std::endl;
+  }
+  return 0;
+}
+
+
+template <class H>
+void Histogram<H>::print() {
+  std::cout<<"Histogram: "<<this->GetName()<<" in ";
+  if (this->GetDirectory()!=0) {
+    this->GetDirectory()->pwd();
+  } else {
+    std::cout<<"memory\n";
+  }
+  if (num_!=NULL) {
+    std::cout<<"\t"<<num_->GetName()<<" in ";
+    if (num_->GetDirectory()!=0) {
+      num_->GetDirectory()->pwd();
+    } else {
+      std::cout<<"memory\n";
+    }
+  }
+  if (den_!=NULL) {
+    std::cout<<"\t"<<den_->GetName()<<" in ";
+    if (den_->GetDirectory()!=0) {
+      den_->GetDirectory()->pwd();
+    } else {
+      std::cout<<"memory\n";
+    }
+  }
+}
+
+
+template <class H>
+void Histogram<H>::SetName(const char* name) {
+  std::cout<<"Naming "<<this->GetName()<<" to "<<name<<std::endl;
+  H::SetName(name);
+  if (num_!=NULL) {
+    std::string name_num=this->GetName();
+    name_num+="_num";
+    std::cout<<"Naming "<<num_->GetName()<<" to "<<name_num<<std::endl;
+    num_->SetName(name_num.c_str());
+  }
+  if (den_!=NULL) {
+    std::string name_den=this->GetName();
+    name_den+="_den";
+    std::cout<<"Naming "<<den_->GetName()<<" to "<<name_den<<std::endl;
+    den_->SetName(name_den.c_str());
+  }
 }
 
 
 template <class H> 
 void Histogram<H>::fillX(H* h, Double_t x, Double_t w=1.) {
+
   for (Int_t i=1; i<=h->GetNbinsY(); i++) {
     h->Fill(x, h->GetYaxis()->GetBinCenter(i), w);
   }
+
   h->Fill(x, h->GetYaxis()->GetBinLowEdge(1)*0.9999, w);
   h->Fill(x, h->GetYaxis()->GetBinUpEdge(h->GetNbinsY())*1.0001, w);
+
 }
 
 
 template <class H> 
 void Histogram<H>::fillY(H* h, Double_t y, Double_t w=1.) {
+
   for (Int_t i=1; i<=h->GetNbinsX(); i++) {
     h->Fill(h->GetXaxis()->GetBinCenter(i), y, w);
   }
+
   h->Fill(h->GetXaxis()->GetBinLowEdge(1)*0.9999, y, w);
   h->Fill(h->GetXaxis()->GetBinUpEdge(h->GetNBinsX())*1.0001, y, w);  
+
 }
 
 //-----------------------------------------------------------------------------
