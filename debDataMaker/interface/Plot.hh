@@ -42,11 +42,77 @@
    - setName() replaces the plot name in canName_ and renames all histograms in
    the plot (leaves the keys untouched)
 
+// REGEXP cheat-sheet:
+//
+// ^	The pattern has to appear at the beginning of a string.	^cat matches 
+//      any string that begins with cat
+// $	The pattern has to appear at the end of a string. cat$ matches any 
+//      string that ends with cat
+// .	Matches any character.	cat. matches catT and cat2 but not catty
+// []	Bracket expression. Matches one of any characters enclosed. gr[ae]y 
+//      matches gray or grey
+// [^]	Negates a bracket expression. Matches one of any characters EXCEPT 
+//      those enclosed. 1[^02] matches 13 but not 10 or 12
+// [-]	Range. Matches any characters within the range.	[1-9] matches any 
+//      single digit EXCEPT 0
+// ?	Preceeding item must match one or zero times. colou?r matches color or
+//      colour but not colouur
+// +	Preceeding item must match one or more times. be+ matches be or bee 
+//      but not b
+// *	Preceeding item must match zero or more times.	be* matches b or be or
+//      beeeeeeeeee
+// ()	Parentheses. Creates a substring or item that metacharacters can be 
+//      applied to a(bee)?t matches at or abeet but not abet
+// {n}	Bound. Specifies exact number of times for the preceeding item to 
+//      match. [0-9]{3} matches any three digits
+// {n,}	Bound. Specifies minimum number of times for the preceeding item to 
+//      match. [0-9]{3,} matches any three or more digits
+// {n,m} Bound. Specifies minimum and maximum number of times for the 
+//      preceeding item to match. [0-9]{3,5} matches any three, four, or 
+//      five digits
+// |	Alternation. One of the alternatives has to match. July (first|1st|1) 
+//      will match July 1st but not July 2
+
+// POSIX Character Classes
+// [:alnum:]	alphanumeric character	[[:alnum:]]{3} matches any three 
+//              letters or numbers, like 7Ds
+// [:alpha:]	alphabetic character, any case	[[:alpha:]]{5} matches five 
+//              alphabetic characters, any case, like aBcDe
+// [:blank:]	space and tab	[[:blank:]]{3,5} matches any three, four, or 
+//              five spaces and tabs
+// [:digit:]	digits	[[:digit:]]{3,5} matches any three, four, or five 
+//              digits, like 3, 05, 489
+// [:lower:]	lowercase alphabetics	[[:lower:]] matches a but not A
+// [:punct:]	punctuation characters	[[:punct:]] matches ! or . or , but 
+//              not a or 3
+// [:space:]	all whitespace characters, including newline and carriage 
+//              return [[:space:]] matches any space, tab, newline, or 
+//              carriage return
+// [:upper:]	uppercase alphabetics	[[:upper:]] matches A but not a
+
+// Perl-Style Metacharacters
+// //	Default delimiters for pattern	/colou?r/ matches color or colour
+// i	Append to pattern to specify a case insensitive match	/colou?r/i 
+//      matches COLOR or Colour
+// \b	A word boundary, the spot between word (\w) and non-word (\W) 
+//      characters /\bfred\b/i matches Fred but not Alfred or Frederick
+// \B	A non-word boundary	/fred\B/i matches Frederick but not Fred
+// \d	A single digit character	/a\db/i matches a2b but not acb
+// \D	A single non-digit character	/a\Db/i matches aCb but not a2b
+// \n	The newline character. (ASCII 10)	/\n/ matches a newline
+// \r	The carriage return character. (ASCII 13)	/\r/ matches a 
+//      carriage return
+// \s	A single whitespace character	/a\sb/ matches a b but not ab
+// \S	A single non-whitespace character	/a\Sb/ matches a2b but not a b
+// \t	The tab character. (ASCII 9)	/\t/ matches a tab.
+// \w	A single word character - alphanumeric and underscore	/\w/ matches 1
+//      or _ but not ?
+// \W	A single non-word character	/a\Wb/i matches a!b but not a2b
 */
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Oct 25 20:57:26 CET 2009
-// $Id: Plot.hh,v 1.6 2009/12/02 14:27:21 veszpv Exp $
+// $Id: Plot.hh,v 1.7 2010/03/28 16:21:43 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -265,7 +331,6 @@ template<class H> class Plot : public std::map<std::string,Histogram<H> > {
   // delete canvas
   //
   void deleteCanvas() {
-    std::cout << "Deleting canvas\n";
     for(size_t i=0; i<frame_.size(); i++) {
       if (frame_[i]!=NULL) delete frame_[i];
     }
@@ -335,6 +400,8 @@ template<class H> class Plot : public std::map<std::string,Histogram<H> > {
 	   Int_t nbinsy, const Float_t *ybins, std::string format,...);
 
   // Accessors
+  // IMPORTANT!!! OPERATORS () and [] do not use regexp. This is to make sure
+  // that the matching is unambiguous.
   Histogram<H>& operator()(size_t i) { return (*this)("[%d]", i); }
 
   Histogram<H>& operator()(size_t i, size_t j) { 
@@ -349,6 +416,7 @@ template<class H> class Plot : public std::map<std::string,Histogram<H> > {
   Histogram<H>& operator()(std::string format, ...);
 
 
+  // Search
   // NOTE: "[" and "]" need to be escaped by "\" for search()
   std::vector<iterator> search(std::string format_regexpr, ...);
 
@@ -833,19 +901,22 @@ template <class H> void Plot<H>::add(Int_t nbinsx, Double_t xlow, Double_t xup,
 // }
 
 
-// template <class H> void Plot<H>::add(Int_t nbinsx, Double_t xlow, Double_t xup,
-// 				     Int_t nbinsy, Double_t ylow, Double_t yup,
-// 				     std::string format,...) { 
-//   va_list argList;
-//   va_start(argList, format);
-//   char s[10000];
-//   vsprintf(s, format.data(), argList);
+template <class H> void Plot<H>::add(Int_t nbinsx, Double_t xlow, Double_t xup,
+				     Int_t nbinsy, Double_t ylow, Double_t yup,
+				     std::string format,...) { 
+  va_list argList;
+  va_start(argList, format);
+  char s[10000];
+  vsprintf(s, format.data(), argList);
 
-//   std::vector<std::string> labels=generateNameTitleForH(s);
-//   (*this)[labels[0]]=Histogram<H>(labels[1].data(), labels[2].data(), 
-// 				  nbinsx, xlow, xup, nbinsy, ylow, yup);
-//   (*this)[labels[0]].setLegend(labels[3], labels[4]);
-// }
+  std::vector<std::string> labels=generateNameTitleForH(s);
+  for (size_t i=0; i<labels.size(); i+=5) {
+    (*this)[labels[i]]=Histogram<H>(labels[i+1].data(), labels[i+2].data(), 
+				    nbinsx, xlow, xup, nbinsy, ylow, yup);
+    (*this)[labels[i]].setDirectory(0);
+    (*this)[labels[i]].setLegend(labels[i+3], labels[i+4]);
+  }
+}
 
 
 // template <class H> void Plot<H>::add(Int_t nbinsx, const Double_t *xbins, 
@@ -936,8 +1007,10 @@ Plot<H>::search(std::string format_regexpr, ...) {
   boost::regex e(s);
   for (iterator it=this->begin(); it!=this->end(); it++) {
     boost::match_results<std::string::const_iterator> what;
+//     if (boost::regex_match(it->first, what, e, 
+// 			   boost::match_default | boost::match_partial)) {
     if (boost::regex_match(it->first, what, e, 
-			   boost::match_default | boost::match_partial)) {
+			   boost::match_default)) {
       ret.push_back(it);
     }
   }
@@ -1356,7 +1429,7 @@ void Plot<H>::scaleAreaTo(std::string regexpr, double area) {
 template <class H> 
 int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
 
-  int debug=0;
+  int debug=1;
   
   typedef std::vector<std::string> PlotNames; // list of names
   typedef std::vector<std::string> OptionList; // 0:pad op, 1:draw op, 2:title 
@@ -1682,7 +1755,6 @@ int Plot<H>::Draw(std::string hist, int ncols, int nrows) {
 //------------------------------------ Write() --------------------------------
 
 template <class H> void Plot<H>::Write() {
-  std::cout<<"Writting "<<canName_<<std::endl;
   std::ostringstream sdir;
   if (canName_!="") {
     sdir<<canName_<<"_HIST";
@@ -1690,10 +1762,7 @@ template <class H> void Plot<H>::Write() {
     if (!dir) dir=gDirectory->mkdir(sdir.str().data(), sdir.str().data());
     dir->cd();
   }
-  for (iterator it=this->begin(); it!=this->end(); it++) {
-    std::cout << "Writting "<<it->second.GetName()<<std::endl;
-    it->second.Write();
-  }
+  for (iterator it=this->begin(); it!=this->end(); it++) it->second.Write();
   if (canName_!="") {
     gDirectory->cd("../");
     if (can_!=NULL) can_->Write();

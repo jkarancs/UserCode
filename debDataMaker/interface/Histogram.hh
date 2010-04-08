@@ -31,7 +31,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Oct 25 20:57:26 CET 2009
-// $Id: Histogram.hh,v 1.4 2009/12/05 09:42:07 veszpv Exp $
+// $Id: Histogram.hh,v 1.5 2010/03/28 16:21:43 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -129,6 +129,9 @@ template<class H> class Histogram : public H {
     legend_="";
     legendHead_="";
   }
+  std::map<std::string,int> auxIndex_;
+  std::vector<H> auxVector_;
+
 
   // Creates the clones in the current TDirectory
   inline H* makeCloneInGDirectory(H* target, std::string newname="") {
@@ -198,6 +201,8 @@ template<class H> class Histogram : public H {
     }
     legend_ = h.legend_;
     legendHead_ = h.legendHead_;
+    auxIndex_ = h.auxIndex_;
+    auxVector_ = h.auxVector_;
     return *this; 
   }
 
@@ -207,11 +212,39 @@ template<class H> class Histogram : public H {
 
   H*          num() const { return num_; }
   H*          den() const { return den_; }
-  H*          index(std::string ext) {
+  H*          ptr(std::string ext) {
     if (ext==".num") return num();
     else if (ext==".den") return den();
     return this;
   }
+
+  // Transient auxiliary copies of this histo, alway stored in memory
+  //
+  H* addAux(std::string key) {
+    H* h=aux(key);
+    if (h!=NULL) return h;
+    auxVector_.push_back(dynamic_cast<H&>(*this));
+    int i=auxVector_.size()-1;
+    auxIndex_[key]=i;
+    auxVector_[i].SetDirectory(0);
+    key.insert(0, "_");
+    auxVector_[i].SetName(key.insert(0, auxVector_[i].GetName()).c_str());
+    return &(auxVector_[i]);
+  }
+  //std::map<std::string,H>& auxIndex() { return auxIndex_; }
+  int auxIndex(std::string key) {
+    typename std::map<std::string,int>::const_iterator it=auxIndex_.find(key);
+    return (it!=auxIndex_.end()) ? it->second : -1;
+  }
+  //std::vector<H>& auxVector() { return auxVector_; }
+  H* aux(int i) {
+    return (i>=0 && i<int(auxVector_.size())) ? &(auxVector_[i]) : NULL; 
+  }
+  H* aux(std::string key) { return aux(auxIndex(key)); }
+  //
+  //
+
+
   std::string getExtensions() { return std::string(".num .den"); }
   int         getExtLen() { return 4; }
 
@@ -575,18 +608,18 @@ void Histogram<H>::print() {
 
 template <class H>
 void Histogram<H>::SetName(const char* name) {
-  std::cout<<"Naming "<<this->GetName()<<" to "<<name<<std::endl;
+  //std::cout<<"Naming "<<this->GetName()<<" to "<<name<<std::endl;
   H::SetName(name);
   if (num_!=NULL) {
     std::string name_num=this->GetName();
     name_num+="_num";
-    std::cout<<"Naming "<<num_->GetName()<<" to "<<name_num<<std::endl;
+    //std::cout<<"Naming "<<num_->GetName()<<" to "<<name_num<<std::endl;
     num_->SetName(name_num.c_str());
   }
   if (den_!=NULL) {
     std::string name_den=this->GetName();
     name_den+="_den";
-    std::cout<<"Naming "<<den_->GetName()<<" to "<<name_den<<std::endl;
+    //std::cout<<"Naming "<<den_->GetName()<<" to "<<name_den<<std::endl;
     den_->SetName(name_den.c_str());
   }
 }
