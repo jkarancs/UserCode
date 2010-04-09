@@ -31,13 +31,16 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Oct 25 20:57:26 CET 2009
-// $Id: Histogram.hh,v 1.5 2010/03/28 16:21:43 veszpv Exp $
+// $Id: Histogram.hh,v 1.6 2010/04/08 07:56:38 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
+#include <map>
+#include <vector>
 
 namespace deb {
 
