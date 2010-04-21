@@ -31,7 +31,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Oct 25 20:57:26 CET 2009
-// $Id: Histogram.hh,v 1.6 2010/04/08 07:56:38 veszpv Exp $
+// $Id: Histogram.hh,v 1.7 2010/04/09 10:35:30 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -41,21 +41,246 @@
 #include <sstream>
 #include <map>
 #include <vector>
+#include <algorithm>
+#include <math.h>
+
+#include "TKey.h"
+#include "TFormula.h"
+
+#include "cxxabi.h"
+#include <boost/regex.hpp>
+
+#ifndef HISTOGRAM_DEBUG
+#define HISTOGRAM_DEBUG 0
+#endif
 
 namespace deb {
+
+template<class U, class V>
+class rmap : public std::map<std::pair<U,U>,V> {
+ public:
+  typedef typename std::pair<U,U>                         Range;
+  typedef typename std::map<std::pair<U,U>,V>             RmapBase;
+  typedef typename std::map<std::pair<U,U>,V>::iterator   iterator;
+
+  rmap(V default_value) : default_value_(default_value) { }
+  rmap(const rmap& m) { *this=m; }
+  ~rmap() { }
+
+ private:
+  std::string name;
+  V default_value_;
+  
+  void order(U& u1, U& u2) { if (u1>u2) { U u(u2); u2=u1; u1=u; } }
+
+ public:
+
+  void set_default(V default_value) { default_value_=default_value; }
+
+  rmap& operator=(const rmap& m){
+    * dynamic_cast<RmapBase*>(this) = dynamic_cast<const RmapBase&>(m);
+    default_value_=m.default_value_;
+    return *this;
+  }
+
+  // The Range means (u1,u2], but if u1==u2, it means {u1}
+  void insert(U u1, U u2, V v) {
+    order(u1, u2);
+    Range r(u1,u2);
+    if (this->size()==0) RmapBase::insert(std::pair<Range,V>(r, v));
+    iterator it=lower_bound(r);
+
+    if (it->first.first==u1) return;
+    if (it==this->end()) {
+      if (u1>=this->rbegin()->first.second) {
+	RmapBase::insert(std::pair<Range,V>(r, v));
+	this->regularize();
+      }
+      return;
+    }
+    if (it==this->begin()) {
+      if (u2<=it->first.first) {
+	RmapBase::insert(std::pair<Range,V>(r, v));
+	this->regularize();
+      }
+      return;
+    }
+    if (u2<=it->first.first) {
+      it--;
+      if (u1>=it->first.second) {
+	RmapBase::insert(std::pair<Range,V>(r, v));
+	this->regularize();
+      }
+    }
+  }
+
+  void insertn(int n,...) {
+    va_list argList;
+    va_start(argList, n);
+    for (int i=0; i<n; i++) {
+      U u1=va_arg(argList, U);
+      U u2=va_arg(argList, U);
+      V v=va_arg(argList, V);
+      insert(u1, u2, v);
+    }
+    va_end(argList);
+  }
+  
+  bool regularize() {
+    bool changed=false;
+    iterator it_end=this->end();
+    it_end--;
+    for (iterator it=this->begin(); it!=it_end; it++) {
+      iterator it2=it;
+      it2++;
+      if (it->second==it2->second && it->first.second==it2->first.first) {
+	Range rnew(it->first.first, it2->first.second);
+	V v=it->second;
+	this->erase(it2);
+	this->erase(it);
+	RmapBase::insert(std::pair<Range,V>(rnew, v));
+	changed=true;
+	break;
+      }
+    }
+    if (changed) regularize();
+    return changed;
+  }
+  
+  V operator()(U u){
+    iterator it=lower_bound(Range(u, 0));
+    if (it->first.first==u) return it->second;
+    if (it==this->begin()) return default_value_;
+    it--;
+    if (u<it->first.second) return it->second;
+    return default_value_;
+  }
+
+  void print() {
+    std::cout<<std::endl;
+    if (this->size()==0) {
+      std::cout<<" Default value: "<<default_value_<<"\n\n";
+      return;
+    }
+    size_t count=0;
+    iterator it=this->begin();
+    for (; it!=this->end(); it++, count++) {
+      std::cout << " " << count << ": ";
+      if (it->first.first==it->first.second) {
+	std::cout << "{" << it->first.first << "}";
+      } else {
+	std::cout << "[" << it->first.first << ", " << it->first.second << ")";
+      }
+      std::cout<< " -> " << it->second<<std::endl;
+    }
+    std::cout<<" Out-of-range value: "<<default_value_<<"\n\n";
+  }
+
+
+  std::vector<V> image();
+  
+  // This version of image() will collect the final image of an rmap-nested
+  // rmap: for rmap<X,rmap<Y,T> >, image<T>() will yield the image of (X,Y)-> T
+  // The result will contain every element only once except for the last, which
+  // is repeated such that image<T>().size() = image(X) * image(Y)
+  template<class T> std::vector<T> image();
+
+};
+
+
+template<class U,class V>
+template<class T>
+std::vector<T> rmap<U,V>::image() {
+  std::vector<T> img;
+
+  for (iterator it=this->begin(); it!=this->end(); it++) {
+      std::vector<T> img_part=it->second.image();
+      img.insert(img.end(), img_part.begin(), img_part.end());
+  }
+  std::sort(img.begin(), img.end());
+  std::unique(img.begin(), img.end());
+  return img;
+}  
+
+
+template<class U,class V>
+std::vector<V> rmap<U,V>::image() {
+  std::vector<V> img;
+  
+  for (iterator it=this->begin(); it!=this->end(); it++) {
+    img.push_back(it->second);
+  }
+  std::sort(img.begin(), img.end());
+  std::unique(img.begin(), img.end());
+  return img;
+} 
+
+
+// template<class U,class V>
+// template<class T> std::vector<T> rmap<U,V>::image() {
+
+//   std::vector<T> img;
+ 
+//   std::string ret_type = abi::__cxa_demangle(typeid(T).name(), NULL,NULL,NULL);
+//   std::string V_type = abi::__cxa_demangle(typeid(V).name(), NULL, NULL, NULL);
+//   std::string V_img_type="";
+
+//   boost::regex e(".*rmap<.*, (.*)>");
+//   boost::match_results<std::string::const_iterator> m;
+//   if (boost::regex_match(V_type, m, e, boost::match_default)) {
+//     if (m.size()==2) {
+//       V_img_type=V_type.substr(m.position(), m.length());
+//       std::cout<<"V_img_type: "<<V_img_type<<std::endl;
+//     }
+//   }
+
+//   for (iterator it=this->begin(); it!=this->end(); it++) {
+ 
+//     std::vector<T> img_part;
+
+//     if (ret_type==V_img_type) {         // rmap<X, rmap<Y, T> > :
+//       img_part=it->second.image();
+//     } else {                            // rmap<X, rmap<Y, rmap<Z, T> > > :
+//       img_part=it->second.image<T>();  
+//     }
+
+//     img.insert(img_part.end(), img_part.begin(), img_part.end());
+//   }
+//   std::sort(img.begin(), img.end());
+//   std::unique(img.begin(), img.end());
+//   return img;
+// }
+
+
+// template<class U,class V>
+// std::vector<V> rmap<U,V>::image() {     // rmap<U, V> :
+//   std::vector<V> img;
+  
+//   for (iterator it=this->begin(); it!=this->end(); it++) {
+//     img.push_back(it->second);
+//   }
+//   std::sort(img.begin(), img.end());
+//   std::unique(img.begin(), img.end());
+//   return img;
+// } 
+
 
 //----------------------------- Class Definition ------------------------------
 
 template<class H> class Histogram : public H {
  public:
 
-  Histogram() : H() { init(); };
+  Histogram() : H() { init(); }
 
   //
   // Copy constructor - creates "this" histo in the current TDirectory
   //
-  //Histogram(const Histogram<H> &h) : H(h) { *this=h; }
-  Histogram(const Histogram<H> &h) { init(); *this=h; }
+  Histogram(const Histogram<H> &h) : H() { init(); *this=h; }
+
+  //
+  // Base class only copy constructor
+  //
+  Histogram(const H& h) : H(h) { init(); };
 
   //
   // TH1 constructors
@@ -117,39 +342,38 @@ template<class H> class Histogram : public H {
 	    Int_t nbinsy, const Float_t *ybins, std::string format,...);
 
   ~Histogram() {
-    if (num_!=NULL) delete num_;
-    if (den_!=NULL) delete den_;
+    if (HISTOGRAM_DEBUG) {
+      std::cout<<"\nDtor: "<<this->GetName()<<" "<<this<<std::endl;
+    }
   }
 
  private:
-  H* num_;                              // the numerator if efficiency is set
-  H* den_;                              // the denominator if efficiency is set
+  std::map<std::string,int> auxIndex_;
+  std::vector<Histogram<H> > auxVector_;
+  int iNum_;                            // the numerator if efficiency is set
+  int iDen_;                            // the denominator if efficiency is set
+  std::map<std::string,int>::iterator lastIndex_;
   std::string legend_;                  // legend of this histogram when drawn
   std::string legendHead_;              // head on the legend (category)
+
   void init() {
-    num_=NULL;
-    den_=NULL;
+    iNum_=-1;
+    iDen_=-1;
     legend_="";
     legendHead_="";
+    setDirectory(0); // set this histo and aux histos to TDirectory==0
+    if (HISTOGRAM_DEBUG) {
+      std::cout<<"\nCtor: "<<this->GetName()<<" "<<this<<std::endl;
+    }
   }
-  std::map<std::string,int> auxIndex_;
-  std::vector<H> auxVector_;
 
-
-  // Creates the clones in the current TDirectory
-  inline H* makeCloneInGDirectory(H* target, std::string newname="") {
-    H* duplicate=NULL;
-    if (target!=NULL) duplicate = new H(*target);
-    if (duplicate!=NULL && newname!="") duplicate->SetName(newname.c_str());
-    return duplicate;
-  }
 
  protected:
   std::vector<std::string> getNameTitle(char *nameTitle) {
   // In format: name[!legend[!legend head]][;title[;Xlabel[;Ylabel[;Zlabel]]]]
   // Returns strings: name, title (containing axis labels in ROOT format)
   // Set variables: legend_, legendHead_
-    std::cout<<"getNameTitle(\""<<nameTitle<<"\"\n";
+    if (HISTOGRAM_DEBUG) std::cout<<"\ngetNameTitle(\""<<nameTitle<<"\")\n";
     std::string name=nameTitle;
     std::string title="";
     size_t posTitle=name.find_first_of(";");
@@ -167,8 +391,10 @@ template<class H> class Histogram : public H {
 	legend_.erase(posLegends);
       }
     }
-    std::cout<<"name "<<name<<" title "<<title<<std::endl;
-    std::cout<<"legend "<<legend_<<" head "<<legendHead_<<std::endl;
+    if (HISTOGRAM_DEBUG) {
+      std::cout<<"  name: "<<name<<"\n  title: "<<title;
+      std::cout<<"\n  legend: "<<legend_<<"\n  head: "<<legendHead_<<std::endl;
+    }
     std::vector<std::string> ret;
     ret.push_back(name);
     ret.push_back(title);
@@ -180,70 +406,160 @@ template<class H> class Histogram : public H {
 
 
  public:
-  Histogram<H>& operator= (const Histogram<H> &h) {
+  Histogram<H>& operator= (const Histogram<H> &h) { // moved to gDirectory
+    if (HISTOGRAM_DEBUG) {
+      std::cout<<"\noperator=: "<<this->GetName()<<" "<<this;
+      std::cout<<" on "<<h.GetName()<<" "<<&h<<std::endl;
+    }
     * dynamic_cast<H*>(this) = dynamic_cast<const H&>(h);
-    if (num_!=NULL) {
-      if (h.num()!=NULL) {
-	*num_ = *h.num();
-      } else {
-	delete num_;
-	num_=NULL;
-      }
-    } else {
-      num_ = makeCloneInGDirectory(h.num());
-    }
-    if (den_!=NULL) {
-      if (h.den()!=NULL) {
-	*den_ = *h.den();
-      } else {
-	delete den_;
-	den_=NULL;
-      }
-    } else {
-      den_ = makeCloneInGDirectory(h.den());
-    }
     legend_ = h.legend_;
     legendHead_ = h.legendHead_;
     auxIndex_ = h.auxIndex_;
     auxVector_ = h.auxVector_;
+    iNum_=h.iNum_;
+    iDen_=h.iDen_;
+
+    setDirectory(0);
     return *this; 
   }
+
+  
 
   void        setLabel(std::string, std::string, ...);  
   std::string getLabel(std::string, std::string, ...);
   void        efficiency();
 
-  H*          num() const { return num_; }
-  H*          den() const { return den_; }
-  H*          ptr(std::string ext) {
-    if (ext==".num") return num();
-    else if (ext==".den") return den();
-    return this;
+  Histogram<H>*  num() { return (iNum_>=0) ? aux(iNum_) : NULL; }
+  Histogram<H>*  den() { return (iDen_>=0) ? aux(iDen_) : NULL; }
+  H&             getBase() { return dynamic_cast<H&>(*this); }
+
+  void        copyContentFrom(H& h) {
+    std::string oldname=this->GetName();
+    this->getBase()=h;
+    this->getBase().SetName(oldname.c_str());
   }
+
+  void        copyContentFrom(Histogram<H>& h) { copyContentFrom(h.getBase());}
+
+  void        copyContentTo(H& h) {
+    std::string oldname=h.GetName();
+    h=this->getBase();
+    h.SetName(oldname.c_str());
+  }
+
+  void        copyContentTo(Histogram<H>& h) { copyContentTo(h.getBase()); }
 
   // Transient auxiliary copies of this histo, alway stored in memory
   //
-  H* addAux(std::string key) {
-    H* h=aux(key);
-    if (h!=NULL) return h;
-    auxVector_.push_back(dynamic_cast<H&>(*this));
-    int i=auxVector_.size()-1;
+
+  int addAux(std::string key,...) {
+    va_list argList;
+    va_start(argList, key);
+    char s[10000];
+    vsprintf(s, key.data(), argList);
+    va_end(argList);
+    key=s;
+
+    if (aux(key)!=NULL) return -1;
+    //auxVector_.push_back(dynamic_cast<H&>(*this));
+    auxVector_.push_back(this->getBase());
+    // IMPORTANT!!! a setDirectory must always follow a push_back
+    setDirectoryAux(0);
+    int i=getNAux()-1;
     auxIndex_[key]=i;
-    auxVector_[i].SetDirectory(0);
-    key.insert(0, "_");
+    key.insert(0, ".");
     auxVector_[i].SetName(key.insert(0, auxVector_[i].GetName()).c_str());
-    return &(auxVector_[i]);
+    return i;
   }
-  //std::map<std::string,H>& auxIndex() { return auxIndex_; }
+
+  int addAux(std::string key, H& h) {
+    int i=addAux(key);
+    if (i>=0) {
+      std::string aname=aux(i)->GetName();
+      (*aux(i))=h; 
+      aux(i)->SetName(aname.c_str());
+    }
+    return i;
+  }
+
+  int addAux(std::string key, std::string formula,...) {
+    va_list argList;
+    va_start(argList, formula);
+    char s[10000];
+    vsprintf(s, formula.data(), argList);
+    va_end(argList);
+    formula=s;
+    Histogram<H> h(*this);
+    if (h.setContent(formula)==0) return addAux(key, h.getBase());
+    return -1;
+  }
+
+  int addAux(std::string key, Histogram<H>& h, std::string formula,...) {
+    va_list argList;
+    va_start(argList, formula);
+    char s[10000];
+    vsprintf(s, formula.data(), argList);
+    va_end(argList);
+    formula=s;
+    Histogram<H> h2=h;
+    if (h2.setContent(formula)==0) return addAux(key, h2.getBase());
+    return -1;
+  }
+
+  void eraseAux(std::string key,...) {
+    va_list argList;
+    va_start(argList, key);
+    char s[10000];
+    vsprintf(s, key.data(), argList);
+    va_end(argList);
+    int i=auxIndex(s);
+    if (i>=0) eraseAux(i);
+  }
+
+  void eraseAux(int i) {
+    typename std::map<std::string,int>::iterator rm=auxIndex_.end();
+    typename std::map<std::string,int>::iterator it=auxIndex_.begin();
+    for (; it!=auxIndex_.end(); it++) {
+      if (it->second==i) rm=it; // this must come before the next line!!!
+      if (it->second>i) it->second-=1;;
+    }
+    if (rm==auxIndex_.end()) return;
+    auxVector_.erase(auxVector_.begin()+i);
+    auxIndex_.erase(rm);
+  }
+
   int auxIndex(std::string key) {
     typename std::map<std::string,int>::const_iterator it=auxIndex_.find(key);
     return (it!=auxIndex_.end()) ? it->second : -1;
   }
-  //std::vector<H>& auxVector() { return auxVector_; }
-  H* aux(int i) {
+
+  int auxKey(int i) { // Very slow function, do not use it if possible
+    typename std::map<std::string,int>::const_iterator it=auxIndex_.begin();
+    for (; it!=auxIndex_.end(); it++) if (it->second==i) return i;
+    return -1;
+  }
+
+  inline int getNAux() { return auxVector_.size(); }
+
+  Histogram<H>* aux(int i=0) {
     return (i>=0 && i<int(auxVector_.size())) ? &(auxVector_[i]) : NULL; 
   }
-  H* aux(std::string key) { return aux(auxIndex(key)); }
+
+  // Use aux() with no parameter when possible if only one aux histo exists
+  Histogram<H>* aux(std::string key) { 
+    if (auxVector_.size()==1) {
+      return (key==auxIndex_.begin()->first) ? aux() : NULL;
+    }
+    return aux(auxIndex(key)); 
+  }
+
+  void setDirectoryAux(TDirectory* dir, std::string list="") {
+    for (int i=0; i<getNAux(); i++) {
+      if (list=="" || list.find(auxVector_[i].GetName())!=std::string::npos) {
+	auxVector_[i].setDirectory(dir);
+      }
+    }
+  }
   //
   //
 
@@ -258,22 +574,46 @@ template<class H> class Histogram : public H {
   std::string getLegend() { return legend_; }
   void        setLegendHead(std::string legendHead) { legendHead_=legendHead; }
   std::string getLegendHead() { return legendHead_; }
-  void        setDirectory(TDirectory *dir=0);
+
+  // Always applies to "this" histo, aux hists in "list" are set to TDirectory:
+  void        setDirectory(TDirectory *dir=0, std::string list="");
   Int_t       Write(const char*, Int_t, Int_t);
   int         load(std::string name="", TDirectory *dir=NULL);
-  void        print();
+  void        print(std::string prefix="");
   void        setStyle(std::string style) { };
   void        SetName(const char* name);
-  void        setName(std::string name) { this->SetName(name.c_str()); }
+  void        setName(std::string name,...) { 
+    va_list argList;
+    va_start(argList, name);
+    char s[10000];
+    vsprintf(s, name.data(), argList);
+    va_end(argList);
+    name=s;
+    SetName(name.c_str()); 
+  }
+  void        reset(Option_t* option="");
 
   // Only for 2-D histograms
   // No safeguard when compiling with 1-D histograms. It just won't compile.
   void        fillX(Double_t x, Double_t w=1.)    { this->fillX(this, x, w); }
   void        fillY(Double_t y, Double_t w=1.)    { this->fillY(this, y, w); }
-  void        fillNumX(Double_t x, Double_t w=1.) { this->fillX(num_, x, w); }
-  void        fillNumY(Double_t y, Double_t w=1.) { this->fillY(num_, y, w); }
-  void        fillDenX(Double_t x, Double_t w=1.) { this->fillX(den_, x, w); }
-  void        fillDenY(Double_t y, Double_t w=1.) { this->fillY(den_, y, w); }
+
+  int         setContent(int type, std::string formula, ...);
+  int         setContent(std::string formula, ...);
+  int         setError(std::string formula, ...);
+
+  // For now it works only for uniform binning:
+  void        shiftBinContent(float shift=0) {
+    int dbin=int(floor(shift/this->GetBinWidth(1)))*-1;
+    shift=(shift+dbin*this->GetBinWidth(1))/this->GetBinWidth(1);
+    int i=this->addAux("__aux_for_shifting_", *this);
+    if (i<0) return;
+    this->setContent("$__aux_for_shifting_{%d}*%f+$__aux_for_shifting_{%d}*%f",
+		     dbin-1, shift, dbin, 1.-shift);
+    eraseAux("__aux_for_shifting_");
+  }
+
+  
 
 };
 
@@ -474,157 +814,147 @@ std::string Histogram<H>::getLabel(std::string param,
 template <class H> 
 void Histogram<H>::efficiency() {
 
-  if (num_!=NULL && den_!=NULL ) { // && den_->Integral()!=0.) {
-    this->Divide(num_, den_, 1., 1., "B");
+  if (iNum_>=0 && iDen_>=0) {
+
+    this->setContent("$num{}/$den{}");
+
+    this->setError("1.96*sqrt( (($num{}+2)/($den{}+4)) " //sqrt(p' [= (X+2)/n']
+		   "* (1-(($num{}+2)/($den{}+4))) " // * (1-p')
+		   "/ ($den{}+4) ) * ($den{}!=0)"); // /n' [=N+4]) * (N!=0)
+    // Last part *(N=0) assures no error in bin with no denominator in eff.
+
     return;
   }
 
+  if (iNum_<0 && aux("num")!=NULL) iNum_=auxIndex("num");
+  if (iDen_<0 && aux("den")!=NULL) iDen_=auxIndex("den");
+
   this->Sumw2();
 
-  if (num_==NULL) {
-    std::ostringstream name_num;
-    name_num << this->GetName() << "_num";
-    num_ = makeCloneInGDirectory(this, name_num.str()); 
-    // Move the new histo into the same directory as "this" is located
-    if (num_!=NULL) num_->SetDirectory(this->GetDirectory());
-  }
-
-  if (den_==NULL) {
-    std::ostringstream name_den;
-    name_den << this->GetName() << "_den";
-    den_ = makeCloneInGDirectory(this, name_den.str());
-    // Move the new histo into the same directory as "this" is located
-    if (den_!=NULL) den_->SetDirectory(this->GetDirectory());
-  }
+  if (iNum_<0) iNum_ = addAux("num");
+  if (iDen_<0) iDen_ = addAux("den");
 
 }
 
 
 template <class H> 
-void Histogram<H>::setDirectory(TDirectory *dir) {
+void Histogram<H>::setDirectory(TDirectory *dir, std::string list) {
   this->SetDirectory(dir);
-  if (num_!=NULL) num_->SetDirectory(dir);
-  if (den_!=NULL) den_->SetDirectory(dir);
+  this->setDirectoryAux(dir, list);
 }
  
 
 template <class H> 
 Int_t Histogram<H>::Write(const char* name = 0, Int_t option = 0, 
 			  Int_t bufsize = 0) {
-  if (num_!=NULL) {
-    std::string name_num=num_->GetName();
-    if (name!=NULL) {
-      name_num=name;
-      name_num+="_num";
-    }
-    num_->Write(name_num.c_str(), option, bufsize);
-  }
-  if (den_!=NULL) {
-    std::string name_den=den_->GetName();
-    if (name!=NULL) {
-      name_den=name;
-      name_den+="_den";
-    }
-    den_->Write(name_den.c_str(), option, bufsize);
+
+  for (int i=0; i<getNAux(); i++) {
+    aux(i)->Write(aux(i)->GetName(), option, bufsize);
   }
   return H::Write(name, option, bufsize);
 }
 
 
 template <class H>
-int Histogram<H>::load(std::string namecycle, TDirectory* dir) {
+int Histogram<H>::load(std::string name, TDirectory* dir) {
 
-  if (namecycle=="") namecycle=this->GetName();
+  if (HISTOGRAM_DEBUG) std::cout<<"\nLoading histogram "<<name<<std::endl;
+
+  // Load this histo:
+
+  std::string oldname=this->GetName();
+
+  if (name=="") name=this->GetName();
   if (dir==NULL) dir=gDirectory;
   H* h=NULL;
 
-  h = (H*) dir->GetObjectChecked(namecycle.c_str(), this->IsA());
+  h = (H*) dir->GetObjectChecked(name.c_str(), this->IsA());
   if (h!=NULL) {
     (*(H*)this)=*h;
     delete h;
-    std::cout<<"Loaded "<<this->GetName()<<std::endl;
+    if (HISTOGRAM_DEBUG) std::cout<<"Loaded "<<this->GetName()<<std::endl;
+  } else {
+    return 1;
   }
 
-  std::string num=namecycle;
-  size_t pos=num.find_first_of(";"); // the cyclenumber part
-  num.insert((pos!=std::string::npos) ? pos : num.length(), "_num");
-  h=NULL;
+  // Load the auxiliary histos, but destroy the ones we have currently first:
 
-  h = (H*) dir->GetObjectChecked(num.c_str(), this->IsA());
-  if (h!=NULL) {
-    if (num_==NULL) {
-      num_ = h;
-    } else {
-      *num_=*h;
-      delete h;
-    }
-    num_->SetDirectory(this->GetDirectory());
-    std::cout<<"Loaded "<<num_->GetName()<<std::endl;
+  auxIndex_.clear();
+  auxVector_.clear();
+  iNum_=iDen_=-1;
+
+  TIter next(dir->GetListOfKeys());
+  TKey *key;
+  while (key=(TKey*)next()) {
+    std::string hname=key->GetName();
+    if (HISTOGRAM_DEBUG) std::cout<<"Key "<<hname<<std::endl;
+
+    if (hname==name) continue;  // this is the main histo not an aux
+    if (hname.find(name)!=0) continue; // this does not belong to this histo
+    if (hname[name.size()]!='.') continue; // has no extension, it isn't an aux
+    std::string aname=hname.substr(0, hname.find_first_of(".", name.size()+1));
+    if (hname!=aname) continue; // this is not a direct aux of this hist
+
+    std::string ext=aname.substr(aname.find_last_of(".")+1);
+
+    int i=addAux(ext);
+
+    // Special cases for known extensions:
+    if (ext=="num") iNum_ = i;
+    if (ext=="den") iDen_ = i; 
+
+    aux(i)->load(aname, dir);
+    if (HISTOGRAM_DEBUG) aux(i)->print();
   }
 
-  std::string den=namecycle;
-  pos=den.find_first_of(";"); // the cyclenumber part
-  den.insert((pos!=std::string::npos) ? pos : den.length(), "_den");
-  h=NULL;
-
-  h = (H*) dir->GetObjectChecked(den.c_str(), this->IsA());
-  if (h!=NULL) {
-    if (den_==NULL) {
-      den_ = h;
-    } else {
-      *den_=*h;
-      delete h;
-    }
-    den_->SetDirectory(this->GetDirectory());
-    std::cout<<"Loaded "<<den_->GetName()<<std::endl;
-  }
+  setDirectory(0);
+  if (name!=oldname) setName(oldname);
   return 0;
 }
 
 
 template <class H>
-void Histogram<H>::print() {
-  std::cout<<"Histogram: "<<this->GetName()<<" in ";
+void Histogram<H>::print(std::string prefix) {
+
+  if (prefix=="") {
+    std::cout<<"\nHistogram: "<<this->GetName()<<" - in ";
+  } else {
+    std::cout<< prefix <<this->GetName()<<" - in ";
+  }
+
   if (this->GetDirectory()!=0) {
     this->GetDirectory()->pwd();
   } else {
     std::cout<<"memory\n";
   }
-  if (num_!=NULL) {
-    std::cout<<"\t"<<num_->GetName()<<" in ";
-    if (num_->GetDirectory()!=0) {
-      num_->GetDirectory()->pwd();
-    } else {
-      std::cout<<"memory\n";
-    }
-  }
-  if (den_!=NULL) {
-    std::cout<<"\t"<<den_->GetName()<<" in ";
-    if (den_->GetDirectory()!=0) {
-      den_->GetDirectory()->pwd();
-    } else {
-      std::cout<<"memory\n";
-    }
+  if (HISTOGRAM_DEBUG) std::cout<< prefix << "   at " << this << std::endl;
+
+  prefix+="   ";
+  for (int i=0; i<getNAux(); i++) {
+    aux(i)->print(prefix);
   }
 }
 
 
 template <class H>
 void Histogram<H>::SetName(const char* name) {
-  //std::cout<<"Naming "<<this->GetName()<<" to "<<name<<std::endl;
+
+  for (int i=0; i<getNAux(); i++) {
+    std::string name_aux=aux(i)->GetName();
+    name_aux.erase(0, strlen(this->GetName()));
+    name_aux.insert(0, name);
+    aux(i)->SetName(name_aux.c_str());
+  }
+  // This has to be the last step, otherwise we lose the original name:
   H::SetName(name);
-  if (num_!=NULL) {
-    std::string name_num=this->GetName();
-    name_num+="_num";
-    //std::cout<<"Naming "<<num_->GetName()<<" to "<<name_num<<std::endl;
-    num_->SetName(name_num.c_str());
-  }
-  if (den_!=NULL) {
-    std::string name_den=this->GetName();
-    name_den+="_den";
-    //std::cout<<"Naming "<<den_->GetName()<<" to "<<name_den<<std::endl;
-    den_->SetName(name_den.c_str());
-  }
+}
+
+
+template <class H>
+void Histogram<H>::reset(Option_t* option) {
+
+  for (int i=0; i<getNAux(); i++) aux(i)->Reset(option);
+  H::Reset(option);
 }
 
 
@@ -651,6 +981,132 @@ void Histogram<H>::fillY(H* h, Double_t y, Double_t w=1.) {
   h->Fill(h->GetXaxis()->GetBinLowEdge(1)*0.9999, y, w);
   h->Fill(h->GetXaxis()->GetBinUpEdge(h->GetNBinsX())*1.0001, y, w);  
 
+}
+
+
+template <class H> 
+int Histogram<H>::setContent(int type, std::string formula,...) {
+
+  va_list argList;
+  va_start(argList, formula);
+  char s[10000];
+  vsprintf(s, formula.data(), argList);
+  va_end(argList);
+  formula=s;
+  std::cout<<"\nProcessing formula: "<<formula<<std::endl;
+
+  std::vector<std::vector<int> > params; // 0: iaux, 1: ibinX [2: ibinY...]
+  int invalid=0;
+
+  size_t dollar=formula.find_first_of("$");
+
+  while (dollar!=std::string::npos) {
+
+    std::vector<int> param;
+    int bra=formula.find_first_of("{", dollar);
+    size_t ket=bra-1;
+
+    for (int i=0; i<this->GetDimension(); i++) {
+      
+      bra=ket+1;
+      if (formula[bra]!='{') {
+	invalid=1;
+	break; // missing bra
+      }
+
+      // index of aux:
+      if (i==0) {
+	param.push_back(auxIndex(formula.substr(dollar+1, bra-dollar-1)));
+	if (param[0]<0) {
+	  invalid=1;
+	  break; // aux histo does not exist
+	}
+      }
+      
+      ket=formula.find_first_of("}", bra);
+      if (ket==std::string::npos) {
+	invalid=1;
+	break; // missing ket
+      }
+      param.push_back(atoi(formula.substr(bra+1, bra-ket-1).c_str())); // ibin
+    } // for
+
+    if (invalid) break;
+    params.push_back(param);
+
+    long len=ket-dollar+1;
+    formula.erase(dollar, len);
+    std::ostringstream par;
+    int ipar=params.size()-1;
+    par<<"["<<ipar<<"]";
+    formula.insert(dollar, par.str());
+    dollar=formula.find_first_of("$", dollar+par.str().size());
+  } // while
+
+  if (invalid) {
+    std::cout<<"Invalid formula: "<<formula<<std::endl;
+    return 1;
+  }
+
+  if (HISTOGRAM_DEBUG) {  
+    //if (1) {
+    std::cout<<"Formula: "<<formula<<std::endl;
+    for (size_t i=0; i<params.size(); i++) {
+      std::cout<<"Param ["<<i<<"]: ";
+      std::cout<<aux(params[i][0])->GetName()<<" bin offset";
+      for (int j=0; j<this->GetDimension(); j++) 
+	std::cout<<" "<<params[i][j+1];
+      std::cout<<std::endl;
+    }
+  }
+
+  // Do the calculation
+  Double_t pars[params.size()];
+  TFormula f("f", formula.c_str());
+
+  for (int i=1; i<=this->GetNbinsX(); i++) {
+    for (int j=1; j<=this->GetNbinsY(); j++) {
+      for (int k=1; k<=this->GetNbinsZ(); k++) {
+	for (int l=0; l<int(params.size()); l++) {
+	  pars[l]=aux(params[l][0])->GetBinContent(i+params[l][1],
+						   j+params[l][2],
+						   k+params[l][3]);
+	}
+	f.SetParameters(pars);
+	if (type==0) {
+	  this->SetBinContent(i, j, k, f.Eval(0));
+	} else {
+	  this->SetBinError(i, j, k, f.Eval(0));
+	}
+      }
+    }
+  }
+
+  return 0;
+}
+
+
+template <class H> 
+int Histogram<H>::setContent(std::string formula,...) {
+  va_list argList;
+  va_start(argList, formula);
+  char s[10000];
+  vsprintf(s, formula.data(), argList);
+  va_end(argList);
+  formula=s;
+  return setContent(0, formula);
+}
+
+
+template <class H> 
+int Histogram<H>::setError(std::string formula,...) {
+  va_list argList;
+  va_start(argList, formula);
+  char s[10000];
+  vsprintf(s, formula.data(), argList);
+  va_end(argList);
+  formula=s;
+  return setContent(1, formula);
 }
 
 //-----------------------------------------------------------------------------

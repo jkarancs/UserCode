@@ -112,7 +112,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Oct 25 20:57:26 CET 2009
-// $Id: Plot.hh,v 1.7 2010/03/28 16:21:43 veszpv Exp $
+// $Id: Plot.hh,v 1.8 2010/04/08 07:56:38 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -136,6 +136,7 @@
 #include "TKey.h"
 #include <boost/regex.hpp>
 
+#define PLOTDEBUG 0
 
 namespace deb {
 
@@ -378,6 +379,8 @@ template<class H> class Plot : public std::map<std::string,Histogram<H> > {
   std::string              getLastDrawNRows()  { return lastDrawNRows_;  }
 
   // Add histograms to plot
+  void add(const Histogram<H>& h, std::string format,...);
+
   void add(Int_t nbinsx, Double_t xlow, Double_t xup, std::string format,...);
 
   void add(Int_t nbins, const Float_t *xbins, std::string format,...);
@@ -398,6 +401,8 @@ template<class H> class Plot : public std::map<std::string,Histogram<H> > {
 
   void add(Int_t nbinsx, const Float_t *xbins, 
 	   Int_t nbinsy, const Float_t *ybins, std::string format,...);
+
+  
 
   // Accessors
   // IMPORTANT!!! OPERATORS () and [] do not use regexp. This is to make sure
@@ -854,6 +859,24 @@ std::vector<std::string> Plot<H>::generateNameTitleForH(std::string format){
 
 
 //---------------------------------- add() ------------------------------------
+
+template <class H> 
+void Plot<H>::add(const Histogram<H>& h, std::string format,...) {
+
+  va_list argList;
+  va_start(argList, format);
+  char s[10000];
+  vsprintf(s, format.data(), argList);
+
+  std::vector<std::string> labels=generateNameTitleForH(s);
+  for (size_t i=0; i<labels.size(); i+=5) {
+    (*this)[labels[i]]=h;
+    (*this)[labels[i]].SetName(labels[i+1].data());
+    (*this)[labels[i]].SetTitle(labels[i+2].data());
+    (*this)[labels[i]].setDirectory(0);
+    (*this)[labels[i]].setLegend(labels[i+3], labels[i+4]);
+  }
+}
 
 template <class H> void Plot<H>::add(Int_t nbinsx, Double_t xlow, Double_t xup,
 				     std::string format,...) {
@@ -1775,9 +1798,11 @@ template <class H> void Plot<H>::Write() {
 //------------------------------------ load() ---------------------------------
 
 template <class H> int Plot<H>::load(std::string name) {
-  std::cout << "===========================================================\n";
-  std::cout << "Current dir: ";
-  gDirectory->pwd();
+  if (PLOTDEBUG) {
+    std::cout << "=========================================================\n";
+    std::cout << "Current dir: ";
+    gDirectory->pwd();
+  }
 
   if (name=="") name=canName_;
   std::string dirname=name;
@@ -1786,35 +1811,42 @@ template <class H> int Plot<H>::load(std::string name) {
   TDirectory *dir=(TDirectory *) gDirectory->GetObjectChecked(dirname.c_str(),
 							      tDir.IsA());
   if (dir==NULL) return 1;
-  std::cout << "Reading from dir: ";
-  dir->pwd();
+  if (PLOTDEBUG) {
+    std::cout << "Reading from dir: ";
+    dir->pwd();
+  }
   //dir->ls();
 
   TIter next(dir->GetListOfKeys());
   TKey *key;
   while (key=(TKey*)next()) {
-    std::cout<<"Key "<<key->GetName()<<std::endl;
+    if (PLOTDEBUG) std::cout<<"Key "<<key->GetName()<<std::endl;
     std::string hname=key->GetName();
-    std::string htype=hname.substr(hname.length()-4, 4);
-    if (htype=="_num" || htype=="_den") continue;
+//     std::string htype=hname.substr(hname.length()-4, 4);
+//     if (htype=="_num" || htype=="_den") continue;
+    if (hname.find('.')!=std::string::npos) continue; // this is an aux histo
     H *obj=NULL;
     dir->GetObject(hname.c_str(), obj);
     if (obj==NULL) continue; // make sure it's an "H" object, should do smarter
     Histogram<H> h;
     h.load(hname, dir);
-    h.print();
+    if (PLOTDEBUG) h.print();
     //hname.erase(0, name.length()+1);
     std::string hkey=keyFromHistName(hname, name);
     (*this)[hkey]=h;
     (*this)[hkey].setDirectory(0);
     (*this)[hkey].setName(histNameFromKey(hkey));
-    std::cout<<"Plot "<<canName_<<"["<<hkey<<"]=\n";
-    (*this)[hkey].print();		     
-    std::cout<<"Added histogram "<<(*this)[hkey].GetName()<<std::endl;
+    if (PLOTDEBUG) {
+      std::cout<<"Plot "<<canName_<<"["<<hkey<<"]=\n";
+      (*this)[hkey].print();		     
+      std::cout<<"Added histogram "<<(*this)[hkey].GetName()<<std::endl;
+    }
   }
-  std::cout<<" End of loading plot"<<std::endl;
-  gDirectory->pwd();
-  gDirectory->ls();
+  if (PLOTDEBUG) {
+    std::cout<<" End of loading plot"<<std::endl;
+    gDirectory->pwd();
+    gDirectory->ls();
+  }
 
   return 0;
 }
