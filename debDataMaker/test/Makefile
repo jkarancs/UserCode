@@ -18,12 +18,25 @@ OBJS          = $(TESTHISTOGRAMO)
 PROGRAMS      = $(TESTHISTOGRAM)
 
 #------------------------------------------------------------------------------
+TESTPLOTO      = TestPlot.$(ObjSuf)
+TESTPLOTS      = TestPlot.$(SrcSuf)
+TESTPLOT       = TestPlot$(ExeSuf)
+
+OBJS          += $(TESTPLOTO)
+PROGRAMS      += $(TESTPLOT)
+
+#------------------------------------------------------------------------------
 
 .SUFFIXES: .$(SrcSuf) .$(ObjSuf) .$(DllSuf)
 
 all:            $(PROGRAMS)
 
 $(TESTHISTOGRAM):     $(TESTHISTOGRAMO)
+		$(LD) $(LDFLAGS) $^ $(LIBS) $(OutPutOpt)$@
+		$(MT_EXE)
+		@echo "$@ done"
+
+$(TESTPLOT):     $(TESTPLOTO)
 		$(LD) $(LDFLAGS) $^ $(LIBS) $(OutPutOpt)$@
 		$(MT_EXE)
 		@echo "$@ done"
