@@ -31,7 +31,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Oct 25 20:57:26 CET 2009
-// $Id: Histogram.hh,v 1.7 2010/04/09 10:35:30 veszpv Exp $
+// $Id: Histogram.hh,v 1.8 2010/04/21 08:44:56 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -49,6 +49,7 @@
 
 #include "cxxabi.h"
 #include <boost/regex.hpp>
+#include <limits>
 
 #ifndef HISTOGRAM_DEBUG
 #define HISTOGRAM_DEBUG 0
@@ -59,8 +60,8 @@ namespace deb {
 template<class U, class V>
 class rmap : public std::map<std::pair<U,U>,V> {
  public:
-  typedef typename std::pair<U,U>                         Range;
-  typedef typename std::map<std::pair<U,U>,V>             RmapBase;
+  typedef typename std::pair<U,U>                         range;
+  typedef typename std::map<std::pair<U,U>,V>             base;
   typedef typename std::map<std::pair<U,U>,V>::iterator   iterator;
 
   rmap(V default_value) : default_value_(default_value) { }
@@ -68,7 +69,6 @@ class rmap : public std::map<std::pair<U,U>,V> {
   ~rmap() { }
 
  private:
-  std::string name;
   V default_value_;
   
   void order(U& u1, U& u2) { if (u1>u2) { U u(u2); u2=u1; u1=u; } }
@@ -78,29 +78,31 @@ class rmap : public std::map<std::pair<U,U>,V> {
   void set_default(V default_value) { default_value_=default_value; }
 
   rmap& operator=(const rmap& m){
-    * dynamic_cast<RmapBase*>(this) = dynamic_cast<const RmapBase&>(m);
+    * dynamic_cast<base*>(this) = dynamic_cast<const base&>(m);
     default_value_=m.default_value_;
     return *this;
   }
 
-  // The Range means (u1,u2], but if u1==u2, it means {u1}
+  using base::insert;
+
+  // The range means (u1,u2], but if u1==u2, it means {u1}
   void insert(U u1, U u2, V v) {
     order(u1, u2);
-    Range r(u1,u2);
-    if (this->size()==0) RmapBase::insert(std::pair<Range,V>(r, v));
+    range r(u1,u2);
+    if (this->size()==0) base::insert(std::pair<range,V>(r, v));
     iterator it=lower_bound(r);
 
     if (it->first.first==u1) return;
     if (it==this->end()) {
       if (u1>=this->rbegin()->first.second) {
-	RmapBase::insert(std::pair<Range,V>(r, v));
+	base::insert(std::pair<range,V>(r, v));
 	this->regularize();
       }
       return;
     }
     if (it==this->begin()) {
       if (u2<=it->first.first) {
-	RmapBase::insert(std::pair<Range,V>(r, v));
+	base::insert(std::pair<range,V>(r, v));
 	this->regularize();
       }
       return;
@@ -108,7 +110,7 @@ class rmap : public std::map<std::pair<U,U>,V> {
     if (u2<=it->first.first) {
       it--;
       if (u1>=it->first.second) {
-	RmapBase::insert(std::pair<Range,V>(r, v));
+	base::insert(std::pair<range,V>(r, v));
 	this->regularize();
       }
     }
@@ -134,11 +136,11 @@ class rmap : public std::map<std::pair<U,U>,V> {
       iterator it2=it;
       it2++;
       if (it->second==it2->second && it->first.second==it2->first.first) {
-	Range rnew(it->first.first, it2->first.second);
+	range rnew(it->first.first, it2->first.second);
 	V v=it->second;
 	this->erase(it2);
 	this->erase(it);
-	RmapBase::insert(std::pair<Range,V>(rnew, v));
+	base::insert(std::pair<range,V>(rnew, v));
 	changed=true;
 	break;
       }
@@ -148,7 +150,7 @@ class rmap : public std::map<std::pair<U,U>,V> {
   }
   
   V operator()(U u){
-    iterator it=lower_bound(Range(u, 0));
+    iterator it=lower_bound(range(u, 0));
     if (it->first.first==u) return it->second;
     if (it==this->begin()) return default_value_;
     it--;
@@ -265,6 +267,206 @@ std::vector<V> rmap<U,V>::image() {
 // } 
 
 
+
+
+// A vector in which elements can be referenced by a key of any type
+template<class V, class U=std::string>
+class mvector : private std::vector<V> {
+ public:
+
+  typedef typename std::vector<V>                         base;
+  //  typedef typename U                                      key_type;
+  typedef typename std::vector<V>::iterator               iterator;
+  typedef typename std::vector<V>::const_iterator         const_iterator;
+
+  mvector() { initialized_=false; };
+
+  mvector(const U& invalid_key):invalid_key_(invalid_key) { initialized_=true;}
+
+  mvector(const mvector& v) { *this=v; }
+
+  ~mvector() { }
+
+ private:
+  std::map<U,size_t> map_;            //numeric_limits<int>::max();
+  std::vector<U> reverse_map_;
+  bool initialized_;
+  U invalid_key_;
+
+ public:
+  //using::std::vector<V>::assign; // implement it later if it turns out to be needed
+  using::std::vector<V>::at;
+  using::std::vector<V>::back;
+  using::std::vector<V>::begin;
+  using::std::vector<V>::capacity;
+  //using::std::vector<V>::clear;
+  using::std::vector<V>::empty;
+  using::std::vector<V>::end;
+  //using::std::vector<V>::erase;
+  using::std::vector<V>::front;
+  using::std::vector<V>::get_allocator;
+  //using::std::vector<V>::insert;
+  //using::std::vector<V>::max_size;
+  using::std::vector<V>::operator[];
+  //using::std::vector<V>::pop_back;
+  //using::std::vector<V>::push_back;
+  using::std::vector<V>::rbegin;
+  using::std::vector<V>::rend;
+  //using::std::vector<V>::reserve;
+  //using::std::vector<V>::resize;
+  using::std::vector<V>::size;
+  //using::std::vector<V>::swap;
+
+
+  void clear() {
+    base::clear();
+    map_.clear();
+    reverse_map_.clear();
+  }
+
+  inline iterator erase(size_t i) {
+    return (i<size()) ? erase(begin()+i) : end();
+  }
+
+  inline iterator erase(iterator pos) { return erase(pos, pos+1); }
+
+  iterator erase(iterator first, iterator last) {
+    if (initialized_) {
+      size_t f=first-begin();
+      size_t n=last-first;
+      std::vector<typename std::map<U,size_t>::iterator> rm;
+      typename std::map<U,size_t>::iterator it=map_.begin();
+      for (; it!=map_.end(); it++) {
+	if (it->second>=f && it->second<f+n) rm.push_back(it);
+	if (it->second>=f+n) it->second-=1;
+      }
+      for (size_t i=0; i<rm.size(); i++) map_.erase(rm[i]);
+      reverse_map_.erase(reverse_map_.begin()+f, reverse_map_.begin()+(f+n));
+    }
+    return base::erase(first, last);    
+  }
+
+  // Returns end() if key does not exist
+  inline iterator erase(const U& key) { return erase(index(key)); }
+
+  inline size_t index (const U& key) const {
+    typename std::map<U,size_t>::const_iterator it=map_.find(key);
+    return (it!=map_.end()) ? it->second : invalid_index();
+  }
+  
+  void initialize_map(const U& invalid_key) {
+    invalid_key_=invalid_key;
+    initialized_=true;
+  }
+
+  void insert(iterator pos, size_t n, const V& x, const U& key) {
+    if (initialized_ && n>0) {
+      size_t f=pos-begin();
+      typename std::map<U,size_t>::iterator it=map_.begin();
+      for (; it!=map_.end(); it++) if (it->second>=f) it->second+=n;
+      map_.insert(std::pair<U,size_t>(key, f));
+      reverse_map_.insert(reverse_map_.begin()+f, n, invalid_key());
+      reverse_map_[f]=key;
+    }
+    base::insert(pos, n, x);
+  }
+
+  void insert(iterator pos, size_t n, const V& x) {
+    insert(pos, n, x, invalid_key());
+    return;
+  }
+  
+  iterator insert(iterator pos, const V& x, const U& key) {
+    size_t i=pos-begin();
+    insert(pos, 1, x, key);
+    return begin()+i;
+  }
+
+  iterator insert(iterator pos, const V& x) {
+    return insert(pos, x, invalid_key());
+  }
+
+  template <class InputIt>
+  void insert (iterator pos, InputIt first, InputIt last, const U& key) {
+    if (!initialized_ || first==last) return;
+    base input;
+    for (InputIt it=first; it!=last; it++) { input.push_back(*it); }
+    size_t f=pos-begin();
+    typename std::map<U,size_t>::iterator it=map_.begin();
+    for (; it!=map_.end(); it++) if (it->second>=f) it->second+=input.size();
+    map_.insert(std::pair<U,size_t>(key, f));
+    reverse_map_.insert(reverse_map_.begin()+f, input.size(), invalid_key());
+    reverse_map_[f]=key;
+    base::insert(pos, input.begin(), input.end());
+  }
+
+  size_t invalid_index() const { return std::numeric_limits<size_t>::max(); }
+
+  U invalid_key() const { return invalid_key_; }
+  
+  U key (size_t i) const {
+    return (i<reverse_map_.size()) ? reverse_map_[i] : invalid_key(); 
+  }
+
+  size_t max_size() const { return long(invalid_index())-1;  }
+
+  mvector& operator=(const mvector& m) {
+    //clear();
+    *(base *)this = (base&)m;
+    map_ = m.map_;
+    reverse_map_ = m.reverse_map_;
+    invalid_key_ = m.invalid_key_;
+    initialized_ = m.initialized_;
+    return *this;
+  }
+
+  V* operator()(size_t i=0) { return (i>=0&&i<size()) ? &((*this)[i]) : NULL; }
+
+  V* operator()(const U& key) {
+    if (!initialized_) return NULL;
+    if (size()==1) return (map_.begin()->first==key) ? &this->front() : NULL;
+    return (*this)(index(key)); 
+  }
+
+  void pop_back() { erase(begin()+long(size())-1, end()); }
+
+  void print() const {
+    std::cout<<"*** mvector container ("<<this<<"):\n";
+    std::cout<<"    size: "<<size()<<std::endl;
+    std::cout<<"    map size: "<<map_.size()<<std::endl;
+    std::cout<<"    reverse map size: "<<reverse_map_.size()<<std::endl;
+    std::cout<<"    content:\n";
+    std::cout<<"    ~~~~~~~~\n";
+    std::cout<<"    #:\t\tkey:\t\taddress:\t\treverse map key:\n";
+    for (size_t i=0; i<size(); i++) {
+      std::cout<<"    "<<i<<":\t\t"<<key(i)<<"\t\t"<<&(*this)[i]<<"\t\t"
+	       <<reverse_map_[i]<<std::endl;
+    }
+  }
+
+  void push_back(const V& x) { insert(end(), x); }
+
+  void push_back(const V& x, const U& key) { insert(end(), x, key); }
+  
+  void reserve(size_t n) {
+    base::reserve(n);
+    reverse_map_.reserve(n);
+  }
+
+  void resize(size_t sz, V c=V()) {
+    long n=size();
+    if (size()>sz) erase(begin()+sz, end());
+    if (size()<sz) insert(end(), long(size())-sz, c);
+  }
+
+  void swap(mvector& m) {
+    base::swap(base::m);
+    reverse_map_.swap(m.reverse_map_);
+    map_.swap(m.map_);
+  }
+};
+
+
 //----------------------------- Class Definition ------------------------------
 
 template<class H> class Histogram : public H {
@@ -348,8 +550,9 @@ template<class H> class Histogram : public H {
   }
 
  private:
-  std::map<std::string,int> auxIndex_;
-  std::vector<Histogram<H> > auxVector_;
+//   std::map<std::string,int> auxIndex_;
+//   std::vector<Histogram<H> > auxVector_;
+  mvector<Histogram<H>,std::string> aux_;
   int iNum_;                            // the numerator if efficiency is set
   int iDen_;                            // the denominator if efficiency is set
   std::map<std::string,int>::iterator lastIndex_;
@@ -357,6 +560,7 @@ template<class H> class Histogram : public H {
   std::string legendHead_;              // head on the legend (category)
 
   void init() {
+    aux_.initialize_map("");
     iNum_=-1;
     iDen_=-1;
     legend_="";
@@ -408,14 +612,21 @@ template<class H> class Histogram : public H {
  public:
   Histogram<H>& operator= (const Histogram<H> &h) { // moved to gDirectory
     if (HISTOGRAM_DEBUG) {
-      std::cout<<"\noperator=: "<<this->GetName()<<" "<<this;
-      std::cout<<" on "<<h.GetName()<<" "<<&h<<std::endl;
+      std::cout<<"\noperator=: "<<this->GetName()<<" ("<<this<<")";
+      std::cout<<" = "<<h.GetName()<<" ("<<&h<<")"<<std::endl;
     }
     * dynamic_cast<H*>(this) = dynamic_cast<const H&>(h);
     legend_ = h.legend_;
     legendHead_ = h.legendHead_;
-    auxIndex_ = h.auxIndex_;
-    auxVector_ = h.auxVector_;
+//     auxIndex_ = h.auxIndex_;
+//     auxVector_ = h.auxVector_;
+    aux_ = h.aux_;
+//     if (HISTOGRAM_DEBUG) {
+//       aux_.print();
+//       h.aux_.print();
+//     }
+
+    //    if (HISTOGRAM_DEBUG) this->print();
     iNum_=h.iNum_;
     iDen_=h.iDen_;
 
@@ -423,7 +634,6 @@ template<class H> class Histogram : public H {
     return *this; 
   }
 
-  
 
   void        setLabel(std::string, std::string, ...);  
   std::string getLabel(std::string, std::string, ...);
@@ -461,14 +671,15 @@ template<class H> class Histogram : public H {
     key=s;
 
     if (aux(key)!=NULL) return -1;
-    //auxVector_.push_back(dynamic_cast<H&>(*this));
-    auxVector_.push_back(this->getBase());
+//     auxVector_.push_back(this->getBase());
+    aux_.push_back(this->getBase(), key);
     // IMPORTANT!!! a setDirectory must always follow a push_back
     setDirectoryAux(0);
     int i=getNAux()-1;
-    auxIndex_[key]=i;
+//     auxIndex_[key]=i;
     key.insert(0, ".");
-    auxVector_[i].SetName(key.insert(0, auxVector_[i].GetName()).c_str());
+//     auxVector_[i].SetName(key.insert(0, auxVector_[i].GetName()).c_str());
+    aux_[i].SetName(key.insert(0, aux_[i].GetName()).c_str());
     return i;
   }
 
@@ -512,51 +723,63 @@ template<class H> class Histogram : public H {
     char s[10000];
     vsprintf(s, key.data(), argList);
     va_end(argList);
-    int i=auxIndex(s);
-    if (i>=0) eraseAux(i);
+//     int i=auxIndex(s);
+//     if (i>=0) eraseAux(i);
+    aux_.erase(s);
   }
 
   void eraseAux(int i) {
-    typename std::map<std::string,int>::iterator rm=auxIndex_.end();
-    typename std::map<std::string,int>::iterator it=auxIndex_.begin();
-    for (; it!=auxIndex_.end(); it++) {
-      if (it->second==i) rm=it; // this must come before the next line!!!
-      if (it->second>i) it->second-=1;;
-    }
-    if (rm==auxIndex_.end()) return;
-    auxVector_.erase(auxVector_.begin()+i);
-    auxIndex_.erase(rm);
+//     typename std::map<std::string,int>::iterator rm=auxIndex_.end();
+//     typename std::map<std::string,int>::iterator it=auxIndex_.begin();
+//     for (; it!=auxIndex_.end(); it++) {
+//       if (it->second==i) rm=it; // this must come before the next line!!!
+//       if (it->second>i) it->second-=1;;
+//     }
+//     if (rm==auxIndex_.end()) return;
+//     auxVector_.erase(auxVector_.begin()+i);
+//     auxIndex_.erase(rm);
+    aux_.erase(i);
   }
 
   int auxIndex(std::string key) {
-    typename std::map<std::string,int>::const_iterator it=auxIndex_.find(key);
-    return (it!=auxIndex_.end()) ? it->second : -1;
+//     typename std::map<std::string,int>::const_iterator it=auxIndex_.find(key);
+//     return (it!=auxIndex_.end()) ? it->second : -1;
+    return aux_.index(key);
   }
 
-  int auxKey(int i) { // Very slow function, do not use it if possible
-    typename std::map<std::string,int>::const_iterator it=auxIndex_.begin();
-    for (; it!=auxIndex_.end(); it++) if (it->second==i) return i;
-    return -1;
+  std::string auxKey(int i) { // Very slow function, do not use it if possible
+//     typename std::map<std::string,int>::const_iterator it=auxIndex_.begin();
+//     for (; it!=auxIndex_.end(); it++) if (it->second==i) return it->first;
+//     return "";
+    return aux_.key(i);
   }
 
-  inline int getNAux() { return auxVector_.size(); }
+//   inline int getNAux() { return auxVector_.size(); }
+  inline int getNAux() { return aux_.size(); }
 
-  Histogram<H>* aux(int i=0) {
-    return (i>=0 && i<int(auxVector_.size())) ? &(auxVector_[i]) : NULL; 
+  const mvector<Histogram<H>,std::string>& aux() const { return aux_; }
+
+  Histogram<H>* aux(int i) {
+//     return (i>=0 && i<int(auxVector_.size())) ? &(auxVector_[i]) : NULL; 
+    return aux_(i);
   }
 
   // Use aux() with no parameter when possible if only one aux histo exists
   Histogram<H>* aux(std::string key) { 
-    if (auxVector_.size()==1) {
-      return (key==auxIndex_.begin()->first) ? aux() : NULL;
-    }
-    return aux(auxIndex(key)); 
+//     if (aux_.size()==1) {
+//       return (key==aux_.begin()->first) ? aux() : NULL;
+//     }
+//     return aux(auxIndex(key)); 
+    return aux_(key);
   }
 
   void setDirectoryAux(TDirectory* dir, std::string list="") {
     for (int i=0; i<getNAux(); i++) {
-      if (list=="" || list.find(auxVector_[i].GetName())!=std::string::npos) {
-	auxVector_[i].setDirectory(dir);
+//       if (list=="" || list.find(auxVector_[i].GetName())!=std::string::npos) {
+// 	auxVector_[i].setDirectory(dir);
+//       }
+      if (list=="" || list.find(aux_.key(i))!=std::string::npos) {
+	aux_[i].setDirectory(dir);
       }
     }
   }
@@ -879,8 +1102,9 @@ int Histogram<H>::load(std::string name, TDirectory* dir) {
 
   // Load the auxiliary histos, but destroy the ones we have currently first:
 
-  auxIndex_.clear();
-  auxVector_.clear();
+//   auxIndex_.clear();
+//   auxVector_.clear();
+  aux_.clear();
   iNum_=iDen_=-1;
 
   TIter next(dir->GetListOfKeys());
@@ -917,9 +1141,9 @@ template <class H>
 void Histogram<H>::print(std::string prefix) {
 
   if (prefix=="") {
-    std::cout<<"\nHistogram: "<<this->GetName()<<" - in ";
+    std::cout<<"\nHistogram: "<<this->GetName()<<" ("<<this<<") - in ";
   } else {
-    std::cout<< prefix <<this->GetName()<<" - in ";
+    std::cout<< prefix <<this->GetName()<<" ("<<this<<") - in ";
   }
 
   if (this->GetDirectory()!=0) {
@@ -927,9 +1151,9 @@ void Histogram<H>::print(std::string prefix) {
   } else {
     std::cout<<"memory\n";
   }
-  if (HISTOGRAM_DEBUG) std::cout<< prefix << "   at " << this << std::endl;
+  //  if (HISTOGRAM_DEBUG) std::cout<< prefix << "   at " << this << std::endl;
 
-  prefix+="   ";
+  prefix+="   \\";
   for (int i=0; i<getNAux(); i++) {
     aux(i)->print(prefix);
   }
