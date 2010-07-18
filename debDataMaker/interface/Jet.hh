@@ -27,13 +27,15 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Jet.hh,v 1.17 2009/11/13 12:04:29 aranyi Exp $
+// $Id: Jet.hh,v 1.19 2009/11/25 13:43:45 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
 
 #include "SusyAnalysis/debDataMaker/interface/VContainer.hh"
 #include "SusyAnalysis/debDataMaker/interface/JetData.hh"
+#include <algorithm>
+#include "SusyAnalysis/debDataMaker/interface/Cut.hh"
 
 namespace deb {
 
@@ -50,13 +52,42 @@ class Jet : public VContainer<JetData>{
 
   inline JetData& jet(size_t i) { return *(*this)(i); }
 
+  enum SortBy {
+    et = 0,
+    pt = 1,
+    nan = NOVAL_I
+  };
+
+ private:
+
+  SortBy sortBy_;
+
+ public:
+
+  inline SortBy& sortBy() { return sortBy_; }
+
+  void setSortBy(std::string param) {
+    sortBy_ = nan;
+    std::transform(param.begin(), param.end(), param.begin(),::tolower);
+    if (param == "et") sortBy_ = et;
+    if (param == "pt") sortBy_ = pt;
+  }
+
+  inline const char* sortedBy() {
+    if (sortBy_==et) return "et";
+    if (sortBy_==pt) return "pt";
+    return "nan";
+  }
+
   // Inherited functions to be overloaded
   void calculate ();
   int passed(std::string selection, size_t i) {
     return passed(selection, i, NULL);
   };
   int passed(std::string, size_t, std::vector<std::pair<std::string,int> >*);
-  
+
+  //int passed(std::string, size_t, std::vector
+
 };
 
 
@@ -82,7 +113,7 @@ int Jet::passed(std::string selection, size_t i,
         all("Number of Candidates               ",NOVAL_I);
     all.second=1;
     if (cutflow!=NULL) (*cutflow).push_back(all);
-    
+
     
     std::pair<std::string,int> 
         eta("|eta|                     <= 2.4   ",NOVAL_I);

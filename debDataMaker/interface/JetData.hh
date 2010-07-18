@@ -18,14 +18,11 @@
       std::string list(std::string prefix=""):
          makes a list of the variables for a TTree::Branch() definition
 
-      selectionTypes_:
-         is a map that translates the string of SelectionType to an integer
-
 */
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: JetData.hh,v 1.3 2009/06/05 19:36:38 veszpv Exp $
+// $Id: JetData.hh,v 1.4 2009/09/05 09:16:50 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -50,26 +47,13 @@ namespace deb {
     float hadfrac;
     float emfrac;
     float area;
-    int corr;   // correction type
-    int pass;
+    int corr_level; // level of correction applied on this jet collection
+    float corr; // jet energy correction factor w.r.t raw
+    float jesp; // +1 systematics of jet energy correction factor (w.r.t raw)
+    float jesm; // -1 systematics of jet energy correction factor (w.r.t raw)
 
-    JetData() {
-      clear();
-      selectionTypes_["VALID"]=VALID;
-      selectionTypes_["RefAna4JetMetMuon"]=RefAna4JetMetMuon;
-      selectionTypes_["RefAna4JetMetElectron"]=RefAna4JetMetElectron;
-      selectionTypes_["TopJetSelection"]=TopJetSelection;
-    }
+    JetData() { clear(); }
     ~JetData() { }
-
-    std::map<std::string, int> selectionTypes_;
-
-    enum JetSelectionType {
-      VALID=PASS_VALIDITY,
-      RefAna4JetMetMuon,
-      RefAna4JetMetElectron,
-      TopJetSelection
-    };
 
     void clear() {
       e=NOVAL_F;
@@ -84,8 +68,10 @@ namespace deb {
       hadfrac=NOVAL_F;
       emfrac=NOVAL_F;
       area=NOVAL_F;
-      corr=NOVAL_I;
-      pass=0; // set 0 to bit at PASS_VALIDITY (pass is invalid)
+      corr_level=NOVAL_I;
+      corr=NOVAL_F;
+      jesp=NOVAL_F;
+      jesm=NOVAL_F;
     }
 
     std::string list(std::string prefix="") {
@@ -102,8 +88,10 @@ namespace deb {
       ss << prefix << "hadfrac/F:";
       ss << prefix << "emfrac/F:";
       ss << prefix << "area/F:";
-      ss << prefix << "corr/I:";
-      ss << prefix << "pass/I";
+      ss << prefix << "corr_level/I:";
+      ss << prefix << "corr/F:";
+      ss << prefix << "jesp/F:";
+      ss << prefix << "jesm/F";
       return ss.str();
     }
 

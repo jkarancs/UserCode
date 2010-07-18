@@ -12,11 +12,16 @@
 #define DEB_CMSSW_VERSION_31X 31000
 #define DEB_CMSSW_VERSION_2XX 20000
 
+//#define DEB_DEBUG
+
   namespace deb{
   
     double const NOVAL_D=-9999.0;
     float const NOVAL_F=-9999.0;
     int const NOVAL_I=-9999;
+    unsigned int const NOVAL_i=9999;
+    long const NOVAL_L=-9999;
+    unsigned long const NOVAL_l=9999;
     const char* const NOVAL_S="N/A";
 
     int const PASS_VALIDITY=0;

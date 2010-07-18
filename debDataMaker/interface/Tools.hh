@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Tools.hh,v 1.3 2009/07/29 10:03:01 veszpv Exp $
+// $Id: Tools.hh,v 1.4 2009/09/05 09:14:42 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -81,6 +81,7 @@ template <class K1, class K2> std::string keyToString(std::pair<K1,K2> key) {
 }
 
 //-----------------------------------------------------------------------------
+// returns <variable name> -> <ROOT Type code, offset in memory>
 
 std::map<std::string,std::pair<char, size_t> > getVariableMap(std::string v) {
   std::map<std::string, std::pair<char, size_t> > ret;

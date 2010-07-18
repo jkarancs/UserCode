@@ -81,7 +81,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Container.hh,v 1.9 2009/11/02 15:00:48 aranyi Exp $
+// $Id: Container.hh,v 1.10 2009/11/12 14:13:51 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -159,7 +159,6 @@ template <class C, class D, class K=size_t> class Container : public C {
   virtual void      calculate() { 
     this->stdWarn("calculate(): virtual function is not implemented\n");
   }
-  void              calculate_pass();
   void              select();
   virtual int       passed(std::string, typename C::const_iterator);
   virtual int       passed(std::string, size_t);
@@ -449,54 +448,26 @@ void Container<C,D,K>::print(int verbose=0) {
   stdMesg("");
 }
 
-//------------------------ calculate_pass() -----------------------------------
-
-template <class C, class D, class K> void Container<C,D,K>::calculate_pass() {
-  if (!this->isValid()) return;
-  for (size_t i=0; i<this->size(); i++) {
-    this->at(i).pass=0;
-    std::map<std::string, int>::const_iterator it;
-    for (it=this->at(i).selectionTypes_.begin();
-	 it!=this->at(i).selectionTypes_.end();
-	 it++){
-      if (it->first.find("VALID")!=std::string::npos) {
-	this->at(i).pass|=1<<it->second;
-	continue;
-      }
-      int result=this->passed(it->first, i);
-      if (result!=0 && result!=1) {
-	this->stdErr("calculate_pass(): selection %s on element %d returned " \
-		     "value %d", it->first.data(), i, result);
-	this->stdErr("...is it implemented? ...are all the parameters "	\
-		     "required for this selection computed by the time " \
-		     "calculate_pass is called?\n");
-	this->print(3);
-	this->at(i).pass=0;
-	return;
-      }
-      this->at(i).pass|=result<<it->second;
-    }
-  }
-}
-
-
 //--------------------------------- select() ----------------------------------
 
 template <class C, class D, class K> void Container<C,D,K>::select() {
 
   if (!isValid()) return;
   if (selectionType_==NOVAL_S) return;
-  if (objVoid_.selectionTypes_.find(selectionType_) ==
-      objVoid_.selectionTypes_.end()) {
-    stdErr("select(): selection type %s is not set correctly, call "	\
-	   "setSelectionType(string) preferably in the constructor\n",
-	   selectionType_.data());
-    return;
-  }
   for(typename C::reverse_iterator rit=this->rbegin(); rit!=this->rend();) {
     rit++;
     typename C::iterator erase_it=rit.base();
-    if (passed(selectionType_, erase_it)==0) this->erase(erase_it);
+    int pass=passed(selectionType_, erase_it);
+    if (passed(selectionType_, erase_it)==0) {
+      this->erase(erase_it);
+      continue;
+    }
+    if (pass==NOVAL_I) {
+      stdErr("select(): error in selecting %s. One or more varibles relevant "
+	     "for the selection has undefined value, or this selection is not "
+	     "implemented at all. Interrupting...", selectionType_.data());
+      break;
+    }
   }
 }
 
