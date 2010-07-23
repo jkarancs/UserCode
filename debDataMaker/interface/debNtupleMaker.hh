@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: debNtupleMaker.hh,v 1.9 2010/07/18 12:26:23 veszpv Exp $
+// $Id: debNtupleMaker.hh,v 1.10 2010/07/23 09:27:43 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -61,7 +61,7 @@
 
 #define DEB_DEBUG
 // <include modules for debug>
-//#include "Cut.hh"
+#include "Selection.hh"
 #undef DEB_DEBUG
 
 #include "SusyAnalysis/debDataMaker/interface/JetProducer.hh"

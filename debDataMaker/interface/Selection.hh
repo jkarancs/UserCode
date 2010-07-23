@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Selection.hh,v 1.1 2010/07/18 12:32:18 veszpv Exp $
+// $Id: Selection.hh,v 1.2 2010/07/23 09:27:43 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -33,52 +33,12 @@ class SelectionBase {
   SelectionBase(std::string name, std::string object="") 
     : name_(name), object_(object) { clear(); }
 
-  SelectionBase(const SelectionBase<C>& s) { *this=s; }
+  SelectionBase(const SelectionBase& s) { *this=s; }
 
   ~SelectionBase() { }
   
-  void init() {
-    name_=NOVAL_S;
-    object_=NOVAL_S;
-    clear();
-  }
 
-  SelectionBase& operator= (const SelectionBase<C>& s) {
-    if (this==&s) return *this;
-    name_ = s.name_;
-    object_ = s.object_;
-    cuts_ = s.cuts_;
-    entries_ = s.entries_;
-    return *this;
-  }
-
-  SelectionBase& operator+= (const SelectionBase& s) {
-    if ( name_ != s.name_ ||  object_ != s.object_ ) {
-      std::cout<<"SelectionBase<C>::operator+= : trying to sum two selections"
-	" together that have different selection or object names.\n";
-      assert(0);
-    }
-
-    entries_ += s.entries_;
-
-    if (s.cuts_.size()==0) return *this;
-
-    if (cuts_.size()==0) {
-      cuts_ = s.cuts_;
-      return *this;
-    }
-
-    if (cuts_.size()!=s.cuts_.size()) {
-      std::cout<<"SelectionBase"<<name_<<" operator+= : Trying to "
-	       <<"sum up selections with different number of cuts ("
-	       <<s.cuts_.size()<<"->"<<cuts_.size()<<")\n";
-      assert(0);
-    }
-
-    for (size_t i=0; i<cuts_.size(); i++) cuts_[i]+=s.cuts_[i];
-
-    return *this;
-  }
+  SelectionBase& operator= (const SelectionBase& s);
 
  private:
   std::string name_;
@@ -86,35 +46,103 @@ class SelectionBase {
   std::vector<C> cuts_;
   unsigned int entries_;
 
+  void init();
+
  public:
-  inline const std::string& name() { return name_; }
-  inline std::string getName() { return name_; }
-  inline void setName(std::string name) { name_=name; }
+  void                          clear();
+  SelectionBase&                operator+= (const SelectionBase& s);
 
-  inline const std::string& object() { return object_; }
-  inline std::string getObject() { return object_; }
-  inline void setObject(std::string object) { object_=object; }
+  inline const std::string&     name() { return name_; }
+  inline std::string            getName() { return name_; }
+  inline void                   setName(std::string name) { name_=name; }
 
-  inline const std::vector<C>& cuts() const { return cuts_; }
-  inline const C& cut(size_t i) const { return cuts_[i]; }
+  inline const std::string&     object() { return object_; }
+  inline std::string            getObject() { return object_; }
+  inline void                   setObject(std::string object) {object_=object;}
 
-  inline unsigned int entries() const { return entries_; }
-  inline void increase_entries() { entries_++; }
+  inline const std::vector<C>&  cuts() const { return cuts_; }
+  inline const C&               cut(size_t i) const { return cuts_[i]; }
 
-  void clear() {
-    cuts_.clear();
-    entries_=0;
-  }
+  inline unsigned int           entries() const { return entries_; }
+  inline void                   increase_entries() { entries_++; }
   
-  void add(const C& cut);
+  void                          add(const C& cut);
 
-  void add(const SelectionBase<Cut>& sel);
+  void                          add(const SelectionBase<Cut>& sel);
 
-  inline int passed();
+  inline int                    passed();
 
-  void print(size_t ncols=8);
+  void                          print(size_t ncols=8);
 
 };
+
+
+//------------------------------ operator= ------------------------------------
+
+template<class C>
+SelectionBase<C>& SelectionBase<C>::operator= (const SelectionBase<C>& s) {
+
+  if (this==&s) return *this;
+  name_ = s.name_;
+  object_ = s.object_;
+  cuts_ = s.cuts_;
+  entries_ = s.entries_;
+  return *this;
+}
+
+
+//-------------------------------- init() -------------------------------------
+
+template<class C>
+void SelectionBase<C>::init() {
+  name_=NOVAL_S;
+  object_=NOVAL_S;
+  clear();
+}
+
+
+//-------------------------------- clear() ------------------------------------
+
+template<class C>
+void SelectionBase<C>::clear() {
+  cuts_.clear();
+  entries_=0;
+}
+
+
+
+//----------------------------- operator+=  -----------------------------------
+
+template<class C> 
+SelectionBase<C>& SelectionBase<C>::operator+= (const SelectionBase<C>& s) {
+
+  if ( name_ != s.name_ ||  object_ != s.object_ ) {
+    std::cout<<"SelectionBase<C>::operator+= : trying to sum two selections"
+      " together that have different selection or object names.\n";
+    assert(0);
+  }
+  
+  entries_ += s.entries_;
+
+  if (s.cuts_.size()==0) return *this;
+  
+  if (cuts_.size()==0) {
+    cuts_ = s.cuts_;
+    return *this;
+  }
+  
+  if (cuts_.size()!=s.cuts_.size()) {
+    std::cout<<"SelectionBase"<<name_<<" operator+= : Trying to "
+	     <<"sum up selections with different number of cuts ("
+	     <<s.cuts_.size()<<"->"<<cuts_.size()<<")\n";
+    assert(0);
+  }
+  
+  for (size_t i=0; i<cuts_.size(); i++) cuts_[i]+=s.cuts_[i];
+
+  return *this;
+}
+
 
 
 //-------------------------------- add(Cut) -----------------------------------
@@ -172,7 +200,7 @@ void SelectionBase<MultiCut>::add(const SelectionBase<Cut>& sel) {
 
   for (size_t i=0; i<cuts_.size(); i++) {
     #ifdef DEB_DEBUG
-    if (cuts_[i].name()!=sel.cuts().name()) {
+    if (cuts_[i].name()!=sel.cut(i).name()) {
       std::cout<<"SelectionBase<MultiCut> "<<name_<<" : Trying to add a "
 	"selection column with a different set of cuts\n";
       assert(0);
@@ -214,7 +242,7 @@ template<> void SelectionBase<Cut>::print(size_t ncols) {
 		<< cuts_[i].passed()*100./entries_ << ") ";
     }
     #ifdef DEB_DEBUG
-    std::cout << " (" << valueToString(value_) << ") ";
+    if (entries_ < 2) std::cout << " (" << cuts_[i].value_str() << ") ";
     #endif
     std::cout<<std::endl;
   }
@@ -246,7 +274,7 @@ template<> void SelectionBase<MultiCut>::print(size_t ncols) {
 		  << cuts_[i].passed(j)*100./entries_ << ") ";
       }
       #ifdef DEB_DEBUG
-      std::cout << " (" << valueToString(value_[j]) << ") ";
+      if (entries_ < 2) std::cout << " (" << cuts_[i].value_str(j) << ") ";
       #endif
       std::cout << " ";
     }

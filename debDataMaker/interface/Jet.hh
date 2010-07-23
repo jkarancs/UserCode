@@ -27,7 +27,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Jet.hh,v 1.20 2010/07/18 12:26:07 veszpv Exp $
+// $Id: Jet.hh,v 1.21 2010/07/23 09:27:43 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -217,6 +217,7 @@ int Jet::passed(std::string selection, size_t i, Selection *sel=NULL) {
     // Collect information for cut-flow analysis
     Cut pt("pt >=20.0 GeV", jet(i).pt, jet(i).pt>=20.);
     sel->add(pt);
+
     Cut eta("|eta| <2.7", jet(i).eta, fabs(jet(i).eta)<2.7);
     sel->add(eta);
 

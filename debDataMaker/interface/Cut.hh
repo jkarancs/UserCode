@@ -20,7 +20,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Jul 18 10:28:26 CET 2010
-// $Id: Cut.hh,v 1.1 2010/07/18 12:32:18 veszpv Exp $
+// $Id: Cut.hh,v 1.2 2010/07/23 09:27:43 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -34,12 +34,13 @@ namespace deb {
 
 class CutBase {
  public:
-  CutBase() { name_ = NOVAL_S; id_ = F; }
-  CutBase(std::string name) { name_ = name; id_ = F; }
+  enum ValueTypeID { I=0, i, L, l, F, D, nan };
+
+  CutBase() { name_ = NOVAL_S; id_ = nan; }
+  CutBase(std::string name, ValueTypeID id=nan) { name_ = name; id_ = id; }
   CutBase(const CutBase& c) { *this=c; }
   ~CutBase() { }
   
-  enum ValueTypeID { I, i, L, l, F, D };
 
   union ValueType {
     int I;
@@ -57,36 +58,140 @@ class CutBase {
     return *this;
   }
 
-//   bool operator!= (const CutBase &rhs) { return !((*this)==rhs); }
-//   bool operator== (const CutBase &rhs) {
-//     if (name_ != rhs.name_) return false;
-//     return (id_ != rhs.id_) ? false : true;
-//   }
-
  private:
   std::string name_;
 
  protected:
   ValueTypeID id_;
 
+  // a helper for operator+= in derived classes, 
+  // asserts c compatibility with *this
+  inline void               assert_equal(const CutBase& c);
+
  public:
-  const std::string& name() const { return name_; }
-  std::string getName() { return name_; }
-  void setName(std::string name) { name_=name; }
+  // Accessors and modifiers:
+  const std::string&        name() const { return name_; }
+  std::string               getName() { return name_; }
+  void                      setName(std::string name) { name_=name; }
+  ValueTypeID               id() const { return id_; }
 
-  ValueTypeID id() const { return id_; }
+  // Static functions:
+  template<class T> 
+  static inline ValueTypeID valueTypeID();
 
-  inline std::string valueToString(const ValueType& value);
+  template<class T> 
+  static inline ValueTypeID valueTypeID(T& t) { return valueTypeID<T>(); }
 
-  template<class T> static inline void check(const T& t);
+  template<class T> 
+  static inline ValueType   valueType(T);
 
-  template<class T> static inline ValueType castToValue(T);
+  template<class T> 
+  static inline void        check(const T& t); // assert that (t!=NOVAL)
 
-  inline void assert_equal(const CutBase& c);
+
+  // Misc:
+  inline std::string        valueToString(const ValueType& value);
+
 
 };
 
-// ------------------------------- valueToString ------------------------------
+
+// ---------------------- CutBase::assert_equal -------------------------------
+
+inline void CutBase::assert_equal(const CutBase& c) {
+  #ifdef DEB_DEBUG
+  if (name_!=c.name_) {
+    std::cout<<"(Multi)Cut::operator+= : Trying to sum up two MultiCuts with "
+      "different names (this function should be called from MultiSelection"
+      "::operator+=)\n";
+    assert(name_==c.name_);
+  }
+  #endif
+  if (id_!=c.id_) {
+    std::cout<<"(Multi)Cut::operator+= : Trying to sum up two MultiCuts with "
+      "different value types (this function should be called from "
+      "MultiSelection::operator+=)\n";
+    assert(id_==c.id_);
+  }
+}
+
+
+// ---------------------- CutBase::valueTypeID --------------------------------
+
+template<> 
+CutBase::ValueTypeID CutBase::valueTypeID<int>() { return I; }
+
+template<> 
+CutBase::ValueTypeID CutBase::valueTypeID<unsigned int>() { return i; }
+
+template<> 
+CutBase::ValueTypeID CutBase::valueTypeID<long>() { return L; }
+
+template<> 
+CutBase::ValueTypeID CutBase::valueTypeID<unsigned long>() { return l; }
+
+template<> 
+CutBase::ValueTypeID CutBase::valueTypeID<float>() { return F; }
+
+template<> 
+CutBase::ValueTypeID CutBase::valueTypeID<double>() { return D; }
+
+
+// ---------------------- CutBase::valueType() ------------------------------
+
+template<> CutBase::ValueType CutBase::valueType(int I) {
+  ValueType v;
+  v.I=I;
+  return v;
+}
+
+
+template<> CutBase::ValueType CutBase::valueType(unsigned int i) {
+  ValueType v;
+  v.i=i;
+  return v;
+}
+
+
+template<> CutBase::ValueType CutBase::valueType(long L) {
+  ValueType v;
+  v.L=L;
+  return v;
+}
+
+
+template<> CutBase::ValueType CutBase::valueType(unsigned long l) {
+  ValueType v;
+  v.l=l;
+  return v;
+}
+
+
+template<> CutBase::ValueType CutBase::valueType(float F) {
+  ValueType v;
+  v.F=F;
+  return v;
+}
+
+
+template<> CutBase::ValueType CutBase::valueType(double D) {
+  ValueType v;
+  v.D=D;
+  return v;
+}
+
+
+// ------------------------ CutBase::check() ----------------------------------
+
+template<> void CutBase::check(const int& t) { assert(t!=NOVAL_I); }
+template<> void CutBase::check(const unsigned int& t) { assert(t!=NOVAL_i); }
+template<> void CutBase::check(const long& t) { assert(t!=NOVAL_L); }
+template<> void CutBase::check(const unsigned long& t) { assert(t!=NOVAL_l); }
+template<> void CutBase::check(const float& t) { assert(t!=NOVAL_F); }
+template<> void CutBase::check(const double& t) { assert(t!=NOVAL_D); }
+
+
+// ---------------------- CutBase::valueToString ------------------------------
   
 std::string CutBase::valueToString(const ValueType& value) {
   std::ostringstream ss;
@@ -102,76 +207,7 @@ std::string CutBase::valueToString(const ValueType& value) {
   return ss.str();
 }
 
-// --------------------------------- check() ----------------------------------
 
-template<> void CutBase::check(const int& t) { assert(t!=NOVAL_I); }
-template<> void CutBase::check(const unsigned int& t) { assert(t!=NOVAL_i); }
-template<> void CutBase::check(const long& t) { assert(t!=NOVAL_L); }
-template<> void CutBase::check(const unsigned long& t) { assert(t!=NOVAL_l); }
-template<> void CutBase::check(const float& t) { assert(t!=NOVAL_F); }
-template<> void CutBase::check(const double& t) { assert(t!=NOVAL_D); }
-
-// ------------------------------- castToValue() ------------------------------
-
-template<> CutBase::ValueType CutBase::castToValue(int I) {
-  ValueType v;
-  v.I=I;
-  return v;
-}
-
-
-template<> CutBase::ValueType CutBase::castToValue(unsigned int i) {
-  ValueType v;
-  v.i=i;
-  return v;
-}
-
-
-template<> CutBase::ValueType CutBase::castToValue(long L) {
-  ValueType v;
-  v.L=L;
-  return v;
-}
-
-
-template<> CutBase::ValueType CutBase::castToValue(unsigned long l) {
-  ValueType v;
-  v.l=l;
-  return v;
-}
-
-
-template<> CutBase::ValueType CutBase::castToValue(float F) {
-  ValueType v;
-  v.F=F;
-  return v;
-}
-
-
-template<> CutBase::ValueType CutBase::castToValue(double D) {
-  ValueType v;
-  v.D=D;
-  return v;
-}
-
-// ------------------------------- assert_equal -------------------------------
-
-inline void CutBase::assert_equal(const CutBase& c) {
-  #ifdef DEB_DEBUG
-  if (name_!=c.name_) {
-    std::cout<<"MultiCut::operator+= : Trying to sum up two MultiCuts with "
-      "different names (this function should be called from MultiSelection"
-      "::operator+=)\n";
-    assert(name_==c.name_);
-  }
-  #endif
-  if (id_!=c.id_) {
-    std::cout<<"MultiCut::operator+= : Trying to sum up two MultiCuts with "
-      "different value types (this function should be called from "
-      "MultiSelection::operator+=)\n";
-    assert(id_==c.id_);
-  }
-}
 
 //-----------------------------------------------------------------------------
 
@@ -189,83 +225,40 @@ class Cut : public CutBase{
 
   Cut& operator= (const Cut& c);
 
-  // should be a friend with Selection
-  Cut& operator+= (const Cut& c) {    
-    static_cast<CutBase*>(this)->assert_equal(c);
-    int passed=passed_+c.passed_;
-    init_();
-    passed_=passed;
-    return *this;
-  }
-
  private:
   ValueType value_;
   int passed_;
   void init_();
 
  public:
-  inline size_t size() const { return 1; }
-  template<class T> inline T value() const;
-  std::string value_str() { return valueToString(value_); }
-  int passed() const { return passed_; }
 
-  void print();
+  // should be a friend with Selection
+  Cut&                        operator+= (const Cut& c);
+
+  inline size_t               size() const { return 1; }
+
+  template<class T> inline T  value() const;
+
+  std::string                 value_str() { return valueToString(value_); }
+
+  int                         passed() const { return passed_; }
+
+  void                        print();
 };
 
   
-// --------------------------------- Constructor ------------------------------
+// ---------------------------- Cut::Constructor ------------------------------
 
 
-template<> 
-Cut::Cut(std::string name, int value, int passed) : CutBase(name) {
-  assert(value!=NOVAL_I);
-  value_.I = value;
-  id_ = I;
-  passed_ = passed;
-}
-
-template<> 
-Cut::Cut(std::string name, unsigned int value, int passed) : CutBase(name) {
-  assert(value!=NOVAL_i);
-  value_.i = value;
-  id_ = i;
-  passed_ = passed;
-}
-
-template<> 
-Cut::Cut(std::string name, long value, int passed) : CutBase(name) {
-  assert(value!=NOVAL_L);
-  value_.L = value;
-  id_ = L;
-  passed_ = passed;
-}
-
-template<> 
-Cut::Cut(std::string name, unsigned long value, int passed) : CutBase(name) {
-  assert(value!=NOVAL_l);
-  value_.l = value;
-  id_ = l;
-  passed_ = passed;
-}
-
-template<> 
-Cut::Cut(std::string name, float value, int passed) : CutBase(name) {
-  assert(value!=NOVAL_F);
-  value_.F = value;
-  id_ = F;
-  passed_ = passed;
-}
-
-template<> 
-Cut::Cut(std::string name, double value, int passed) : CutBase(name) {
-  assert(value!=NOVAL_D);
-  value_.D = value;
-  id_ = D;
+template<class T> Cut::Cut(std::string name, T value, int passed) 
+  : CutBase(name, valueTypeID<T>()) {
+  check(value);
+  value_ = valueType(value);
   passed_ = passed;
 }
 
 
-// --------------------------------- init_() ----------------------------------
+// ---------------------------- Cut::init_() ----------------------------------
 
 void Cut::init_() {
   switch (id_) {
@@ -281,7 +274,7 @@ void Cut::init_() {
 }
   
 
-// --------------------------------- operator= --------------------------------
+// ---------------------------- Cut::operator= --------------------------------
 
 Cut& Cut::operator= (const Cut& c) {
   if (this==&c) return *this;
@@ -292,7 +285,19 @@ Cut& Cut::operator= (const Cut& c) {
 }
 
 
-// --------------------------------- value() ----------------------------------
+// ---------------------------- Cut::operator+= -------------------------------
+
+Cut& Cut::operator+= (const Cut& c) {    
+  //static_cast<CutBase*>(this)->assert_equal(c);
+  assert_equal(c);
+  int passed=passed_+c.passed_;
+  init_();
+  passed_=passed;
+  return *this;
+}
+
+
+// ---------------------------- Cut::value() ----------------------------------
 
 template<> Cut::ValueType Cut::value() const { return value_; }
 template<> int Cut::value() const { return value_.I; }
@@ -303,7 +308,7 @@ template<> float Cut::value() const { return value_.F; }
 template<> double Cut::value() const { return value_.D; }
 
 
-// --------------------------------- print() ----------------------------------
+// ---------------------------- Cut::print() ----------------------------------
 
 void Cut::print() {
   std::cout<<std::setw(20)<<name()<<" :\t"<< passed_;
@@ -325,130 +330,45 @@ class MultiCut : public CutBase {
  public:
   MultiCut() : CutBase() { init_(); }
   MultiCut(const MultiCut& c) : CutBase(c) { *this=c; }
-  MultiCut(const Cut& c) : CutBase(c) {
-    init_();
-    value_.push_back(c.value<ValueType>());
-    passed_.push_back(c.passed());
-  }
+  MultiCut(const Cut& c);
   template<class T> MultiCut (std::string, T, int);
   ~MultiCut() { }
 
   MultiCut& operator= (const MultiCut& c);
 
-  // should be a friend with selection
-  MultiCut& operator+= (const MultiCut& c) {
-
-    static_cast<CutBase*>(this)->assert_equal(c);
-    size_t multi=c.size();
-
-    if (c.size() > size()) {
-      for (size_t i=size(); i<c.size(); i++) passed_.push_back(c.passed(i));
-      multi=size();
-    }
-
-    for (size_t i=0; i<multi; i++) passed_[i]+=c.passed_[i];
-
-    value_.clear();
-    return *this;
-  }
 
  private:
   std::vector<ValueType> value_;
   std::vector<int> passed_;
-  void init_();
 
- public:
-  inline size_t size() const { return passed_.size(); }
-  template<class T> inline T value(size_t i) const;
-  std::string value_str(size_t i) { return valueToString(value_[i]); }
-  int passed(size_t i) const { return passed_[i]; }
-
-  void add(ValueType value, int passed) {
-    value_.push_back(value);
-    passed_.push_back(passed);
+  void init_() { 
+    value_.clear(); 
+    passed_.clear(); 
   }
 
-  void print();
+
+ public:
+
+  void                 add(ValueType value, int passed);
+
+  // should be a friend with selection
+  MultiCut&            operator+= (const MultiCut& c);
+
+  inline size_t        size() const { return passed_.size(); }
+
+  template<class T> 
+  inline T             value(size_t i) const;
+
+  std::string          value_str(size_t i) { return valueToString(value_[i]); }
+
+  int                  passed(size_t i) const { return passed_[i]; }
+
+  void                 print();
 };
 
   
-// --------------------------------- Constructor ------------------------------
 
-
-template<> 
-MultiCut::MultiCut(std::string name, int value, int passed) : CutBase(name) {
-  assert(value!=NOVAL_I);
-  ValueType v;
-  v.I = value;
-  id_ = I;
-  value_.push_back(v);
-  passed_.push_back(passed);
-}
-
-template<> 
-MultiCut::MultiCut(std::string name, unsigned int value, int passed) 
-  : CutBase(name) {
-  assert(value!=NOVAL_i);
-  ValueType v;
-  v.i = value;
-  id_ = i;
-  value_.push_back(v);
-  passed_.push_back(passed);
-}
-
-template<> 
-MultiCut::MultiCut(std::string name, long value, int passed) : CutBase(name) {
-  assert(value!=NOVAL_L);
-  ValueType v;
-  v.L = value;
-  id_ = L;
-  value_.push_back(v);
-  passed_.push_back(passed);
-}
-
-template<> 
-MultiCut::MultiCut(std::string name, unsigned long value, int passed) 
-  : CutBase(name) {
-  assert(value!=NOVAL_l);
-  ValueType v;
-  v.l = value;
-  id_ = l;
-  value_.push_back(v);
-  passed_.push_back(passed);
-}
-
-template<> 
-MultiCut::MultiCut(std::string name, float value, int passed) : CutBase(name) {
-  assert(value!=NOVAL_F);
-//   ValueType v;
-//   v.F = value;
-//   id_ = F;
-//   value_.push_back(v);
-  value_.push_back(castToValue(value));
-  passed_.push_back(passed);
-}
-
-template<> 
-MultiCut::MultiCut(std::string name, double value, int passed) 
-  : CutBase(name) {
-  assert(value!=NOVAL_D);
-  ValueType v;
-  v.D = value;
-  id_ = D;
-  value_.push_back(v);
-  passed_.push_back(passed);
-}
-
-
-// --------------------------------- init_() ----------------------------------
-
-void MultiCut::init_() {
-  value_.clear();
-  passed_.clear();
-}
-  
-
-// --------------------------------- operator= --------------------------------
+// ----------------------- MultiCut::operator= --------------------------------
 
 MultiCut& MultiCut::operator= (const MultiCut& c) {
   *(static_cast<CutBase*> (this)) = c;
@@ -458,7 +378,54 @@ MultiCut& MultiCut::operator= (const MultiCut& c) {
 }
 
 
-// --------------------------------- value() ----------------------------------
+// ----------------------- MultiCut::Constructors -----------------------------
+
+MultiCut::MultiCut(const Cut& c) : CutBase(c) {
+  init_();
+  value_.push_back(c.value<ValueType>());
+  passed_.push_back(c.passed());
+}
+
+
+
+template<class T> 
+MultiCut::MultiCut(std::string name, T value, int passed) 
+  : CutBase(name, valueTypeID<T>()) {
+  check(value);
+  value_.push_back(valueType(value));
+  passed_.push_back(passed);
+}
+
+
+
+// ---------------------- MultiCut::add() -------------------------------------
+
+void MultiCut::add(ValueType value, int passed) {
+  value_.push_back(value);
+  passed_.push_back(passed);
+}
+
+
+
+// ----------------------- MultiCut::operator+= -------------------------------
+
+MultiCut& MultiCut::operator+= (const MultiCut& c) {
+  assert_equal(c);
+  size_t multi=c.size();
+  
+  if (c.size() > size()) {
+    for (size_t i=size(); i<c.size(); i++) passed_.push_back(c.passed(i));
+    multi=size();
+  }
+  
+  for (size_t i=0; i<multi; i++) passed_[i]+=c.passed_[i];
+
+  value_.clear();
+  return *this;
+}
+
+
+// ----------------------- MultiCut::value() ----------------------------------
 
 template<> 
 MultiCut::ValueType MultiCut::value(size_t i) const { return value_[i]; }
@@ -482,7 +449,7 @@ template<>
 double MultiCut::value(size_t i) const { return value_[i].D; }
 
 
-// --------------------------------- print() ----------------------------------
+// ----------------------- MultiCut::print() ----------------------------------
 
 void MultiCut::print() {
   std::cout<<std::setw(20)<<name()<<" :";
