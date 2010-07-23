@@ -81,7 +81,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Container.hh,v 1.10 2009/11/12 14:13:51 aranyi Exp $
+// $Id: Container.hh,v 1.11 2010/07/18 12:26:04 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -89,6 +89,7 @@
 #include "TTree.h"
 #include "CONST.hh"
 #include "Tools.hh"
+#include "Selection.hh"
 
 namespace deb {
 
@@ -160,12 +161,10 @@ template <class C, class D, class K=size_t> class Container : public C {
     this->stdWarn("calculate(): virtual function is not implemented\n");
   }
   void              select();
-  virtual int       passed(std::string, typename C::const_iterator);
-  virtual int       passed(std::string, size_t);
-  virtual int       passed(std::string, typename C::const_iterator, 
-			   std::vector<std::pair<std::string,int> >*);
-  virtual int       passed(std::string, size_t, 
-			   std::vector<std::pair<std::string,int> >*);
+//   virtual int       passed(std::string, typename C::const_iterator);
+//   virtual int       passed(std::string, size_t);
+  virtual int       passed(std::string, typename C::const_iterator,Selection*);
+  virtual int       passed(std::string, size_t, Selection*);
 };
 
 //--------------------------------- Constructor -------------------------------
@@ -450,15 +449,23 @@ void Container<C,D,K>::print(int verbose=0) {
 
 //--------------------------------- select() ----------------------------------
 
+// Add also a select(MuliSelection& ) function, too!
+
 template <class C, class D, class K> void Container<C,D,K>::select() {
 
   if (!isValid()) return;
   if (selectionType_==NOVAL_S) return;
+  #ifdef DEB_DEBUG
+  stdMesg("Container::select() : selecting...\n");
+  #endif
   for(typename C::reverse_iterator rit=this->rbegin(); rit!=this->rend();) {
     rit++;
     typename C::iterator erase_it=rit.base();
     int pass=passed(selectionType_, erase_it);
     if (passed(selectionType_, erase_it)==0) {
+      #ifdef DEB_DEBUG
+      stdMesg("Jet %d did not pass selection\n", erase_it-this->begin());
+      #endif
       this->erase(erase_it);
       continue;
     }
@@ -466,7 +473,7 @@ template <class C, class D, class K> void Container<C,D,K>::select() {
       stdErr("select(): error in selecting %s. One or more varibles relevant "
 	     "for the selection has undefined value, or this selection is not "
 	     "implemented at all. Interrupting...", selectionType_.data());
-      break;
+      assert(0);
     }
   }
 }
@@ -474,31 +481,31 @@ template <class C, class D, class K> void Container<C,D,K>::select() {
 
 //--------------------------------- passed() ----------------------------------
 
+// template <class C, class D, class K>
+// int Container<C,D,K>::passed(std::string selection, 
+// 			      typename C::const_iterator it) {
+//   stdErr("passed(): virtual function passed() has not been implemented\n");
+//   return NOVAL_I;
+// }
+
+
+// template <class C, class D, class K>
+// int Container<C,D,K>::passed(std::string selection, size_t i) {
+//   stdErr("passed(): virtual function passed() has not been implemented\n");
+//   return NOVAL_I;
+// }
+
 template <class C, class D, class K>
 int Container<C,D,K>::passed(std::string selection, 
-			      typename C::const_iterator it) {
-  stdErr("passed(): virtual function passed() has not been implemented\n");
-  return NOVAL_I;
-}
-
-
-template <class C, class D, class K>
-int Container<C,D,K>::passed(std::string selection, size_t i) {
-  stdErr("passed(): virtual function passed() has not been implemented\n");
-  return NOVAL_I;
-}
-
-template <class C, class D, class K>
-int Container<C,D,K>::passed(std::string selection, 
-			      typename C::const_iterator it,
-  std::vector<std::pair<std::string,int> > *cutflow) {
+			     typename C::const_iterator it,
+			     Selection* stat=NULL) {
   stdErr("passed(): virtual function passed() has not been implemented\n");
   return NOVAL_I;
 }
 
 template <class C, class D, class K>
 int Container<C,D,K>::passed(std::string selection, size_t i,
-  std::vector<std::pair<std::string,int> > *cutflow) {
+			     Selection* stat=NULL){
   stdErr("passed(): virtual function passed() has not been implemented\n");
   return NOVAL_I;
 }

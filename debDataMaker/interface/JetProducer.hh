@@ -31,7 +31,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: JetProducer.hh,v 1.3 2009/07/29 10:09:06 veszpv Exp $
+// $Id: JetProducer.hh,v 1.4 2010/07/18 12:26:12 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -44,7 +44,6 @@
 #include "DataFormats/JetReco/interface/GenJet.h"
 #include "DataFormats/JetReco/interface/CaloJet.h"
 
-//#define DEB_DEBUG
 
 namespace deb {
 

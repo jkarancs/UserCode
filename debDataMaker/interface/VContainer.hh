@@ -16,7 +16,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: VContainer.hh,v 1.3 2009/11/02 15:00:54 aranyi Exp $
+// $Id: VContainer.hh,v 1.4 2009/11/12 14:41:12 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -62,39 +62,38 @@ public:
 //     return ss.str();
 //   }
 
-  virtual int      passed(std::string,typename std::vector<D>::const_iterator);
-  virtual int      passed(std::string, size_t);
-  virtual int      passed(std::string, typename std::vector<D>::const_iterator, 
-			  std::vector<std::pair<std::string,int> >*);
-  virtual int      passed(std::string, size_t, 
-			  std::vector<std::pair<std::string,int> >*);
+//   virtual int      passed(std::string,typename std::vector<D>::const_iterator);
+//   virtual int      passed(std::string, size_t);
+  virtual int      passed(std::string, typename std::vector<D>::const_iterator,
+			  Selection*);
+  virtual int      passed(std::string, size_t, Selection*);
 };
 
 
 //---------------------------------- passed() ---------------------------------
 
-template <class D>
-int VContainer<D>::passed(std::string selection, 
-			  typename std::vector<D>::const_iterator it){
-  return this->passed(selection, it-this->begin());
-}
+// template <class D>
+// int VContainer<D>::passed(std::string selection, 
+// 			  typename std::vector<D>::const_iterator it){
+//   return this->passed(selection, it-this->begin());
+// }
 
 
-template <class D> int VContainer<D>::passed(std::string selection, size_t i) {
-  this->stdErr("passed(): virtual function passed() has not been "	\
-	       "implemented\n");
-  return NOVAL_I;
-}
+// template <class D> int VContainer<D>::passed(std::string selection, size_t i) {
+//   this->stdErr("passed(): virtual function passed() has not been "	\
+// 	       "implemented\n");
+//   return NOVAL_I;
+// }
 
 template <class D>
 int VContainer<D>::passed(std::string selection, 
 			  typename std::vector<D>::const_iterator it,
-			  std::vector<std::pair<std::string,int> > *cutflow){
-  return this->passed(selection, it-this->begin(),cutflow);
+			  Selection* stat=NULL){
+  return this->passed(selection, it-this->begin(),stat);
 }
 
 template <class D> int VContainer<D>::passed(std::string selection, size_t i,
-			   std::vector<std::pair<std::string,int> > *cutflow) {
+					     Selection* stat) {
   this->stdErr("passed(): virtual function passed() has not been "	\
 	       "implemented\n");
   return NOVAL_I;

@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: debNtupleMaker.hh,v 1.8 2009/12/10 14:41:49 aranyi Exp $
+// $Id: debNtupleMaker.hh,v 1.9 2010/07/18 12:26:23 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -59,6 +59,11 @@
 #include "TMath.h"
 #include "TLorentzVector.h"
 
+#define DEB_DEBUG
+// <include modules for debug>
+//#include "Cut.hh"
+#undef DEB_DEBUG
+
 #include "SusyAnalysis/debDataMaker/interface/JetProducer.hh"
 // #include "SusyAnalysis/debDataMaker/interface/MetProducer.hh"
 // #include "SusyAnalysis/debDataMaker/interface/DeltaR.hh"
@@ -70,6 +75,7 @@
 // #include "SusyAnalysis/debDataMaker/interface/Beamspot.hh"
 // #include "SusyAnalysis/debDataMaker/interface/TriggerProducer.hh"
 
+
 using namespace deb;
 
 class debNtupleMaker : public edm::EDFilter {
@@ -78,7 +84,8 @@ public:
   ~debNtupleMaker();
 
   JetProducer<pat::Jet> pjet;
-  TTree *tree;  
+  TTree *tree;
+  MultiSelection* pjet_total;
 
 private:
   virtual void beginJob();
