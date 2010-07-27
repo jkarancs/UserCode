@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Selection.hh,v 1.2 2010/07/23 09:27:43 veszpv Exp $
+// $Id: Selection.hh,v 1.3 2010/07/23 14:10:27 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -28,23 +28,30 @@ namespace deb {
 template<class C>
 class SelectionBase {
  public:
+  enum  SelectionOp { individual=1, sequential=2, complementary=4 };
+
   SelectionBase() { init(); }
 
-  SelectionBase(std::string name, std::string object="") 
-    : name_(name), object_(object) { clear(); }
+  SelectionBase(std::string name, 
+		SelectionOp op=individual,
+		std::string object=NOVAL_S)
+    : name_(name), op_(op), object_(object) { clear(); }
 
   SelectionBase(const SelectionBase& s) { *this=s; }
 
   ~SelectionBase() { }
   
+  template<class CC> friend class SelectionBase;
 
   SelectionBase& operator= (const SelectionBase& s);
 
  private:
   std::string name_;
+  SelectionOp op_;
   std::string object_;
   std::vector<C> cuts_;
   unsigned int entries_;
+
 
   void init();
 
@@ -66,6 +73,8 @@ class SelectionBase {
   inline unsigned int           entries() const { return entries_; }
   inline void                   increase_entries() { entries_++; }
   
+  SelectionOp                   op() { return op_; }
+
   void                          add(const C& cut);
 
   void                          add(const SelectionBase<Cut>& sel);
@@ -73,6 +82,10 @@ class SelectionBase {
   inline int                    passed();
 
   void                          print(size_t ncols=8);
+
+  void                          analyze(SelectionBase& result, SelectionOp op);
+
+  //void                          fill(Plot<TH1>& plot);
 
 };
 
@@ -85,6 +98,7 @@ SelectionBase<C>& SelectionBase<C>::operator= (const SelectionBase<C>& s) {
   if (this==&s) return *this;
   name_ = s.name_;
   object_ = s.object_;
+  op_ = s.op_;
   cuts_ = s.cuts_;
   entries_ = s.entries_;
   return *this;
@@ -97,6 +111,7 @@ template<class C>
 void SelectionBase<C>::init() {
   name_=NOVAL_S;
   object_=NOVAL_S;
+  op_=individual;
   clear();
 }
 
@@ -116,15 +131,22 @@ void SelectionBase<C>::clear() {
 template<class C> 
 SelectionBase<C>& SelectionBase<C>::operator+= (const SelectionBase<C>& s) {
 
-  if ( name_ != s.name_ ||  object_ != s.object_ ) {
+  if ( name_ != s.name_ ||  object_ != s.object_ || op_ != s.op_ ) {
     std::cout<<"SelectionBase<C>::operator+= : trying to sum two selections"
-      " together that have different selection or object names.\n";
+      " together that have different selection or object names, or different"
+      " representations.\n";
     assert(0);
   }
-  
+
+  if (cuts_.size()!=0 && entries_==0) entries_=1;
+ 
   entries_ += s.entries_;
 
-  if (s.cuts_.size()==0) return *this;
+  if (s.cuts_.size()==0) {
+    return *this;
+  } else {
+    if (s.entries_==0) ++entries_;
+  }
   
   if (cuts_.size()==0) {
     cuts_ = s.cuts_;
@@ -164,11 +186,19 @@ void SelectionBase<C>::add(const C& cut) {
 
 template<> 
 void SelectionBase<Cut>::add(const SelectionBase<Cut>& sel) {
-  if (entries_!=sel.entries()) {
+  if ( op_ != individual || sel.op_ != individual ) {
+    std::cout<<"Selection "<<name_<<" : Trying to add columns with wrong"
+      "representations\n";
+    assert(op_==individual);
+    assert(sel.op_==individual);
+  }
+
+  if ( entries_!=sel.entries() && (entries_ > 1 || sel.entries_ > 1) ) {
     std::cout<<"Selection "<<name_<<" : Trying to add a "
       "selection column with a different number of entries\n";
     assert(0);
   }
+
   cuts_.insert(cuts_.end(), sel.cuts().begin(), sel.cuts().end());
   return;
 }
@@ -176,8 +206,14 @@ void SelectionBase<Cut>::add(const SelectionBase<Cut>& sel) {
 
 template<> 
 void SelectionBase<MultiCut>::add(const SelectionBase<Cut>& sel) {
+  if ( op_ != individual || sel.op_ != SelectionBase<Cut>::individual ) {
+    std::cout<<"Selection "<<name_<<" : Trying to add columns with wrong"
+      "representations\n";
+    assert(op_==individual);
+    assert(sel.op_==SelectionBase<Cut>::individual);
+  }
 
-  if (entries_!=sel.entries()) {
+  if ( entries_!=sel.entries() && (entries_ > 1 || sel.entries_ > 1) ) {
     std::cout<<"MultiSelection "<<name_<<" : Trying to add a "
       "selection column with different number of entries\n";
     assert(0);
@@ -216,8 +252,18 @@ void SelectionBase<MultiCut>::add(const SelectionBase<Cut>& sel) {
 //------------------------------- passed()-------------------------------------
 
 template<> int SelectionBase<Cut>::passed() {
-  for (size_t i=0; i<cuts_.size(); i++) if (cuts_[i].passed() == 0) return 0;
-  return 1;
+  assert(entries_<2);
+  assert(cuts_.size()!=0);
+
+  if (op_ == sequential) return (cuts_[cuts_.size()-1].passed()==0) ? 0 : 1;
+
+  if (op_ == individual) {
+    for (size_t i=0; i<cuts_.size(); i++) if (cuts_[i].passed() == 0) return 0;
+    return 1;
+  }
+
+  assert(0);
+  return NOVAL_I;
 }
 
 
@@ -234,6 +280,7 @@ template<> int SelectionBase<MultiCut>::passed() {
 template<> void SelectionBase<Cut>::print(size_t ncols) {
   std::cout<<"\nSelection report: "<<name_<<"\n";
   std::cout<<"Entries: "<<entries_<<std::endl;
+  std::cout<<"Selection option: "<<op_<<std::endl;
   std::cout<<std::setw(20)<<"\t"<<object_<<"\n";
   for (size_t i=0; i<cuts_.size(); i++) {
     std::cout<<std::setw(20)<<cuts_[i].name()<<" :\t"<< cuts_[i].passed();
@@ -255,7 +302,11 @@ template<> void SelectionBase<MultiCut>::print(size_t ncols) {
 
   std::cout<<"\nMultiSelection report: "<<name_<<"\n";
   std::cout<<"Entries: "<<entries_<<std::endl;
-  if (cuts_.size()==0) return;
+  std::cout<<"Selection option: "<<op_<<std::endl;
+  if (cuts_.size()==0) {
+    std::cout<<std::endl;
+    return;
+  }
 
   std::cout<<std::setw(20);
   for (size_t i=0; i<cuts_[0].size() && i<ncols; i++) {
@@ -284,8 +335,98 @@ template<> void SelectionBase<MultiCut>::print(size_t ncols) {
 }
 
 
-//-----------------------------------------------------------------------------
 
+//------------------------------- analyze() -----------------------------------
+
+template<class C> 
+void SelectionBase<C>::analyze(SelectionBase<C>& result, SelectionOp op) {
+
+  if (entries_ > 1) {
+    std::cout << "(Multi)Selection::analyze() : cannot analyze a Selection"
+      " containing the results of multiple events.";
+    assert(entries_ > 1);
+  }
+
+  if (op_ != individual) {
+    std::cout<<"(Multi)Selection::analyze() : cannot analyze this kind of "
+	     <<"selection\n";
+    assert(op_!=individual);
+  }
+
+  if (cuts_.size()==0) {
+    result=*this;
+    result.op_ = op;
+    return;
+  }
+
+  if (op == op_) {
+    result=*this;
+    return;
+  }
+
+  if (op == sequential) {
+    result=*this; // WARNING: result and this may be the same array
+    result.op_=op;
+    for (size_t j=0; j<cuts_[0].size(); j++) {
+      size_t i=0;
+      for ( ; i<cuts_.size(); i++) if (cuts_[i].passed_[j]==0) break;
+      if (i==cuts_.size()) continue;
+      for (i++; i<cuts_.size(); i++) result.cuts_[i].passed_[j]=0;
+    }
+    return;
+  }
+
+  if (op == complementary) {
+    result=*this; // WARNING: result and this may be the same array
+    result.op_=op;
+    for (size_t j=0; j<cuts_[0].size(); j++) {
+      size_t i=0;
+      for ( ; i<cuts_.size(); i++) if (cuts_[i].passed_[j]==0) break;
+      if (i==cuts_.size()) continue;
+      size_t i_passed=i;
+      for (i++; i<cuts_.size(); i++) { 
+	if (cuts_[i].passed_[j]==0) break; 
+	result.cuts_[i].passed_[j]=0;
+      }
+      if (i==cuts_.size()) {
+	result.cuts_[i_passed].passed_[j]=1;
+      } else {
+	for (i++; i<cuts_.size(); i++) result.cuts_[i].passed_[j]=0;
+      }
+      for (i=0; i<i_passed; i++) result.cuts_[i].passed_[j]=0;
+    }
+    return;
+  }
+
+}
+
+
+//------------------------------- plot() --------------------------------------
+
+// template<class C> void SelectionBase<C>::fill(Plot<TH1>& plot) {
+
+//   if (plot.size()==0) {
+
+//     for (size_t i=0; i<cuts_.size(); i++) {
+//       for (size_t j=0; j<cuts_[i].size(); j++) {
+// 	TH1* h=cuts_[i].create_histogram(j);
+	
+//       }
+//     }
+
+//   } else {
+//     #ifdef DEB_DEBUG
+    
+//     #endif
+//   }
+
+  
+// }
+
+
+
+
+//-----------------------------------------------------------------------------
 
 
 

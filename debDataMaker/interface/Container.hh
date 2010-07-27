@@ -81,7 +81,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Container.hh,v 1.11 2010/07/18 12:26:04 veszpv Exp $
+// $Id: Container.hh,v 1.12 2010/07/23 09:27:43 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -161,6 +161,9 @@ template <class C, class D, class K=size_t> class Container : public C {
     this->stdWarn("calculate(): virtual function is not implemented\n");
   }
   void              select();
+
+  void              report(MultiSelection& event_report);
+
 //   virtual int       passed(std::string, typename C::const_iterator);
 //   virtual int       passed(std::string, size_t);
   virtual int       passed(std::string, typename C::const_iterator,Selection*);
@@ -477,6 +480,65 @@ template <class C, class D, class K> void Container<C,D,K>::select() {
     }
   }
 }
+
+
+template <class C, class D, class K> 
+void Container<C,D,K>::report(MultiSelection& event_report) {
+  #ifdef DEB_DEBUG
+  stdMesg("\n\nContainer::report() running...\n");
+  #endif
+  if (!isValid()) return;
+
+  if (event_report.name()==NOVAL_S) event_report.setName(selectionType_);
+  if (event_report.name()==NOVAL_S) return;
+  if (event_report.object()==NOVAL_S) event_report.setObject(name_);
+
+  MultiSelection rep(event_report.name(), 
+		     MultiSelection::individual,
+		     event_report.object());
+  
+  for (typename C::iterator it=this->begin(); it!=this->end(); it++) {
+    Selection sel(event_report.name(), 
+		  Selection::individual, 
+		  name_+"_"+keyToString(key(it)));
+    Cut cand("Candidate", it-this->begin(), 1);
+    sel.add(cand);
+    int passed_with_cutflow = passed(event_report.name(), it, &sel);
+    int passed_without_cutflow = passed(event_report.name(), it);
+    assert(passed_with_cutflow == passed_without_cutflow);
+    rep.add(sel);
+    #ifdef DEB_DEBUG
+    std::cout<<"Container::report() : SELECTION REPORT:\n";
+    sel.print();
+    #endif
+  }
+  rep.increase_entries();
+  #ifdef DEB_DEBUG
+  std::cout<<"Container::report() : EVENT REPORT:\n";
+  rep.print();
+  #endif
+  
+  if (event_report.op() != MultiSelection::individual) {
+    rep.analyze(rep, event_report.op());
+  }
+
+  #ifdef DEB_DEBUG
+  std::cout<<"Container::report() : ANALYZED ("<<rep.op()<<") EVENT REPORT:\n";
+  rep.print();
+  std::cout<<"Container::report() : SUMMED EVENT REPORT INPUT:\n";
+  event_report.print();
+  #endif
+
+  event_report+=rep;
+
+  #ifdef DEB_DEBUG
+  std::cout<<"Container::report() : SUMMED EVENT REPORT OUTPUT:\n";
+  event_report.print();
+  stdMesg("\n\nContainer::report() Done.\n");
+  #endif
+
+}
+
 
 
 //--------------------------------- passed() ----------------------------------

@@ -24,13 +24,14 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Producer.hh,v 1.5 2009/11/12 14:38:30 aranyi Exp $
+// $Id: Producer.hh,v 1.6 2010/07/18 12:26:15 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
 
 #include "FWCore/Utilities/interface/InputTag.h"
 #include "FWCore/Framework/interface/Event.h"
+#include "DataFormats/Common/interface/View.h"
 
 namespace deb {
 

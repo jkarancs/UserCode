@@ -15,25 +15,10 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: debNtupleMaker.hh,v 1.10 2010/07/23 09:27:43 veszpv Exp $
+// $Id: debNtupleMaker.hh,v 1.11 2010/07/23 14:10:28 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
-
-// system include files 
-#include <memory>
-
-// user include files
-#include "FWCore/Framework/interface/Frameworkfwd.h"
-#include "FWCore/Framework/interface/EDFilter.h"
-//#include "FWCore/Framework/interface/Event.h"
-#include "FWCore/Framework/interface/EventSetup.h"
-#include "FWCore/Framework/interface/MakerMacros.h"
-
-//#include "FWCore/ParameterSet/interface/ParameterSet.h"
-#include "FWCore/ServiceRegistry/interface/Service.h"
-#include "CommonTools/UtilAlgos/interface/TFileService.h"
-//#include "FWCore/Utilities/interface/InputTag.h"
 
 //#include "SimGeneral/HepPDTRecord/interface/ParticleDataTable.h"
 //#include "DataFormats/Candidate/interface/Candidate.h"
@@ -54,15 +39,38 @@
 //#include "DataFormats/Common/interface/TriggerResults.h"
 //#include "FWCore/Framework/interface/TriggerNames.h"
 
+// ROOT
 #include "TTree.h"
 #include "TH1.h"
 #include "TMath.h"
 #include "TLorentzVector.h"
 
-#define DEB_DEBUG
-// <include modules for debug>
+// CMSSW
+#include "FWCore/MessageLogger/interface/MessageLogger.h"
+// user include files
+#include "FWCore/Framework/interface/Frameworkfwd.h"
+#include "FWCore/Framework/interface/EDFilter.h"
+//#include "FWCore/Framework/interface/Event.h"
+#include "FWCore/Framework/interface/EventSetup.h"
+#include "FWCore/Framework/interface/MakerMacros.h"
+
+//#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/ServiceRegistry/interface/Service.h"
+#include "CommonTools/UtilAlgos/interface/TFileService.h"
+//#include "FWCore/Utilities/interface/InputTag.h"
+
+
+
+// DEB DATA MAKER
+// <exclude modules from debugging here>
 #include "Selection.hh"
+#define DEB_DEBUG
+// <include modules to debug here>
+// <exclude modules from debugging by including them before DEB_DEBUG>
+#include "Container.hh"
 #undef DEB_DEBUG
+
+//#define DEB_DEBUG
 
 #include "SusyAnalysis/debDataMaker/interface/JetProducer.hh"
 // #include "SusyAnalysis/debDataMaker/interface/MetProducer.hh"
@@ -74,6 +82,7 @@
 // #include "SusyAnalysis/debDataMaker/interface/EventProducer.hh"
 // #include "SusyAnalysis/debDataMaker/interface/Beamspot.hh"
 // #include "SusyAnalysis/debDataMaker/interface/TriggerProducer.hh"
+#include "Plot.hh"
 
 
 using namespace deb;
@@ -85,7 +94,8 @@ public:
 
   JetProducer<pat::Jet> pjet;
   TTree *tree;
-  MultiSelection* pjet_total;
+  MultiSelection* pjet_rep;
+  Plot<TH1>* pjet_plt;
 
 private:
   virtual void beginJob();

@@ -27,7 +27,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Jet.hh,v 1.21 2010/07/23 09:27:43 veszpv Exp $
+// $Id: Jet.hh,v 1.22 2010/07/23 14:10:27 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -35,7 +35,6 @@
 #include "SusyAnalysis/debDataMaker/interface/VContainer.hh"
 #include "SusyAnalysis/debDataMaker/interface/JetData.hh"
 #include <algorithm>
-#include "SusyAnalysis/debDataMaker/interface/Selection.hh"
 
 
 namespace deb {

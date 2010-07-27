@@ -31,13 +31,11 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: JetProducer.hh,v 1.4 2010/07/18 12:26:12 veszpv Exp $
+// $Id: JetProducer.hh,v 1.5 2010/07/23 09:27:43 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
 
-#include "DataFormats/Common/interface/View.h"
-#include "FWCore/MessageLogger/interface/MessageLogger.h"
 #include "SusyAnalysis/debDataMaker/interface/Jet.hh"
 #include "SusyAnalysis/debDataMaker/interface/Producer.hh"
 #include "DataFormats/PatCandidates/interface/Jet.h"

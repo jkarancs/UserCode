@@ -112,7 +112,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Oct 25 20:57:26 CET 2009
-// $Id: Plot.hh,v 1.10 2010/04/22 14:44:44 veszpv Exp $
+// $Id: Plot.hh,v 1.11 2010/07/27 09:39:24 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -447,7 +447,7 @@ template<class H> class Plot : public std::map<std::string,Histogram<H> > {
 
   void setColor(std::string regexpr, std::string attr, 
 		Color_t color, int step=0);
-  void setColor(std::vector<iterator> list, std::string what="", 
+  void setColor(std::vector<iterator> list, std::string what, 
 		std::string attr, Color_t color, int step=0);
 
 
@@ -457,18 +457,18 @@ template<class H> class Plot : public std::map<std::string,Histogram<H> > {
 
 
   void setStyle(std::string regexpr, std::string attr, Style_t style);
-  void setStyle(std::vector<iterator> list, std::string what="", 
+  void setStyle(std::vector<iterator> list, std::string what, 
 		std::string attr, Style_t style);
 
 
   void setWidth(std::string regexpr, std::string attr, Width_t width);
-  void setWidth(std::vector<iterator> list, std::string what="",
+  void setWidth(std::vector<iterator> list, std::string what,
 		std::string attr, Width_t width);
 
 
   void setAxisRange(std::string regexpr, Double_t xmin, Double_t xmax, 
 		    Option_t* axis = "X");
-  void setAxisRange(std::vector<iterator> list, std::string what="",
+  void setAxisRange(std::vector<iterator> list, std::string what,
 		    Double_t xmin, Double_t xmax, Option_t* axis = "X");
 
 

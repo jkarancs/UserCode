@@ -15,10 +15,11 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Tools.hh,v 1.1 2009/06/19 08:40:24 aranyi Exp $
+// $Id: CMSSWTools.hh,v 1.1 2009/07/15 20:08:41 aranyi Exp $
 //
 //
 //-----------------------------------------------------------------------------
+
 
 namespace deb {
 

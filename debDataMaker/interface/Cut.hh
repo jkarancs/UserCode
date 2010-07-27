@@ -20,7 +20,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Jul 18 10:28:26 CET 2010
-// $Id: Cut.hh,v 1.2 2010/07/23 09:27:43 veszpv Exp $
+// $Id: Cut.hh,v 1.3 2010/07/23 14:10:27 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -32,6 +32,8 @@
 
 namespace deb {
 
+template<class C> class SelectionBase;
+
 class CutBase {
  public:
   enum ValueTypeID { I=0, i, L, l, F, D, nan };
@@ -41,7 +43,6 @@ class CutBase {
   CutBase(const CutBase& c) { *this=c; }
   ~CutBase() { }
   
-
   union ValueType {
     int I;
     unsigned int i;
@@ -65,8 +66,9 @@ class CutBase {
   ValueTypeID id_;
 
   // a helper for operator+= in derived classes, 
-  // asserts c compatibility with *this
-  inline void               assert_equal(const CutBase& c);
+  // asserts compatibility of 'c' with *this
+  inline void               assert_equal_base(const CutBase& c);
+
 
  public:
   // Accessors and modifiers:
@@ -90,15 +92,16 @@ class CutBase {
 
 
   // Misc:
-  inline std::string        valueToString(const ValueType& value);
+  std::string               valueToString(const ValueType& value);
 
+  TH1*                      create_histogram();
 
 };
 
 
-// ---------------------- CutBase::assert_equal -------------------------------
+// ---------------------- CutBase::assert_equal_base --------------------------
 
-inline void CutBase::assert_equal(const CutBase& c) {
+inline void CutBase::assert_equal_base(const CutBase& c) {
   #ifdef DEB_DEBUG
   if (name_!=c.name_) {
     std::cout<<"(Multi)Cut::operator+= : Trying to sum up two MultiCuts with "
@@ -113,6 +116,24 @@ inline void CutBase::assert_equal(const CutBase& c) {
       "MultiSelection::operator+=)\n";
     assert(id_==c.id_);
   }
+}
+
+
+// ---------------------- CutBase::create_histogram() -------------------------
+
+TH1* CutBase::create_histogram() {
+  TH1* ret;
+
+  switch (id_) {
+  case I: ret = new TH1I(); break;
+  case i: ret = new TH1D(); break;
+  case L: ret = new TH1D(); break;
+  case l: ret = new TH1D(); break;
+  case F: ret = new TH1F(); break;
+  case D: ret = new TH1D(); break;
+  default : ret = NULL;
+  }
+  return ret;
 }
 
 
@@ -225,15 +246,20 @@ class Cut : public CutBase{
 
   Cut& operator= (const Cut& c);
 
+
  private:
   ValueType value_;
   int passed_;
-  void init_();
+
+  inline void                 init_id_();
+  inline void                 init_();
+
+  Cut&                        operator+= (const Cut& c);
+
+  template<class C> friend class SelectionBase;
+
 
  public:
-
-  // should be a friend with Selection
-  Cut&                        operator+= (const Cut& c);
 
   inline size_t               size() const { return 1; }
 
@@ -244,6 +270,9 @@ class Cut : public CutBase{
   int                         passed() const { return passed_; }
 
   void                        print();
+
+  inline TH1*                 create_histogram(size_t i=0);
+  
 };
 
   
@@ -258,9 +287,9 @@ template<class T> Cut::Cut(std::string name, T value, int passed)
 }
 
 
-// ---------------------------- Cut::init_() ----------------------------------
+// ---------------------------- Cut::init_id_() -------------------------------
 
-void Cut::init_() {
+void Cut::init_id_() {
   switch (id_) {
   case I: value_.I = NOVAL_I; break;
   case i: value_.i = NOVAL_i; break;
@@ -270,6 +299,13 @@ void Cut::init_() {
   case D: value_.D = NOVAL_D; break;
   default : assert(0);
   }
+}
+  
+
+// ---------------------------- Cut::init_() ----------------------------------
+
+void Cut::init_() {
+  init_id_();
   passed_ = NOVAL_I;
 }
   
@@ -288,11 +324,10 @@ Cut& Cut::operator= (const Cut& c) {
 // ---------------------------- Cut::operator+= -------------------------------
 
 Cut& Cut::operator+= (const Cut& c) {    
-  //static_cast<CutBase*>(this)->assert_equal(c);
-  assert_equal(c);
-  int passed=passed_+c.passed_;
-  init_();
-  passed_=passed;
+  assert_equal_base(c);
+  init_id_();
+  passed_+=c.passed_;
+  value_=c.value_;
   return *this;
 }
 
@@ -319,6 +354,8 @@ void Cut::print() {
 }
 
 
+
+
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -341,18 +378,16 @@ class MultiCut : public CutBase {
   std::vector<ValueType> value_;
   std::vector<int> passed_;
 
-  void init_() { 
-    value_.clear(); 
-    passed_.clear(); 
-  }
+  void                 init_() { value_.clear(); passed_.clear(); }
+
+  MultiCut&            operator+= (const MultiCut& c);
+
+  template<class C> friend class SelectionBase;
 
 
  public:
 
   void                 add(ValueType value, int passed);
-
-  // should be a friend with selection
-  MultiCut&            operator+= (const MultiCut& c);
 
   inline size_t        size() const { return passed_.size(); }
 
@@ -410,17 +445,22 @@ void MultiCut::add(ValueType value, int passed) {
 // ----------------------- MultiCut::operator+= -------------------------------
 
 MultiCut& MultiCut::operator+= (const MultiCut& c) {
-  assert_equal(c);
+  assert_equal_base(c);
   size_t multi=c.size();
   
   if (c.size() > size()) {
-    for (size_t i=size(); i<c.size(); i++) passed_.push_back(c.passed(i));
-    multi=size();
+    multi=size(); // Save before passed_ is enlarged!
+    for (size_t i=size(); i<c.size(); i++) {
+      passed_.push_back(c.passed_[i]);
+      value_.push_back(c.value_[i]);
+    }
   }
   
-  for (size_t i=0; i<multi; i++) passed_[i]+=c.passed_[i];
+  for (size_t i=0; i<multi; i++) {
+    passed_[i]+=c.passed_[i];
+    value_[i]=c.value_[i];
+  }
 
-  value_.clear();
   return *this;
 }
 
@@ -462,7 +502,6 @@ void MultiCut::print() {
   }
   std::cout<<std::endl;
 }
-
 
 
 }
