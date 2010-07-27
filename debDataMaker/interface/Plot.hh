@@ -112,7 +112,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Oct 25 20:57:26 CET 2009
-// $Id: Plot.hh,v 1.9 2010/04/21 08:45:18 veszpv Exp $
+// $Id: Plot.hh,v 1.10 2010/04/22 14:44:44 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -125,6 +125,7 @@
 #include "TH1.h"
 #include "TH2.h"
 #include "TCanvas.h"
+#include "TGaxis.h"
 #include "TLegend.h"
 #include "TStyle.h"
 #include "TROOT.h"
@@ -134,6 +135,7 @@
 #include "TDirectory.h"
 #include "TList.h"
 #include "TKey.h"
+#include "TLatex.h"
 #include <boost/regex.hpp>
 
 #define PLOTDEBUG 0
@@ -373,7 +375,8 @@ template<class H> class Plot : public std::map<std::string,Histogram<H> > {
   bool                   isDrawn()     { return (can_==NULL) ? false : true; }
   TCanvas*               canvas()      { return can_; }
   std::vector<TLegend>   legend()      { return legend_; }
-  std::vector<H*>        frames()      { return frame_; }
+  std::vector<H*>&       frames()      { return frame_; }
+  H&                     frame(int ipad) { return *frame_[ipad-1]; }
   int                    getNPads()    { return frame_.size(); }
   int                    getMaxNPads() { return ntiles_; }
 
@@ -556,19 +559,66 @@ template<class H> class Plot : public std::map<std::string,Histogram<H> > {
   void setPlotStyle(std::string);
 
   //void setOptStat(int);
+  
+  void addText(int ipad, std::string text, float x=0.2, float y=0.8) {
+    
+    canvas()->cd(ipad);
+    TLatex *texlabel = new TLatex();
+    texlabel->SetNDC();
+    texlabel->SetTextSize(0.050);
+    texlabel->DrawLatex(x, y, text.c_str());
 
-//   void addText(float x1, float y1, float x2, float y2, std::string text) {
-//     TPaveText text(0.3, 0.3, 0.5, 0.8)
-//       text.AddText("Valami")
-//       root [15] text.SetFillColor(0)
-//       root [16] text.SetBorderSize(0)
-//       root [17] text.Draw()
-//       root [18] text.SetFillStyle(0)
-//       root [19] text.SetTextSize(0.06)
-//       root [20] text.SetTextFont(42)
-//       root [21] text.Draw()
-      
-//       }
+    //     TPaveText text(0.3, 0.3, 0.5, 0.8)
+    //       text.AddText("Valami")
+    //       root [15] text.SetFillColor(0)
+    //       root [16] text.SetBorderSize(0)
+    //       root [17] text.Draw()
+    //       root [18] text.SetFillStyle(0)
+    //       root [19] text.SetTextSize(0.06)
+    //       root [20] text.SetTextFont(42)
+    //       root [21] text.Draw()
+  }
+
+
+  void drawRightAxis(int ipad, double scale, Int_t color, 
+		     std::string title="") {
+
+    TPad *pad=(TPad*)canvas()->GetPad(ipad);
+    pad->SetTicky(0);
+    pad->SetRightMargin(0.16);
+    pad->SetFrameFillStyle(0);
+    pad->SetFrameBorderMode(0);
+    pad->SetFrameFillStyle(0);
+    pad->SetFrameLineColor(0);
+    pad->SetFrameBorderMode(0);
+    pad->Update();
+    
+    scale=1./scale;
+    double min=frame(ipad).GetMinimum()*scale;
+    double max=frame(ipad).GetMaximum()*scale;
+
+    TGaxis *axis = new TGaxis(pad->GetUxmax(), pad->GetUymin(), 
+			      pad->GetUxmax(), pad->GetUymax(),
+			      min, max, 510, "+L");
+    axis->SetLineColor(color);
+    axis->SetTextColor(color); 
+    
+    axis->SetTitleColor(color);
+    axis->SetTitleFont(42);
+    axis->SetTitleSize(0.06);
+    axis->SetTitleOffset(1.25);
+    axis->SetTitle(title.c_str());
+    
+    axis->SetLabelColor(color);
+    axis->SetLabelFont(42);
+    axis->SetLabelOffset(0.007);
+    axis->SetLabelSize(0.05);
+
+    axis->Draw();
+    pad->Update();
+    pad->Modified();
+    canvas()->Update();
+  }
 
 
 };
@@ -1483,6 +1533,7 @@ int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
   std::vector<std::pair<PlotNames,OptionList> > pads;
 
   // break each input string into line(s), make a list with one line per entry
+  // each line represents a plot assignments producing at least one pad
   std::vector<std::string> expList = itemizeString(hists, "\n");
 
   if (debug) {
@@ -1491,7 +1542,7 @@ int Plot<H>::Draw(std::vector<std::string> hists, int ncols, int nrows) {
   }
 
   // decide if hitos in one line should be plotted on a single or separate pads
-  for (size_t i=0; i<expList.size(); i++) {
+  for (size_t i=0; i<expList.size(); i++) { // loop along plot assignments
     std::pair<PlotNames,OptionList> pad;
     std::pair<std::string,std::string> split=splitString(expList[i], ";");
     // first item is list of histogram names(+legend lables)

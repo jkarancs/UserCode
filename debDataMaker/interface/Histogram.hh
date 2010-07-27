@@ -31,7 +31,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Oct 25 20:57:26 CET 2009
-// $Id: Histogram.hh,v 1.8 2010/04/21 08:44:56 veszpv Exp $
+// $Id: Histogram.hh,v 1.9 2010/04/22 14:44:44 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -149,7 +149,7 @@ class rmap : public std::map<std::pair<U,U>,V> {
     return changed;
   }
   
-  V operator()(U u){
+  V& operator()(U u){
     iterator it=lower_bound(range(u, 0));
     if (it->first.first==u) return it->second;
     if (it==this->begin()) return default_value_;
@@ -293,7 +293,18 @@ class mvector : private std::vector<V> {
   bool initialized_;
   U invalid_key_;
 
+  void unchecked_push_back(const V& x, const U& key) {
+    base::push_back(x);
+    reverse_map_.push_back(key);
+    map_.insert(std::pair<U,size_t>(key, size()-1));
+  }
+
  public:
+  void initialize_map(const U& invalid_key) {
+    invalid_key_=invalid_key;
+    initialized_=true;
+  }
+
   //using::std::vector<V>::assign; // implement it later if it turns out to be needed
   using::std::vector<V>::at;
   using::std::vector<V>::back;
@@ -354,57 +365,97 @@ class mvector : private std::vector<V> {
     return (it!=map_.end()) ? it->second : invalid_index();
   }
   
-  void initialize_map(const U& invalid_key) {
-    invalid_key_=invalid_key;
-    initialized_=true;
-  }
-
+  // Add 'n' instances of 'x' to mvector starting at 'pos', and set the key
+  // of first added element to 'key' and the rest to 'ivalid key'
+  // Do nothing if 'key' already exists
   void insert(iterator pos, size_t n, const V& x, const U& key) {
     if (initialized_ && n>0) {
+      if (map_.find(key)!=map_.end()) return; //problem would be solved with rmap
       size_t f=pos-begin();
       typename std::map<U,size_t>::iterator it=map_.begin();
       for (; it!=map_.end(); it++) if (it->second>=f) it->second+=n;
-      map_.insert(std::pair<U,size_t>(key, f));
+      if (key!=invalid_key()) map_.insert(std::pair<U,size_t>(key, f));
       reverse_map_.insert(reverse_map_.begin()+f, n, invalid_key());
       reverse_map_[f]=key;
     }
     base::insert(pos, n, x);
   }
 
+  // Add 'n' instances of 'x' to mvector starting at 'pos' with 'invalid key'-s
   void insert(iterator pos, size_t n, const V& x) {
     insert(pos, n, x, invalid_key());
     return;
   }
   
+  // Add an instance of 'x' to mvector starting at 'pos', and set it's 'key'
+  // Do nothing if 'key' already exists
   iterator insert(iterator pos, const V& x, const U& key) {
     size_t i=pos-begin();
     insert(pos, 1, x, key);
     return begin()+i;
   }
 
+  // Add an instance of 'x' to mvector starting at 'pos' with 'invalid key'
   iterator insert(iterator pos, const V& x) {
     return insert(pos, x, invalid_key());
   }
 
+  // Add a vector[first, last) to mvector starting at 'pos', and set the key
+  // of the first added element to 'key'
+  // Do nothing if 'key' already exists
   template <class InputIt>
   void insert (iterator pos, InputIt first, InputIt last, const U& key) {
-    if (!initialized_ || first==last) return;
-    base input;
-    for (InputIt it=first; it!=last; it++) { input.push_back(*it); }
-    size_t f=pos-begin();
-    typename std::map<U,size_t>::iterator it=map_.begin();
-    for (; it!=map_.end(); it++) if (it->second>=f) it->second+=input.size();
-    map_.insert(std::pair<U,size_t>(key, f));
-    reverse_map_.insert(reverse_map_.begin()+f, input.size(), invalid_key());
-    reverse_map_[f]=key;
-    base::insert(pos, input.begin(), input.end());
+    if (initialized_ && first!=last) {
+      if (map_.find(key)!=map_.end()) return; //problem would be solved with rmap
+      base input;
+      for (InputIt it=first; it!=last; it++) { input.push_back(*it); }
+      size_t f=pos-begin();
+      typename std::map<U,size_t>::iterator it=map_.begin();
+      for (; it!=map_.end(); it++) if (it->second>=f) it->second+=input.size();
+      if (key!=invalid_key()) map_.insert(std::pair<U,size_t>(key, f));
+      reverse_map_.insert(reverse_map_.begin()+f, input.size(), invalid_key());
+      reverse_map_[f]=key;
+      base::insert(pos, input.begin(), input.end());
+    } else {
+      base::insert(pos, first, last);
+    }
+  }
+
+  // Add 'n' elements in an mvector 'input' starting from 'pos2' to this
+  // mvector starting from 'pos'
+  // If a key in 'input' already exists, skip the single element belonging to
+  // that key.
+  // Do nothing if the invalid keys in the two vectors are not the same
+  void insert (size_t pos1, const mvector& input, size_t pos2, size_t n) {
+    if (initialized_ && n>0) {
+      if (input.invalid_key()!=invalid_key()) return;
+      std::vector<V> ins;
+      std::vector<std::pair<U,size_t> > map;
+      std::vector<U> reverse_map;
+      for (size_t i=pos2; i<pos2+n; i++) {
+	if (index(input.key(i))!=invalid_index()) continue; // this key exists
+	ins.push_back(input[i]);
+	reverse_map.push_back(input.key(i));
+	map.push_back(std::pair<U,size_t>(input.key(i), pos1+ins.size()-1));
+      }
+      typename std::map<U,size_t>::iterator it=map_.begin();
+      for (;it!=map_.end(); it++) if (it->second>=pos1) it->second+=ins.size();
+      base::insert(pos1, ins.begin(), ins.end());
+      reverse_map_.insert(pos1, reverse_map.begin(), reverse_map.end());
+      map_.insert(map.begin(), map.end());
+    } else {
+      base::insert(pos1, input.begin(), input.end());
+    }
   }
 
   size_t invalid_index() const { return std::numeric_limits<size_t>::max(); }
 
-  U invalid_key() const { return invalid_key_; }
+  const U& invalid_key() const { return invalid_key_; }
   
-  U key (size_t i) const {
+//   U key (size_t i) const {
+//     return (i<reverse_map_.size()) ? reverse_map_[i] : invalid_key(); 
+//   }
+  const U& key (size_t i) const {
     return (i<reverse_map_.size()) ? reverse_map_[i] : invalid_key(); 
   }
 
@@ -464,6 +515,9 @@ class mvector : private std::vector<V> {
     reverse_map_.swap(m.reverse_map_);
     map_.swap(m.map_);
   }
+
+  // SORT VECTOR ELEMENTS BASED ON KEYS
+
 };
 
 
@@ -1039,12 +1093,28 @@ void Histogram<H>::efficiency() {
 
   if (iNum_>=0 && iDen_>=0) {
 
-    this->setContent("$num{}/$den{}");
-
-    this->setError("1.96*sqrt( (($num{}+2)/($den{}+4)) " //sqrt(p' [= (X+2)/n']
-		   "* (1-(($num{}+2)/($den{}+4))) " // * (1-p')
-		   "/ ($den{}+4) ) * ($den{}!=0)"); // /n' [=N+4]) * (N!=0)
-    // Last part *(N=0) assures no error in bin with no denominator in eff.
+    if (this->GetDimension()==1) {
+      this->setContent("$num{}/$den{}");
+      
+      this->setError("1.96*sqrt( (($num{}+2)/($den{}+4)) " //sqrt(p' [= (X+2)/n']
+		     "* (1-(($num{}+2)/($den{}+4))) " // * (1-p')
+		     "/ ($den{}+4) ) * ($den{}!=0)"); // /n' [=N+4]) * (N!=0)
+      // Last part *(N=0) assures no error in bin with no denominator in eff.
+    } else if (this->GetDimension()==2) {
+      this->setContent("$num{}{}/$den{}{}");
+      
+      this->setError("1.96*sqrt( (($num{}{}+2)/($den{}{}+4)) " //sqrt(p' [= (X+2)/n']
+		     "* (1-(($num{}{}+2)/($den{}{}+4))) " // * (1-p')
+		     "/ ($den{}{}+4) ) * ($den{}{}!=0)"); // /n' [=N+4]) * (N!=0)
+      // Last part *(N=0) assures no error in bin with no denominator in eff.
+    } else if (this->GetDimension()==3) {
+      this->setContent("$num{}{}{}/$den{}{}{}");
+      
+      this->setError("1.96*sqrt( (($num{}{}{}+2)/($den{}{}{}+4)) " //sqrt(p' [= (X+2)/n']
+		     "* (1-(($num{}{}{}+2)/($den{}{}{}+4))) " // * (1-p')
+		     "/ ($den{}{}{}+4) ) * ($den{}{}{}!=0)"); // /n' [=N+4]) * (N!=0)
+      // Last part *(N=0) assures no error in bin with no denominator in eff.
+    }
 
     return;
   }
