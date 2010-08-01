@@ -17,12 +17,22 @@
   namespace deb{
   
     double const NOVAL_D=-9999.0;
+    Double_t const NOVAL_D_t=-9999.0;
     float const NOVAL_F=-9999.0;
     int const NOVAL_I=-9999;
     unsigned int const NOVAL_i=9999;
     long const NOVAL_L=-9999;
     unsigned long const NOVAL_l=9999;
     const char* const NOVAL_S="N/A";
+
+    template<class T> inline T        NOVAL() { return T();     }
+    template<> inline double          NOVAL() { return NOVAL_D; }
+    template<> inline float           NOVAL() { return NOVAL_F; }
+    template<> inline int             NOVAL() { return NOVAL_I; }
+    template<> inline unsigned int    NOVAL() { return NOVAL_i; }
+    template<> inline long            NOVAL() { return NOVAL_L; }
+    template<> inline unsigned long   NOVAL() { return NOVAL_l; }
+    template<> inline const char*     NOVAL() { return NOVAL_S; }
 
     int const PASS_VALIDITY=0;
 

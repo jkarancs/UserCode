@@ -20,7 +20,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Jul 18 10:28:26 CET 2010
-// $Id: Cut.hh,v 1.3 2010/07/23 14:10:27 veszpv Exp $
+// $Id: Cut.hh,v 1.4 2010/07/27 09:45:41 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -65,6 +65,13 @@ class CutBase {
  protected:
   ValueTypeID id_;
 
+  // These functions are protected because they all need to know 'id_'
+  inline ValueType          invalidValue() const;
+  inline bool               isValid(ValueType value) const;
+  std::string               valueToString(const ValueType& value) const;
+  inline size_t             valueSize() const;
+  inline std::string        valueTypeName() const { return valueTypeName(id_);}
+
   // a helper for operator+= in derived classes, 
   // asserts compatibility of 'c' with *this
   inline void               assert_equal_base(const CutBase& c);
@@ -73,7 +80,7 @@ class CutBase {
  public:
   // Accessors and modifiers:
   const std::string&        name() const { return name_; }
-  std::string               getName() { return name_; }
+  std::string               getName() const { return name_; }
   void                      setName(std::string name) { name_=name; }
   ValueTypeID               id() const { return id_; }
 
@@ -84,17 +91,15 @@ class CutBase {
   template<class T> 
   static inline ValueTypeID valueTypeID(T& t) { return valueTypeID<T>(); }
 
-  template<class T> 
-  static inline ValueType   valueType(T);
 
   template<class T> 
-  static inline void        check(const T& t); // assert that (t!=NOVAL)
+  static inline ValueType   valueType(T); //cast input to ValueType
 
 
-  // Misc:
-  std::string               valueToString(const ValueType& value);
-
-  TH1*                      create_histogram();
+  static const char*        valueTypeName(ValueTypeID id);
+ 
+  template<class T> 
+  static inline void        check(const T& t) { assert(t!=NOVAL<T>()); }
 
 };
 
@@ -116,24 +121,6 @@ inline void CutBase::assert_equal_base(const CutBase& c) {
       "MultiSelection::operator+=)\n";
     assert(id_==c.id_);
   }
-}
-
-
-// ---------------------- CutBase::create_histogram() -------------------------
-
-TH1* CutBase::create_histogram() {
-  TH1* ret;
-
-  switch (id_) {
-  case I: ret = new TH1I(); break;
-  case i: ret = new TH1D(); break;
-  case L: ret = new TH1D(); break;
-  case l: ret = new TH1D(); break;
-  case F: ret = new TH1F(); break;
-  case D: ret = new TH1D(); break;
-  default : ret = NULL;
-  }
-  return ret;
 }
 
 
@@ -202,19 +189,24 @@ template<> CutBase::ValueType CutBase::valueType(double D) {
 }
 
 
-// ------------------------ CutBase::check() ----------------------------------
+// ---------------------- CutBase::valueTypeName() ----------------------------
 
-template<> void CutBase::check(const int& t) { assert(t!=NOVAL_I); }
-template<> void CutBase::check(const unsigned int& t) { assert(t!=NOVAL_i); }
-template<> void CutBase::check(const long& t) { assert(t!=NOVAL_L); }
-template<> void CutBase::check(const unsigned long& t) { assert(t!=NOVAL_l); }
-template<> void CutBase::check(const float& t) { assert(t!=NOVAL_F); }
-template<> void CutBase::check(const double& t) { assert(t!=NOVAL_D); }
+const char*  CutBase::valueTypeName(ValueTypeID id) {  
+  switch (id) {
+  case I: return ("I");
+  case i: return ("i");
+  case L: return ("L");
+  case l: return ("l");
+  case F: return ("F");
+  case D: return ("D");
+  default : return (NOVAL_S);
+  }
+}
 
 
 // ---------------------- CutBase::valueToString ------------------------------
   
-std::string CutBase::valueToString(const ValueType& value) {
+std::string CutBase::valueToString(const ValueType& value) const {
   std::ostringstream ss;
   switch (id_) {
   case I: ss << value.I; break;
@@ -228,6 +220,55 @@ std::string CutBase::valueToString(const ValueType& value) {
   return ss.str();
 }
 
+
+// ---------------------- CutBase::valueSize ----------------------------------
+  
+size_t CutBase::valueSize() const {
+  switch (id_) {
+  case I: return (sizeof(int));
+  case i: return (sizeof(unsigned int));
+  case L: return (sizeof(long));
+  case l: return (sizeof(unsigned long));
+  case F: return (sizeof(float));
+  case D: return (sizeof(double));
+  default : assert(0);
+  }
+}
+
+
+// ----------------------- CutBase::invalidValue() ----------------------------
+
+CutBase::ValueType CutBase::invalidValue() const {
+  ValueType value;
+  switch (id_) {
+  case I: value.I = NOVAL_I; break;
+  case i: value.i = NOVAL_i; break;
+  case L: value.L = NOVAL_L; break;
+  case l: value.l = NOVAL_l; break;
+  case F: value.F = NOVAL_F; break;
+  case D: value.D = NOVAL_D; break;
+  default : assert(0);
+  }
+  return value;
+}
+  
+
+
+// ----------------------- CutBase::isValid() ---------------------------------
+
+bool CutBase::isValid(ValueType value) const {
+  switch (id_) {
+  case I: return (value.I != NOVAL_I);
+  case i: return (value.i != NOVAL_i);
+  case L: return (value.L != NOVAL_L);
+  case l: return (value.l != NOVAL_l);
+  case F: return (value.F != NOVAL_F);
+  case D: return (value.D != NOVAL_D);
+  default : assert(0);
+  }
+  return false;
+}
+  
 
 
 //-----------------------------------------------------------------------------
@@ -251,28 +292,42 @@ class Cut : public CutBase{
   ValueType value_;
   int passed_;
 
-  inline void                 init_id_();
   inline void                 init_();
 
   Cut&                        operator+= (const Cut& c);
 
+  template<class T> 
+  inline T&                   get_value_();
+
   template<class C> friend class SelectionBase;
+  template<class F> friend class SelectionTree;
 
 
  public:
 
   inline size_t               size() const { return 1; }
 
-  template<class T> inline T  value() const;
+  inline void                 setValueInvalid() { value_=invalidValue(); }
+  inline void                 setValueInvalid(size_t i) { setValueInvalid(); }
+
+  inline bool                 isValid() { return CutBase::isValid(value_); }
+  inline bool                 isValid(size_t i) { return isValid(); }
+
+  template<class T> 
+  inline const T&             value() const { return get_value_<T>(); }
+
+  template<class T> 
+  inline const T&             value(size_t i) const { return value<T>(); }
+
+  template<class T> inline void value(T& t) const;
+  template<class T> inline void value(size_t i, T& t) const { value(t);}
 
   std::string                 value_str() { return valueToString(value_); }
 
   int                         passed() const { return passed_; }
 
-  void                        print();
+  void                        print() const;
 
-  inline TH1*                 create_histogram(size_t i=0);
-  
 };
 
   
@@ -287,25 +342,10 @@ template<class T> Cut::Cut(std::string name, T value, int passed)
 }
 
 
-// ---------------------------- Cut::init_id_() -------------------------------
-
-void Cut::init_id_() {
-  switch (id_) {
-  case I: value_.I = NOVAL_I; break;
-  case i: value_.i = NOVAL_i; break;
-  case L: value_.L = NOVAL_L; break;
-  case l: value_.l = NOVAL_l; break;
-  case F: value_.F = NOVAL_F; break;
-  case D: value_.D = NOVAL_D; break;
-  default : assert(0);
-  }
-}
-  
-
 // ---------------------------- Cut::init_() ----------------------------------
 
 void Cut::init_() {
-  init_id_();
+  setValueInvalid();
   passed_ = NOVAL_I;
 }
   
@@ -325,7 +365,6 @@ Cut& Cut::operator= (const Cut& c) {
 
 Cut& Cut::operator+= (const Cut& c) {    
   assert_equal_base(c);
-  init_id_();
   passed_+=c.passed_;
   value_=c.value_;
   return *this;
@@ -334,18 +373,41 @@ Cut& Cut::operator+= (const Cut& c) {
 
 // ---------------------------- Cut::value() ----------------------------------
 
-template<> Cut::ValueType Cut::value() const { return value_; }
-template<> int Cut::value() const { return value_.I; }
-template<> unsigned int Cut::value() const { return value_.i; }
-template<> long Cut::value() const { return value_.L; }
-template<> unsigned long Cut::value() const { return value_.l; }
-template<> float Cut::value() const { return value_.F; }
-template<> double Cut::value() const { return value_.D; }
+template<class T> T& Cut::get_value_() {
+  switch (id_) {
+  case I: return (static_cast<T>(value_.I));
+  case i: return (static_cast<T>(value_.i));
+  case L: return (static_cast<T>(value_.L));
+  case l: return (static_cast<T>(value_.l));
+  case F: return (static_cast<T>(value_.F));
+  case D: return (static_cast<T>(value_.D));
+  default : assert(0);
+  }
+}
+
+template<> Cut::ValueType& Cut::get_value_() { return value_; }
+
+
+// ---------------------------- Cut::value() ----------------------------------
+
+template<class T> void Cut::value(T& t) const {
+  switch (id_) {
+  case I: t=static_cast<T>(value_.I);break;
+  case i: t=static_cast<T>(value_.i);break;
+  case L: t=static_cast<T>(value_.L);break;
+  case l: t=static_cast<T>(value_.l);break;
+  case F: t=static_cast<T>(value_.F);break;
+  case D: t=static_cast<T>(value_.D);break;
+  default : assert(0);
+  }
+}
+
+template<> void Cut::value(ValueType& t) const { t=value_; }
 
 
 // ---------------------------- Cut::print() ----------------------------------
 
-void Cut::print() {
+void Cut::print() const {
   std::cout<<std::setw(20)<<name()<<" :\t"<< passed_;
   #ifdef DEB_DEBUG
   std::cout << " (" << valueToString(value_) << ") ";
@@ -382,23 +444,36 @@ class MultiCut : public CutBase {
 
   MultiCut&            operator+= (const MultiCut& c);
 
+  template<class T> 
+  inline T&            get_value_(size_t j);  
+
   template<class C> friend class SelectionBase;
+  template<class F> friend class SelectionTree;
 
 
  public:
 
-  void                 add(ValueType value, int passed);
+  void            add(ValueType value, int passed);
 
-  inline size_t        size() const { return passed_.size(); }
+  inline void     setValueInvalid(size_t i) { value_[i]=invalidValue(); }
+
+  inline bool     isValid(size_t i) const{ return CutBase::isValid(value_[i]);}
+
+  inline size_t   size() const { return passed_.size(); }
 
   template<class T> 
-  inline T             value(size_t i) const;
+  inline const T& value(size_t j) const { 
+    return const_cast<MultiCut*>(this)->get_value_<T>(j); 
+  }
 
-  std::string          value_str(size_t i) { return valueToString(value_[i]); }
+  template<class T> 
+  void            value(size_t j, T& t) const;
 
-  int                  passed(size_t i) const { return passed_[i]; }
+  std::string     value_str(size_t i) const{ return valueToString(value_[i]); }
 
-  void                 print();
+  int             passed(size_t i) const { return passed_[i]; }
+
+  void            print() const;
 };
 
   
@@ -417,7 +492,10 @@ MultiCut& MultiCut::operator= (const MultiCut& c) {
 
 MultiCut::MultiCut(const Cut& c) : CutBase(c) {
   init_();
-  value_.push_back(c.value<ValueType>());
+  //value_.push_back(c.value<ValueType>());
+  ValueType v;
+  c.value(v);
+  value_.push_back(v);
   passed_.push_back(c.passed());
 }
 
@@ -467,31 +545,47 @@ MultiCut& MultiCut::operator+= (const MultiCut& c) {
 
 // ----------------------- MultiCut::value() ----------------------------------
 
-template<> 
-MultiCut::ValueType MultiCut::value(size_t i) const { return value_[i]; }
+
+template<class T> T& MultiCut::get_value_(size_t j) {
+  switch (id_) {
+  case I: return (static_cast<T>(value_[j].I));
+  case i: return (static_cast<T>(value_[j].i));
+  case L: return (static_cast<T>(value_[j].L));
+  case l: return (static_cast<T>(value_[j].l));
+  case F: return (static_cast<T>(value_[j].F));
+  case D: return (static_cast<T>(value_[j].D));
+  default : assert(0);
+  }
+}  
+
 
 template<> 
-int MultiCut::value(size_t i) const { return value_[i].I; }
+MultiCut::ValueType& MultiCut::get_value_(size_t j) { return value_[j]; }
+
+
+// ----------------------- MultiCut::value() ----------------------------------
+
+
+template<class T> void MultiCut::value(size_t j, T& t) const {
+  switch (id_) {
+  case I: t=static_cast<T>(value_[j].I); break;
+  case i: t=static_cast<T>(value_[j].i); break;
+  case L: t=static_cast<T>(value_[j].L); break;
+  case l: t=static_cast<T>(value_[j].l); break;
+  case F: t=static_cast<T>(value_[j].F); break;
+  case D: t=static_cast<T>(value_[j].D); break;
+  default : assert(0);
+  }
+}  
 
 template<> 
-unsigned int MultiCut::value(size_t i) const { return value_[i].i; }
+void MultiCut::value(size_t i, ValueType& v) const { v=value_[i]; }
 
-template<> 
-long MultiCut::value(size_t i) const { return value_[i].L; }
-
-template<> 
-unsigned long MultiCut::value(size_t i) const { return value_[i].l; }
-
-template<> 
-float MultiCut::value(size_t i) const { return value_[i].F; }
-
-template<> 
-double MultiCut::value(size_t i) const { return value_[i].D; }
 
 
 // ----------------------- MultiCut::print() ----------------------------------
 
-void MultiCut::print() {
+void MultiCut::print() const {
   std::cout<<std::setw(20)<<name()<<" :";
   for (size_t i=0; i<passed_.size(); i++) {
     std::cout << "\t" << passed_[i];

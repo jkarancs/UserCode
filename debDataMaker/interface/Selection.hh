@@ -15,12 +15,14 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Selection.hh,v 1.3 2010/07/23 14:10:27 veszpv Exp $
+// $Id: Selection.hh,v 1.4 2010/07/27 09:45:41 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
 
 #include "SusyAnalysis/debDataMaker/interface/Cut.hh"
+#include "TFile.h"
+#include "TTree.h"
 #include <limits>
 
 namespace deb {
@@ -42,6 +44,7 @@ class SelectionBase {
   ~SelectionBase() { }
   
   template<class CC> friend class SelectionBase;
+  template<class F> friend class SelectionTree;
 
   SelectionBase& operator= (const SelectionBase& s);
 
@@ -59,12 +62,12 @@ class SelectionBase {
   void                          clear();
   SelectionBase&                operator+= (const SelectionBase& s);
 
-  inline const std::string&     name() { return name_; }
-  inline std::string            getName() { return name_; }
+  inline const std::string&     name() const { return name_; }
+  inline std::string            getName() const { return name_; }
   inline void                   setName(std::string name) { name_=name; }
 
-  inline const std::string&     object() { return object_; }
-  inline std::string            getObject() { return object_; }
+  inline const std::string&     object() const { return object_; }
+  inline std::string            getObject() const { return object_; }
   inline void                   setObject(std::string object) {object_=object;}
 
   inline const std::vector<C>&  cuts() const { return cuts_; }
@@ -73,7 +76,7 @@ class SelectionBase {
   inline unsigned int           entries() const { return entries_; }
   inline void                   increase_entries() { entries_++; }
   
-  SelectionOp                   op() { return op_; }
+  SelectionOp                   op() const { return op_; }
 
   void                          add(const C& cut);
 
@@ -84,8 +87,6 @@ class SelectionBase {
   void                          print(size_t ncols=8);
 
   void                          analyze(SelectionBase& result, SelectionOp op);
-
-  //void                          fill(Plot<TH1>& plot);
 
 };
 
@@ -242,7 +243,7 @@ void SelectionBase<MultiCut>::add(const SelectionBase<Cut>& sel) {
       assert(0);
     }
     #endif
-    cuts_[i].add(sel.cut(i).value<Cut::ValueType>(), sel.cut(i).passed());
+    cuts_[i].add(sel.cuts_[i].value_, sel.cuts_[i].passed_);
   }
 
   return;
@@ -289,7 +290,7 @@ template<> void SelectionBase<Cut>::print(size_t ncols) {
 		<< cuts_[i].passed()*100./entries_ << ") ";
     }
     #ifdef DEB_DEBUG
-    if (entries_ < 2) std::cout << " (" << cuts_[i].value_str() << ") ";
+    std::cout << " (" << cuts_[i].value_str() << ") ";
     #endif
     std::cout<<std::endl;
   }
@@ -325,7 +326,7 @@ template<> void SelectionBase<MultiCut>::print(size_t ncols) {
 		  << cuts_[i].passed(j)*100./entries_ << ") ";
       }
       #ifdef DEB_DEBUG
-      if (entries_ < 2) std::cout << " (" << cuts_[i].value_str(j) << ") ";
+      std::cout << " (" << cuts_[i].value_str(j) << ") ";
       #endif
       std::cout << " ";
     }
@@ -371,7 +372,10 @@ void SelectionBase<C>::analyze(SelectionBase<C>& result, SelectionOp op) {
       size_t i=0;
       for ( ; i<cuts_.size(); i++) if (cuts_[i].passed_[j]==0) break;
       if (i==cuts_.size()) continue;
-      for (i++; i<cuts_.size(); i++) result.cuts_[i].passed_[j]=0;
+      for (i++; i<cuts_.size(); i++) {
+	result.cuts_[i].passed_[j]=0;
+	result.cuts_[i].setValueInvalid(j);
+      }
     }
     return;
   }
@@ -387,13 +391,20 @@ void SelectionBase<C>::analyze(SelectionBase<C>& result, SelectionOp op) {
       for (i++; i<cuts_.size(); i++) { 
 	if (cuts_[i].passed_[j]==0) break; 
 	result.cuts_[i].passed_[j]=0;
+	result.cuts_[i].setValueInvalid(j);
       }
       if (i==cuts_.size()) {
 	result.cuts_[i_passed].passed_[j]=1;
       } else {
-	for (i++; i<cuts_.size(); i++) result.cuts_[i].passed_[j]=0;
+	for (i++; i<cuts_.size(); i++) {
+	  result.cuts_[i].passed_[j]=0;
+	  result.cuts_[i].setValueInvalid(j);
+	}
       }
-      for (i=0; i<i_passed; i++) result.cuts_[i].passed_[j]=0;
+      for (i=0; i<i_passed; i++) {
+	result.cuts_[i].passed_[j]=0;
+	result.cuts_[i].setValueInvalid(j);
+      }
     }
     return;
   }
@@ -401,32 +412,18 @@ void SelectionBase<C>::analyze(SelectionBase<C>& result, SelectionOp op) {
 }
 
 
-//------------------------------- plot() --------------------------------------
-
-// template<class C> void SelectionBase<C>::fill(Plot<TH1>& plot) {
-
-//   if (plot.size()==0) {
-
-//     for (size_t i=0; i<cuts_.size(); i++) {
-//       for (size_t j=0; j<cuts_[i].size(); j++) {
-// 	TH1* h=cuts_[i].create_histogram(j);
-	
-//       }
-//     }
-
-//   } else {
-//     #ifdef DEB_DEBUG
-    
-//     #endif
-//   }
-
-  
-// }
-
 
 
 
 //-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+
+
 
 
 
@@ -434,6 +431,291 @@ typedef SelectionBase<Cut> Selection;
 
 typedef SelectionBase<MultiCut> MultiSelection;
 
+
+
+
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+
+//class TFileService;
+
+template<class F=TFile> class SelectionTree {
+ public:
+
+  SelectionTree() { f_ = NULL; name_ = object_ = NOVAL_S; clear_(); }
+ 
+
+  SelectionTree(std::string name, std::string object)
+    : name_(name), object_(object) { f_ = NULL; clear_(); }
+
+
+  SelectionTree(std::string name, std::string object, F& f)
+    : name_(name), object_(object) { f_ = &f; clear_(); }
+
+
+//   SelectionTree(std::string name, std::string object, TFile& f)
+//     : name_(name), object_(object) { f_ = &f; clear_(); }
+
+
+//   SelectionTree(std::string name, std::string object, TFileService& fs)
+//     : name_(name), object_(object) { f_ = &fs; clear_(); }
+
+
+  template<class C> 
+  SelectionTree(const SelectionBase<C>& sel) 
+    : name_(sel.name()), object_(sel.object()) { f_ = NULL; clear_(); }
+
+
+  template<class C> 
+  SelectionTree(const SelectionBase<C>& sel, F& f) 
+    : name_(sel.name()), object_(sel.object()) { f_ = &f; clear_(); }
+
+
+//   template<class C> 
+//   SelectionTree(const SelectionBase<C>& sel, TFile& f) 
+//     : name_(sel.name()), object_(sel.object()) { f_ = &f; clear_(); }
+
+
+//   template<class C> 
+//   SelectionTree(const SelectionBase<C>& sel, TFileService& fs) 
+//     : name_(sel.name()), object_(sel.object()) { f_ = &fs; clear_(); }
+
+
+  SelectionTree(const SelectionTree& s) { *this=s; }
+
+
+  ~SelectionTree() { }
+
+  // Shallow copy, does not duplicate the tree. This is only for STL containers
+  SelectionTree& operator= (const SelectionTree&);
+
+
+ private:
+  F* f_;
+  std::string name_;            // name of selection
+  std::string object_;          // name the object of selection
+
+  std::vector<std::vector<TTree*> > tree_; // (iobj, icut) -> Tree
+
+  void                          clear_() { tree_.clear(); }
+
+  TTree*                        make_tree_(std::string);
+
+  template<class C>
+  void                          addTree_(const SelectionBase<C>&, size_t);
+
+  template<class C>
+  void                          fillTree_(const SelectionBase<C>&, size_t);
+
+
+ public:
+
+  inline F*                     file() { return f_; }
+
+  inline const std::string&     name() { return name_; }
+  inline std::string            getName() { return name_; }
+
+  inline const std::string&     object() { return object_; }
+  inline std::string            getObject() { return object_; }
+
+  template<class C> void        fill(const SelectionBase<C>&);
+
+  // Plot<TH1>*                 plot();
+  // Where plot Name==this::object_, Title==this::name_, Index==[i_obj][i_cut]
+  // the histos in the plot: Name= plot::Name_plot::Index, Title==cut::Name
+ 
+};
+
+
+
+// //---------------------------- make_tree_() -----------------------------------
+
+// void SelectionTree::make_tree_(TTree* tree) {
+
+//   tree_ = tree;
+
+//   std::ostringstream tname;
+//   assert( name_ != "" && name_ != NOVAL_S );
+//   assert( object_ != "" && object_ != NOVAL_S );
+//   tname << object_ << "_" << name_;
+
+//   if (tree_!=NULL) {
+//     std::string name=tree->GetName();
+//     if ( name=="" || name==NOVAL_S ) {
+//       tree_->SetName(tname.str().c_str());
+//       tree_->SetTitle("SelectionTree");
+//     }
+//     return;
+//   }
+
+//   tree_ = new TTree(tname.str().c_str(), "SelectionTree");
+// }
+
+
+//---------------------------- operator= () -----------------------------------
+// Shallow copy, does not duplicate the tree. This is only for STL containers
+
+template<class F>
+SelectionTree<F>& SelectionTree<F>::operator= (const SelectionTree<F>& s) {
+  if (this==&s) return *this;
+  f_ = s.f_;
+  name_ = s.name_;
+  object_ = s.object_;
+  tree_ = s.tree_;
+  return *this;
+}
+
+
+
+//----------------------------- make_tree_() ----------------------------------
+
+template<>
+TTree* SelectionTree<TFile>::make_tree_(std::string tname) {
+
+  TTree* ret = new TTree(tname.c_str(), "SelectionTree");
+  assert(ret != NULL);
+  return ret;
+}
+
+
+// template<>
+// TTree* SelectionTree<TFileService>::make_tree_(std::string tname) {
+
+//   assert( f_ != NULL);
+//   TTree* ret = f_->make<TTree>(tname.c_str(), "SelectionTree");
+//   assert(ret != NULL);
+//   return ret;
+// }
+
+
+template<class F>
+TTree* SelectionTree<F>::make_tree_(std::string tname) {
+
+  assert( f_ != NULL);
+  TTree* ret = f_->template make<TTree>(tname.c_str(), "SelectionTree");
+  assert(ret != NULL);
+  return ret;
+}
+
+
+//-------------------------------- addTree_ () -------------------------------
+
+template<class F>
+template<class C>
+void SelectionTree<F>::addTree_(const SelectionBase<C>& sel, size_t iobj) {
+  
+  if (sel.cuts_.size()==0) return;
+
+  #ifdef DEB_DEBUG
+  assert( iobj <= sel.cuts_[0].size() );
+  std::cout<< "SelectionTree::fill() : expanding tree with branches for "
+	   << sel.object_ << "_" << iobj << std::endl;
+  #endif
+
+  std::vector<TTree*> tree;
+
+  for (size_t icut=0; icut<sel.cuts_.size(); icut++) {
+    std::ostringstream tname;
+    tname << object_ << iobj << "_cut" << icut;
+    TTree *t = make_tree_(tname.str());
+
+    std::ostringstream vlist;
+    vlist << "val/" << sel.cuts_[icut].valueTypeName();
+    TBranch* br = t->Branch("val", NULL, vlist.str().c_str());
+    assert(br != NULL);
+
+    tree.push_back(t);
+  }
+
+  tree_.push_back(tree);
+
+}
+
+
+//------------------------------- fillTree () -------------------------------
+
+template<class F>
+template<class C>
+void SelectionTree<F>::fillTree_(const SelectionBase<C>& sel, size_t iobj) {
+  
+  #ifdef DEB_DEBUG
+  assert( iobj <= sel.cuts_[0].size() );
+  assert( tree_.size() != 0 );
+
+  std::cout<< "SelectionTree::fill() : filling branch for "
+	   << sel.object_ << "_" << iobj << std::endl;
+  #endif
+
+  for (size_t icut=0; icut<sel.cuts_.size(); icut++) {
+
+    #ifdef DEB_DEBUG
+    if (icut!=0) std::cout << ", ";
+    std::cout << sel.cuts_[icut].name()
+	      << " (" << sel.cuts_[icut].value_str(iobj);
+    #endif
+    
+    if (sel.cuts_[icut].isValid(iobj)) {
+      #ifdef DEB_DEBUG
+      assert( tree_[iobj][icut] != NULL ); // was checked in make_tree_()
+      assert( tree_[iobj][icut]->GetListOfBranches()->GetEntriesFast() == 1 );
+      std::cout<<" -> "<<tree_[iobj][icut]->GetName() << ")";
+      #endif
+
+      TBranch* b = 
+	(TBranch*) tree_[iobj][icut]->GetListOfBranches()->UncheckedAt(0);
+
+      Cut::ValueType* v = const_cast<Cut::ValueType*>
+	(&sel.cuts_[icut].template value<Cut::ValueType>(iobj));
+
+      b->SetAddress(v);
+      tree_[iobj][icut]->Fill();
+    }
+    #ifdef DEB_DEBUG
+    else {
+      std::cout<<" not filled)";
+    }
+    #endif
+  }
+  
+  #ifdef DEB_DEBUG
+  std::cout<<std::endl;
+  #endif
+}
+
+
+
+//------------------------------- fill() --------------------------------------
+
+template<class F>
+template<class C> 
+void SelectionTree<F>::fill(const SelectionBase<C>& sel) {
+
+  #ifdef DEB_DEBUG
+  std::cout<<"SelectionTree::fill() : "<<name_<<" called.\n";
+  #endif
+
+  if (sel.cuts_.size()==0) return;
+
+  size_t multi=sel.cuts_[0].size();
+  
+  if ( sel.cuts_[0].size() > tree_.size() ) {
+    multi=tree_.size(); // Save before passed_ is enlarged!
+
+    for (size_t iobj=tree_.size(); iobj<sel.cuts_[0].size(); iobj++) {
+      addTree_(sel, iobj);
+      fillTree_(sel, iobj);
+    }
+  }
+  
+  for (size_t iobj=0; iobj<multi; iobj++) fillTree_(sel, iobj);
+
+  return;
+}
 
 
 }
