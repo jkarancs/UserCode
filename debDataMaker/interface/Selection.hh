@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Selection.hh,v 1.4 2010/07/27 09:45:41 veszpv Exp $
+// $Id: Selection.hh,v 1.5 2010/08/01 21:44:31 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -458,32 +458,14 @@ template<class F=TFile> class SelectionTree {
     : name_(name), object_(object) { f_ = &f; clear_(); }
 
 
-//   SelectionTree(std::string name, std::string object, TFile& f)
-//     : name_(name), object_(object) { f_ = &f; clear_(); }
-
-
-//   SelectionTree(std::string name, std::string object, TFileService& fs)
-//     : name_(name), object_(object) { f_ = &fs; clear_(); }
-
-
   template<class C> 
   SelectionTree(const SelectionBase<C>& sel) 
-    : name_(sel.name()), object_(sel.object()) { f_ = NULL; clear_(); }
+    : name_(sel.name()), object_(sel.object()) { f_ =NULL; clear_(); }
 
 
   template<class C> 
   SelectionTree(const SelectionBase<C>& sel, F& f) 
     : name_(sel.name()), object_(sel.object()) { f_ = &f; clear_(); }
-
-
-//   template<class C> 
-//   SelectionTree(const SelectionBase<C>& sel, TFile& f) 
-//     : name_(sel.name()), object_(sel.object()) { f_ = &f; clear_(); }
-
-
-//   template<class C> 
-//   SelectionTree(const SelectionBase<C>& sel, TFileService& fs) 
-//     : name_(sel.name()), object_(sel.object()) { f_ = &fs; clear_(); }
 
 
   SelectionTree(const SelectionTree& s) { *this=s; }
@@ -532,31 +514,6 @@ template<class F=TFile> class SelectionTree {
 };
 
 
-
-// //---------------------------- make_tree_() -----------------------------------
-
-// void SelectionTree::make_tree_(TTree* tree) {
-
-//   tree_ = tree;
-
-//   std::ostringstream tname;
-//   assert( name_ != "" && name_ != NOVAL_S );
-//   assert( object_ != "" && object_ != NOVAL_S );
-//   tname << object_ << "_" << name_;
-
-//   if (tree_!=NULL) {
-//     std::string name=tree->GetName();
-//     if ( name=="" || name==NOVAL_S ) {
-//       tree_->SetName(tname.str().c_str());
-//       tree_->SetTitle("SelectionTree");
-//     }
-//     return;
-//   }
-
-//   tree_ = new TTree(tname.str().c_str(), "SelectionTree");
-// }
-
-
 //---------------------------- operator= () -----------------------------------
 // Shallow copy, does not duplicate the tree. This is only for STL containers
 
@@ -576,26 +533,14 @@ SelectionTree<F>& SelectionTree<F>::operator= (const SelectionTree<F>& s) {
 
 template<>
 TTree* SelectionTree<TFile>::make_tree_(std::string tname) {
-
   TTree* ret = new TTree(tname.c_str(), "SelectionTree");
   assert(ret != NULL);
   return ret;
 }
 
 
-// template<>
-// TTree* SelectionTree<TFileService>::make_tree_(std::string tname) {
-
-//   assert( f_ != NULL);
-//   TTree* ret = f_->make<TTree>(tname.c_str(), "SelectionTree");
-//   assert(ret != NULL);
-//   return ret;
-// }
-
-
 template<class F>
 TTree* SelectionTree<F>::make_tree_(std::string tname) {
-
   assert( f_ != NULL);
   TTree* ret = f_->template make<TTree>(tname.c_str(), "SelectionTree");
   assert(ret != NULL);
@@ -621,7 +566,7 @@ void SelectionTree<F>::addTree_(const SelectionBase<C>& sel, size_t iobj) {
 
   for (size_t icut=0; icut<sel.cuts_.size(); icut++) {
     std::ostringstream tname;
-    tname << object_ << iobj << "_cut" << icut;
+    tname << object_ << iobj << "_" << name_ << "_cut" << icut;
     TTree *t = make_tree_(tname.str());
 
     std::ostringstream vlist;

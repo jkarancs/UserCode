@@ -81,12 +81,13 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Container.hh,v 1.12 2010/07/23 09:27:43 veszpv Exp $
+// $Id: Container.hh,v 1.13 2010/07/27 09:45:41 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
 
 #include "TTree.h"
+#include "TFile.h"
 #include "CONST.hh"
 #include "Tools.hh"
 #include "Selection.hh"
@@ -162,7 +163,9 @@ template <class C, class D, class K=size_t> class Container : public C {
   }
   void              select();
 
-  void              report(MultiSelection& event_report);
+  template<class T>
+  void              report(MultiSelection& event_report, 
+			   SelectionTree<T>* tree=NULL);
 
 //   virtual int       passed(std::string, typename C::const_iterator);
 //   virtual int       passed(std::string, size_t);
@@ -482,8 +485,10 @@ template <class C, class D, class K> void Container<C,D,K>::select() {
 }
 
 
-template <class C, class D, class K> 
-void Container<C,D,K>::report(MultiSelection& event_report) {
+template <class C, class D, class K>
+template <class T>
+void Container<C,D,K>::report(MultiSelection& event_report,
+			      SelectionTree<T>* tree) {
   #ifdef DEB_DEBUG
   stdMesg("\n\nContainer::report() running...\n");
   #endif
@@ -536,6 +541,13 @@ void Container<C,D,K>::report(MultiSelection& event_report) {
   event_report.print();
   stdMesg("\n\nContainer::report() Done.\n");
   #endif
+
+  if (tree!=NULL) {
+    #ifdef DEB_DEBUG
+    stdMesg("\n\nContainer::report() filling tree\n");
+    #endif
+    tree->fill(rep);
+  }
 
 }
 

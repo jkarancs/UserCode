@@ -20,7 +20,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Jul 18 10:28:26 CET 2010
-// $Id: Cut.hh,v 1.4 2010/07/27 09:45:41 veszpv Exp $
+// $Id: Cut.hh,v 1.5 2010/08/01 21:44:31 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -314,13 +314,12 @@ class Cut : public CutBase{
   inline bool                 isValid(size_t i) { return isValid(); }
 
   template<class T> 
-  inline const T&             value() const { return get_value_<T>(); }
+  inline const T&             value() const { 
+    return const_cast<Cut*>(this)->get_value_<T>(); 
+  }
 
   template<class T> 
   inline const T&             value(size_t i) const { return value<T>(); }
-
-  template<class T> inline void value(T& t) const;
-  template<class T> inline void value(size_t i, T& t) const { value(t);}
 
   std::string                 value_str() { return valueToString(value_); }
 
@@ -388,23 +387,6 @@ template<class T> T& Cut::get_value_() {
 template<> Cut::ValueType& Cut::get_value_() { return value_; }
 
 
-// ---------------------------- Cut::value() ----------------------------------
-
-template<class T> void Cut::value(T& t) const {
-  switch (id_) {
-  case I: t=static_cast<T>(value_.I);break;
-  case i: t=static_cast<T>(value_.i);break;
-  case L: t=static_cast<T>(value_.L);break;
-  case l: t=static_cast<T>(value_.l);break;
-  case F: t=static_cast<T>(value_.F);break;
-  case D: t=static_cast<T>(value_.D);break;
-  default : assert(0);
-  }
-}
-
-template<> void Cut::value(ValueType& t) const { t=value_; }
-
-
 // ---------------------------- Cut::print() ----------------------------------
 
 void Cut::print() const {
@@ -466,9 +448,6 @@ class MultiCut : public CutBase {
     return const_cast<MultiCut*>(this)->get_value_<T>(j); 
   }
 
-  template<class T> 
-  void            value(size_t j, T& t) const;
-
   std::string     value_str(size_t i) const{ return valueToString(value_[i]); }
 
   int             passed(size_t i) const { return passed_[i]; }
@@ -492,10 +471,7 @@ MultiCut& MultiCut::operator= (const MultiCut& c) {
 
 MultiCut::MultiCut(const Cut& c) : CutBase(c) {
   init_();
-  //value_.push_back(c.value<ValueType>());
-  ValueType v;
-  c.value(v);
-  value_.push_back(v);
+  value_.push_back(c.value<ValueType>());
   passed_.push_back(c.passed());
 }
 
@@ -561,26 +537,6 @@ template<class T> T& MultiCut::get_value_(size_t j) {
 
 template<> 
 MultiCut::ValueType& MultiCut::get_value_(size_t j) { return value_[j]; }
-
-
-// ----------------------- MultiCut::value() ----------------------------------
-
-
-template<class T> void MultiCut::value(size_t j, T& t) const {
-  switch (id_) {
-  case I: t=static_cast<T>(value_[j].I); break;
-  case i: t=static_cast<T>(value_[j].i); break;
-  case L: t=static_cast<T>(value_[j].L); break;
-  case l: t=static_cast<T>(value_[j].l); break;
-  case F: t=static_cast<T>(value_[j].F); break;
-  case D: t=static_cast<T>(value_[j].D); break;
-  default : assert(0);
-  }
-}  
-
-template<> 
-void MultiCut::value(size_t i, ValueType& v) const { v=value_[i]; }
-
 
 
 // ----------------------- MultiCut::print() ----------------------------------
