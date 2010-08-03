@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Selection.hh,v 1.5 2010/08/01 21:44:31 veszpv Exp $
+// $Id: Selection.hh,v 1.6 2010/08/03 09:15:12 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -290,7 +290,7 @@ template<> void SelectionBase<Cut>::print(size_t ncols) {
 		<< cuts_[i].passed()*100./entries_ << ") ";
     }
     #ifdef DEB_DEBUG
-    std::cout << " (" << cuts_[i].value_str() << ") ";
+    if (entries_<2) std::cout << " (" << cuts_[i].value_str() << ") ";
     #endif
     std::cout<<std::endl;
   }
@@ -326,7 +326,7 @@ template<> void SelectionBase<MultiCut>::print(size_t ncols) {
 		  << cuts_[i].passed(j)*100./entries_ << ") ";
       }
       #ifdef DEB_DEBUG
-      std::cout << " (" << cuts_[i].value_str(j) << ") ";
+      if (entries_<2) std::cout << " (" << cuts_[i].value_str(j) << ") ";
       #endif
       std::cout << " ";
     }
