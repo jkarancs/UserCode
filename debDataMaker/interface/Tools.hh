@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Tools.hh,v 1.6 2010/07/23 09:27:43 veszpv Exp $
+// $Id: Tools.hh,v 1.7 2010/07/27 09:45:41 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -23,6 +23,12 @@
 // system include files 
 #include <memory>
 #include "cxxabi.h"
+
+
+#define  check_noval(variable)  (  assert( (variable)!=NOVAL(variable) )  )
+#define  RUNCHECK(x) ( std::cout << "Check-point " << x << std::endl )
+
+
 
 namespace deb {
 
