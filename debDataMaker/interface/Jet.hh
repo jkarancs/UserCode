@@ -27,7 +27,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Jet.hh,v 1.22 2010/07/23 14:10:27 veszpv Exp $
+// $Id: Jet.hh,v 1.23 2010/07/27 09:45:41 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -90,7 +90,9 @@ class Jet : public VContainer<JetData>{
 
 //-------------------------------- calculate() --------------------------------
 
-void Jet::calculate () { 
+void Jet::calculate () {
+  stdWarn("Jet::calculate() was called. At the moment, it does not do "
+	  "anything.\n");
 }
   
 
@@ -206,8 +208,8 @@ int Jet::passed(std::string selection, size_t i, Selection *sel=NULL) {
     // The fast route
     if (sel==NULL) {
 
-      Cut::check(jet(i).eta);
-      Cut::check(jet(i).pt);
+      check_noval(jet(i).eta);
+      check_noval(jet(i).pt);
 
       if ( jet(i).pt>=20 && fabs(jet(i).eta)<2.7 ) return 1;
       return 0;
@@ -215,10 +217,10 @@ int Jet::passed(std::string selection, size_t i, Selection *sel=NULL) {
 
     // Collect information for cut-flow analysis
     Cut pt("pt >=20.0 GeV", jet(i).pt, jet(i).pt>=20.);
-    sel->add(pt);
+        sel->add(pt);
 
     Cut eta("|eta| <2.7", jet(i).eta, fabs(jet(i).eta)<2.7);
-    sel->add(eta);
+        sel->add(eta);
 
     if (sel->passed()) return 1;
     return 0;

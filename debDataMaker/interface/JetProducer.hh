@@ -31,7 +31,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: JetProducer.hh,v 1.5 2010/07/23 09:27:43 veszpv Exp $
+// $Id: JetProducer.hh,v 1.6 2010/07/27 09:45:41 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -129,6 +129,8 @@ template<class T> JetProducer<T>::JetProducer(const edm::ParameterSet& iConfig)
 //----------------------------------- set() -----------------------------------
 
 template<class T> void JetProducer<T>::set(const edm::Event& iEvent) {
+
+  increment_event_counter();
 
   if (!isValid()) return;
 

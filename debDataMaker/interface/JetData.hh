@@ -12,7 +12,7 @@
  Implementation:
 
       void clear()
-         that sets all the variables to a default value 
+         sets all the variables to a default value 
 	 (NOVAL_X where X= I,F,D)
 
       std::string list(std::string prefix=""):
@@ -22,7 +22,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: JetData.hh,v 1.4 2009/09/05 09:16:50 veszpv Exp $
+// $Id: JetData.hh,v 1.5 2010/07/18 12:26:12 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
