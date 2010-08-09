@@ -81,7 +81,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Container.hh,v 1.13 2010/07/27 09:45:41 veszpv Exp $
+// $Id: Container.hh,v 1.14 2010/08/03 09:15:35 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -124,6 +124,10 @@ template <class C, class D, class K=size_t> class Container : public C {
 
  protected:
   TTree*            tree_;              // pointer to tree if being saved there
+
+  #ifdef DEB_DEBUG
+  unsigned long     counter_;
+  #endif
 
  private:
   void              init(size_t);
@@ -171,6 +175,8 @@ template <class C, class D, class K=size_t> class Container : public C {
 //   virtual int       passed(std::string, size_t);
   virtual int       passed(std::string, typename C::const_iterator,Selection*);
   virtual int       passed(std::string, size_t, Selection*);
+
+  inline void       increment_event_counter();
 };
 
 //--------------------------------- Constructor -------------------------------
@@ -183,6 +189,9 @@ void Container<C,D,K>::init(size_t storeNObjects) {
   setValid(true);
   vars_=getVariableMap(objVoid_.list());
   tree_=NULL;
+  #ifdef DEB_DEBUG
+  counter_ = 0;
+  #endif
 }
 
 template <class C, class D, class K>
@@ -337,6 +346,9 @@ void Container<C,D,K>::stdErr(std::string mesg, ...) {
   va_end(argList);
   mesg=s;
   std::cerr<<"*** ERROR: "<<name_<<"("<<humanTypeId(objVoid_)<<")::"
+           #ifdef DEB_DEBUG
+	   <<"<"<<counter_<<">"<<"::"
+           #endif
 	   <<mesg<<std::endl;
 }
 
@@ -349,8 +361,11 @@ void Container<C,D,K>::stdWarn(std::string mesg, ...) {
   vsprintf(s, mesg.data(), argList);
   va_end(argList);
   mesg=s;
-  std::cout<<"*** WARNING: "<<name_<<"("<<humanTypeId(objVoid_)<<")::"<<mesg
-	   <<std::endl;
+  std::cout<<"*** WARNING: "<<name_<<"("<<humanTypeId(objVoid_)<<")::"
+           #ifdef DEB_DEBUG
+	   <<"<"<<counter_<<">"<<"::"
+           #endif
+	   <<mesg<<std::endl;
 }
 
 
@@ -362,7 +377,11 @@ void Container<C,D,K>::stdMesg(std::string mesg, ...) {
   vsprintf(s, mesg.data(), argList);
   va_end(argList);
   mesg=s;
-  std::cout<<name_<<"("<<humanTypeId(objVoid_)<<")::"<<mesg<<std::endl;
+  std::cout<<name_<<"("<<humanTypeId(objVoid_)<<")::"
+           #ifdef DEB_DEBUG
+	   <<"<"<<counter_<<">"<<"::"
+           #endif
+	   <<mesg<<std::endl;
 }
 
 //---------------------------------- print() ----------------------------------
@@ -433,7 +452,7 @@ void Container<C,D,K>::print(int verbose=0) {
     for (it=vars_.begin(); it!=vars_.end(); it++) {
       std::ostringstream ss;
       ss<<"   \t"<<ROOTVariableTypeMap[(*it).second.first].first;
-      ss<<" "<<(*it).first<<"=\t";
+      ss<<" "<<(*it).first<<" = \t\t";
       if ((*it).second.first=='F' || (*it).second.first=='D') ss<<"%f";
       else if ((*it).second.first=='I'||(*it).second.first=='L') ss<<"%d";
       else if ((*it).second.first=='i'||(*it).second.first=='l') ss<<"%u";
@@ -459,10 +478,11 @@ void Container<C,D,K>::print(int verbose=0) {
 
 template <class C, class D, class K> void Container<C,D,K>::select() {
 
+  stdMesg("Container::select() Running...");
   if (!isValid()) return;
   if (selectionType_==NOVAL_S) return;
   #ifdef DEB_DEBUG
-  stdMesg("Container::select() : selecting...\n");
+  stdMesg("Container::select() : validity and selection type passed...");
   #endif
   for(typename C::reverse_iterator rit=this->rbegin(); rit!=this->rend();) {
     rit++;
@@ -470,18 +490,22 @@ template <class C, class D, class K> void Container<C,D,K>::select() {
     int pass=passed(selectionType_, erase_it);
     if (passed(selectionType_, erase_it)==0) {
       #ifdef DEB_DEBUG
-      stdMesg("Jet %d did not pass selection\n", erase_it-this->begin());
+      stdMesg("Container::select() : %s_%d did not pass selection", 
+	      name_.data(), erase_it-this->begin());
       #endif
       this->erase(erase_it);
       continue;
     }
     if (pass==NOVAL_I) {
-      stdErr("select(): error in selecting %s. One or more varibles relevant "
-	     "for the selection has undefined value, or this selection is not "
-	     "implemented at all. Interrupting...", selectionType_.data());
+      stdErr("Container::select() : error in selecting %s. One or more "
+	     "varibles relevant for the selection has undefined value, or "
+	     "this selection is not implemented at all. Interrupting...", 
+	     selectionType_.data());
       assert(0);
     }
   }
+
+  stdMesg("Container::select() : Done.\n");
 }
 
 
@@ -489,9 +513,11 @@ template <class C, class D, class K>
 template <class T>
 void Container<C,D,K>::report(MultiSelection& event_report,
 			      SelectionTree<T>* tree) {
-  #ifdef DEB_DEBUG
-  stdMesg("\n\nContainer::report() running...\n");
-  #endif
+
+  stdMesg("Container::report() : Running...");
+  std::ostringstream prepend;
+  prepend<<name_<<"("<<humanTypeId(objVoid_)<<"):: ";
+
   if (!isValid()) return;
 
   if (event_report.name()==NOVAL_S) event_report.setName(selectionType_);
@@ -513,14 +539,16 @@ void Container<C,D,K>::report(MultiSelection& event_report,
     assert(passed_with_cutflow == passed_without_cutflow);
     rep.add(sel);
     #ifdef DEB_DEBUG
-    std::cout<<"Container::report() : SELECTION REPORT:\n";
-    sel.print();
+    stdMesg("");
+    stdMesg("Container::report() : SELECTION REPORT:");
+    sel.print(6, prepend.str());
     #endif
   }
   rep.increase_entries();
   #ifdef DEB_DEBUG
-  std::cout<<"Container::report() : EVENT REPORT:\n";
-  rep.print();
+  stdMesg("");
+  stdMesg("Container::report() : EVENT REPORT:");
+  rep.print(6, prepend.str());
   #endif
   
   if (event_report.op() != MultiSelection::individual) {
@@ -528,27 +556,32 @@ void Container<C,D,K>::report(MultiSelection& event_report,
   }
 
   #ifdef DEB_DEBUG
-  std::cout<<"Container::report() : ANALYZED ("<<rep.op()<<") EVENT REPORT:\n";
-  rep.print();
-  std::cout<<"Container::report() : SUMMED EVENT REPORT INPUT:\n";
-  event_report.print();
+  stdMesg("");
+  stdMesg("Container::report() : ANALYZED (%d) EVENT REPORT:", rep.op());
+  rep.print(6, prepend.str());
+  stdMesg("");
+  stdMesg("Container::report() : SUMMED EVENT REPORT INPUT:");
+  event_report.print(6, prepend.str());
   #endif
 
   event_report+=rep;
 
   #ifdef DEB_DEBUG
-  std::cout<<"Container::report() : SUMMED EVENT REPORT OUTPUT:\n";
-  event_report.print();
-  stdMesg("\n\nContainer::report() Done.\n");
+  stdMesg("");
+  stdMesg("Container::report() : SUMMED EVENT REPORT OUTPUT:");
+  event_report.print(6, prepend.str());
   #endif
 
   if (tree!=NULL) {
     #ifdef DEB_DEBUG
-    stdMesg("\n\nContainer::report() filling tree\n");
+    stdMesg("");
+    stdMesg("Container::report() : filling tree");
     #endif
     tree->fill(rep);
   }
 
+  stdMesg("");
+  stdMesg("Container::report() : Done.\n");
 }
 
 
@@ -582,6 +615,16 @@ int Container<C,D,K>::passed(std::string selection, size_t i,
 			     Selection* stat=NULL){
   stdErr("passed(): virtual function passed() has not been implemented\n");
   return NOVAL_I;
+}
+
+
+//--------------------- increment_event_counter() -----------------------------
+
+template <class C, class D, class K>
+void Container<C,D,K>::increment_event_counter() {
+  #ifdef DEB_DEBUG
+  counter_++;
+  #endif
 }
 
 //-----------------------------------------------------------------------------
