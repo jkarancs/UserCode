@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Selection.hh,v 1.6 2010/08/03 09:15:12 veszpv Exp $
+// $Id: Selection.hh,v 1.7 2010/08/03 09:31:51 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -24,6 +24,8 @@
 #include "TFile.h"
 #include "TTree.h"
 #include <limits>
+
+#define CUT_NAME_LENGTH 30
 
 namespace deb {
 
@@ -84,7 +86,9 @@ class SelectionBase {
 
   inline int                    passed();
 
-  void                          print(size_t ncols=8);
+  void                          print(size_t ncols=8, 
+				      std::string prepend="",
+				      std::string last="");
 
   void                          analyze(SelectionBase& result, SelectionOp op);
 
@@ -278,13 +282,16 @@ template<> int SelectionBase<MultiCut>::passed() {
 
 //------------------------------- print()--------------------------------------
 
-template<> void SelectionBase<Cut>::print(size_t ncols) {
-  std::cout<<"\nSelection report: "<<name_<<"\n";
-  std::cout<<"Entries: "<<entries_<<std::endl;
-  std::cout<<"Selection option: "<<op_<<std::endl;
-  std::cout<<std::setw(20)<<"\t"<<object_<<"\n";
+template<> 
+void SelectionBase<Cut>::print(size_t ncols, std::string prepend, 
+			       std::string last) {
+  std::cout<<prepend<<"Selection report: "<<name_<<"\n";
+  std::cout<<prepend<<"Entries: "<<entries_<<std::endl;
+  std::cout<<prepend<<"Selection option: "<<op_<<std::endl;
+  std::cout<<prepend<<std::setw(CUT_NAME_LENGTH)<<" "<<"\t"<<object_<<"\n";
   for (size_t i=0; i<cuts_.size(); i++) {
-    std::cout<<std::setw(20)<<cuts_[i].name()<<" :\t"<< cuts_[i].passed();
+    std::cout<<prepend<<std::setw(CUT_NAME_LENGTH)
+	     <<cuts_[i].name()<<" :\t"<< cuts_[i].passed();
     if (entries_!=0) {
       std::cout << " (" << std::fixed << std::setprecision(2) 
 		<< cuts_[i].passed()*100./entries_ << ") ";
@@ -294,22 +301,24 @@ template<> void SelectionBase<Cut>::print(size_t ncols) {
     #endif
     std::cout<<std::endl;
   }
-  std::cout<<std::endl;
+  std::cout<<last;
 }
 
 
 
-template<> void SelectionBase<MultiCut>::print(size_t ncols) {
+template<> 
+void SelectionBase<MultiCut>::print(size_t ncols, 
+				    std::string prepend, std::string last) {
 
-  std::cout<<"\nMultiSelection report: "<<name_<<"\n";
-  std::cout<<"Entries: "<<entries_<<std::endl;
-  std::cout<<"Selection option: "<<op_<<std::endl;
+  std::cout<<prepend<<"MultiSelection report: "<<name_<<"\n";
+  std::cout<<prepend<<"Entries: "<<entries_<<std::endl;
+  std::cout<<prepend<<"Selection option: "<<op_<<std::endl;
   if (cuts_.size()==0) {
-    std::cout<<std::endl;
+    std::cout<<prepend<<std::endl;
     return;
   }
 
-  std::cout<<std::setw(20);
+  std::cout<<prepend<<std::setw(CUT_NAME_LENGTH)<<" "<<"  ";
   for (size_t i=0; i<cuts_[0].size() && i<ncols; i++) {
     std::cout<<"\t";
     if (entries_!=0 && i!=0) std::cout<<"\t";
@@ -318,7 +327,8 @@ template<> void SelectionBase<MultiCut>::print(size_t ncols) {
   std::cout<<std::endl;
 
   for (size_t i=0; i<cuts_.size(); i++) {
-    std::cout<<std::setw(20)<<cuts_[i].name()<<" :";
+    std::cout<<prepend<<std::setw(CUT_NAME_LENGTH);
+    std::cout<<cuts_[i].name()<<" :";
     for (size_t j=0; j<cuts_[i].size() && j<ncols; j++) {
       std::cout << "\t" << cuts_[i].passed(j);
       if (entries_!=0) {
@@ -332,7 +342,8 @@ template<> void SelectionBase<MultiCut>::print(size_t ncols) {
     }
     std::cout<<std::endl;
   }
-  std::cout<<std::endl;
+
+  std::cout<<last;
 }
 
 
