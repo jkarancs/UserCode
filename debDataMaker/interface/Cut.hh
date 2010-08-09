@@ -20,7 +20,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Jul 18 10:28:26 CET 2010
-// $Id: Cut.hh,v 1.5 2010/08/01 21:44:31 veszpv Exp $
+// $Id: Cut.hh,v 1.6 2010/08/03 09:15:12 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -29,6 +29,7 @@
 
 #include <string>
 #include "CONST.hh"
+#include "Tools.hh"
 
 namespace deb {
 
@@ -99,7 +100,7 @@ class CutBase {
   static const char*        valueTypeName(ValueTypeID id);
  
   template<class T> 
-  static inline void        check(const T& t) { assert(t!=NOVAL<T>()); }
+  static inline bool        check(const T& t) { return t!=NOVAL<T>(); }
 
 };
 
@@ -335,7 +336,10 @@ class Cut : public CutBase{
 
 template<class T> Cut::Cut(std::string name, T value, int passed) 
   : CutBase(name, valueTypeID<T>()) {
-  check(value);
+  if (check(value)==false) {
+    std::cout<<"Cut::Cut("<<name<<", "<<value<<", "<<passed<<") failed\n";
+    check_noval(value);
+  }
   value_ = valueType(value);
   passed_ = passed;
 }
@@ -480,7 +484,10 @@ MultiCut::MultiCut(const Cut& c) : CutBase(c) {
 template<class T> 
 MultiCut::MultiCut(std::string name, T value, int passed) 
   : CutBase(name, valueTypeID<T>()) {
-  check(value);
+  if (check(value)==false) {
+    std::cout<<"MultiCut::Cut("<<name<<", "<<value<<", "<<passed<<") failed\n";
+    check_noval(value);
+  }
   value_.push_back(valueType(value));
   passed_.push_back(passed);
 }
