@@ -22,7 +22,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Tue Aug 3 12:21:11 CET 2010
-// $Id$
+// $Id: BeamspotData.hh,v 1.3 2010/08/09 15:40:25 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -30,10 +30,11 @@
 #include <string>
 #include <sstream>
 #include "CONST.hh"
+#include "Data.hh"
 
 namespace deb {
 
-  class BeamspotData {
+  class BeamspotData : public Data {
   public:
     float x;
     float y;
@@ -50,9 +51,10 @@ namespace deb {
     
     std::string list(std::string prefix="") {
       std::ostringstream ss;
-      ss << prefix << "x/F:";
-      ss << prefix << "y/F:";
-      ss << prefix << "z/F";
+      ss << Data::list(prefix);
+      ss << prefix << ":x/F";
+      ss << prefix << ":y/F";
+      ss << prefix << ":z/F";
       return ss.str();
     }
 

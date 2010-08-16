@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Tools.hh,v 1.7 2010/07/27 09:45:41 veszpv Exp $
+// $Id: Tools.hh,v 1.8 2010/08/09 15:33:58 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -27,6 +27,7 @@
 
 #define  check_noval(variable)  (  assert( (variable)!=NOVAL(variable) )  )
 #define  RUNCHECK(x) ( std::cout << "Check-point " << x << std::endl )
+#define  RUN_CHECK(x) ( std::cout << "Check-point " << x << std::endl )
 
 
 

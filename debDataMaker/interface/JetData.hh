@@ -22,7 +22,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: JetData.hh,v 1.5 2010/07/18 12:26:12 veszpv Exp $
+// $Id: JetData.hh,v 1.6 2010/08/09 15:38:09 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -30,10 +30,11 @@
 #include <string>
 #include <sstream>
 #include "CONST.hh"
+#include "Data.hh"
 
 namespace deb {
 
-  class JetData {
+  class JetData : public Data {
   public:
     float e;
     float px;
@@ -47,10 +48,10 @@ namespace deb {
     float hadfrac;
     float emfrac;
     float area;
-    int corr_level; // level of correction applied on this jet collection
-    float corr; // jet energy correction factor w.r.t raw
-    float jesp; // +1 systematics of jet energy correction factor (w.r.t raw)
-    float jesm; // -1 systematics of jet energy correction factor (w.r.t raw)
+    int corr_level;      // level of correction applied on this jet collection
+    float corr;          // jet energy correction factor w.r.t raw
+    float jesp;          // +1 systematics of energy corr. factor (w.r.t raw)
+    float jesm;          // -1 systematics of energy corr. factor (w.r.t raw)
 
     JetData() { clear(); }
     ~JetData() { }
@@ -76,22 +77,23 @@ namespace deb {
 
     std::string list(std::string prefix="") {
       std::ostringstream ss;
-      ss << prefix << "e/F:";
-      ss << prefix << "px/F:";
-      ss << prefix << "py/F:";
-      ss << prefix << "pz/F:";
-      ss << prefix << "m/F:";
-      ss << prefix << "et/F:";
-      ss << prefix << "pt/F:";
-      ss << prefix << "phi/F:";
-      ss << prefix << "eta/F:";
-      ss << prefix << "hadfrac/F:";
-      ss << prefix << "emfrac/F:";
-      ss << prefix << "area/F:";
-      ss << prefix << "corr_level/I:";
-      ss << prefix << "corr/F:";
-      ss << prefix << "jesp/F:";
-      ss << prefix << "jesm/F";
+      ss << Data::list(prefix);
+      ss << prefix << ":e/F";
+      ss << prefix << ":px/F";
+      ss << prefix << ":py/F";
+      ss << prefix << ":pz/F";
+      ss << prefix << ":m/F";
+      ss << prefix << ":et/F";
+      ss << prefix << ":pt/F";
+      ss << prefix << ":phi/F";
+      ss << prefix << ":eta/F";
+      ss << prefix << ":hadfrac/F";
+      ss << prefix << ":emfrac/F";
+      ss << prefix << ":area/F";
+      ss << prefix << ":corr_level/I";
+      ss << prefix << ":corr/F";
+      ss << prefix << ":jesp/F";
+      ss << prefix << ":jesm/F";
       return ss.str();
     }
 

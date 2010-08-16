@@ -31,7 +31,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Tue Aug 3 12:21:11 CET 2010
-// $Id$
+// $Id: BeamspotProducer.hh,v 1.1 2010/08/09 15:39:51 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -75,6 +75,7 @@ BeamspotProducer<T>::BeamspotProducer(const edm::ParameterSet& iConfig)
 //----------------------------------- set() -----------------------------------
 
 template<class T> void BeamspotProducer<T>::set(const edm::Event& iEvent) {
+  increment_event_counter();
 
   if (!isValid()) return;
 
@@ -84,6 +85,8 @@ template<class T> void BeamspotProducer<T>::set(const edm::Event& iEvent) {
   clear();
 
   BeamspotData beamspot;
+  beamspot.oid = 0;
+  beamspot.eid = event_counter();
 
   if ( beamSpotHandle.isValid() ) {
 

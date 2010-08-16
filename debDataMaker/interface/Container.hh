@@ -81,7 +81,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Container.hh,v 1.14 2010/08/03 09:15:35 veszpv Exp $
+// $Id: Container.hh,v 1.15 2010/08/09 15:37:18 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -91,6 +91,8 @@
 #include "CONST.hh"
 #include "Tools.hh"
 #include "Selection.hh"
+
+#define VARIABLE_NAME_LENGTH 20
 
 namespace deb {
 
@@ -115,6 +117,7 @@ template <class C, class D, class K=size_t> class Container : public C {
 
  protected:
   std::string       name_;
+  unsigned long     counter_;           // event counter
   size_t            storeNObjects_;     // storeNObjects after calling select()
   std::vector<K>    storeList_;
   std::string       selectionType_;     // 1, 2,... variants of data selection.
@@ -125,15 +128,16 @@ template <class C, class D, class K=size_t> class Container : public C {
  protected:
   TTree*            tree_;              // pointer to tree if being saved there
 
-  #ifdef DEB_DEBUG
-  unsigned long     counter_;
-  #endif
 
  private:
   void              init(size_t);
   void              init(std::vector<K>&);
 
+
  public:
+  inline void       increment_event_counter();
+  inline unsigned long 
+                    event_counter() { return counter_; }
   //virtual std::string       keyToString(K)=0;
   virtual KeyType   key(typename C::iterator)=0;
   // Commented out because it is dangerous, this operator should not be called
@@ -176,7 +180,6 @@ template <class C, class D, class K=size_t> class Container : public C {
   virtual int       passed(std::string, typename C::const_iterator,Selection*);
   virtual int       passed(std::string, size_t, Selection*);
 
-  inline void       increment_event_counter();
 };
 
 //--------------------------------- Constructor -------------------------------
@@ -189,9 +192,7 @@ void Container<C,D,K>::init(size_t storeNObjects) {
   setValid(true);
   vars_=getVariableMap(objVoid_.list());
   tree_=NULL;
-  #ifdef DEB_DEBUG
   counter_ = 0;
-  #endif
 }
 
 template <class C, class D, class K>
@@ -345,11 +346,8 @@ void Container<C,D,K>::stdErr(std::string mesg, ...) {
   vsprintf(s, mesg.data(), argList);
   va_end(argList);
   mesg=s;
-  std::cerr<<"*** ERROR: "<<name_<<"("<<humanTypeId(objVoid_)<<")::"
-           #ifdef DEB_DEBUG
-	   <<"<"<<counter_<<">"<<"::"
-           #endif
-	   <<mesg<<std::endl;
+  std::cerr<<"*** ERROR: "<<name_<<"("<<humanTypeId(objVoid_)<<")::<"
+	   <<counter_<<">::"<<mesg<<std::endl;
 }
 
 
@@ -361,11 +359,8 @@ void Container<C,D,K>::stdWarn(std::string mesg, ...) {
   vsprintf(s, mesg.data(), argList);
   va_end(argList);
   mesg=s;
-  std::cout<<"*** WARNING: "<<name_<<"("<<humanTypeId(objVoid_)<<")::"
-           #ifdef DEB_DEBUG
-	   <<"<"<<counter_<<">"<<"::"
-           #endif
-	   <<mesg<<std::endl;
+  std::cout<<"*** WARNING: "<<name_<<"("<<humanTypeId(objVoid_)<<")::<"
+	   <<counter_<<">::"<<mesg<<std::endl;
 }
 
 
@@ -377,10 +372,7 @@ void Container<C,D,K>::stdMesg(std::string mesg, ...) {
   vsprintf(s, mesg.data(), argList);
   va_end(argList);
   mesg=s;
-  std::cout<<name_<<"("<<humanTypeId(objVoid_)<<")::"
-           #ifdef DEB_DEBUG
-	   <<"<"<<counter_<<">"<<"::"
-           #endif
+  std::cout<<name_<<"("<<humanTypeId(objVoid_)<<")::<"<<counter_<<">::"
 	   <<mesg<<std::endl;
 }
 
@@ -451,8 +443,8 @@ void Container<C,D,K>::print(int verbose=0) {
     std::map<std::string,std::pair<char,size_t> >::const_iterator it;
     for (it=vars_.begin(); it!=vars_.end(); it++) {
       std::ostringstream ss;
-      ss<<"   \t"<<ROOTVariableTypeMap[(*it).second.first].first;
-      ss<<" "<<(*it).first<<" = \t\t";
+      ss<<"   "<<std::setw(8)<<ROOTVariableTypeMap[(*it).second.first].first;
+      ss<<std::setw(VARIABLE_NAME_LENGTH)<<(*it).first<<" = ";
       if ((*it).second.first=='F' || (*it).second.first=='D') ss<<"%f";
       else if ((*it).second.first=='I'||(*it).second.first=='L') ss<<"%d";
       else if ((*it).second.first=='i'||(*it).second.first=='l') ss<<"%u";

@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Selection.hh,v 1.7 2010/08/03 09:31:51 veszpv Exp $
+// $Id: Selection.hh,v 1.8 2010/08/09 15:34:35 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -24,6 +24,7 @@
 #include "TFile.h"
 #include "TTree.h"
 #include <limits>
+#include <cmath>
 
 #define CUT_NAME_LENGTH 30
 
@@ -32,12 +33,14 @@ namespace deb {
 template<class C>
 class SelectionBase {
  public:
-  enum  SelectionOp { individual=1, sequential=2, complementary=4 };
+  // This must be bit-coded, also implies a priority order
+  enum  SelectionOp { individual=1, sequential=2, complementary=4, 
+		      multiplicity=256 };
 
   SelectionBase() { init(); }
 
   SelectionBase(std::string name, 
-		SelectionOp op=individual,
+		unsigned int op=individual,
 		std::string object=NOVAL_S)
     : name_(name), op_(op), object_(object) { clear(); }
 
@@ -52,45 +55,44 @@ class SelectionBase {
 
  private:
   std::string name_;
-  SelectionOp op_;
+  unsigned int op_;
   std::string object_;
   std::vector<C> cuts_;
   unsigned int entries_;
 
-
   void init();
 
  public:
-  void                          clear();
-  SelectionBase&                operator+= (const SelectionBase& s);
-
-  inline const std::string&     name() const { return name_; }
-  inline std::string            getName() const { return name_; }
-  inline void                   setName(std::string name) { name_=name; }
-
-  inline const std::string&     object() const { return object_; }
-  inline std::string            getObject() const { return object_; }
-  inline void                   setObject(std::string object) {object_=object;}
-
-  inline const std::vector<C>&  cuts() const { return cuts_; }
-  inline const C&               cut(size_t i) const { return cuts_[i]; }
-
-  inline unsigned int           entries() const { return entries_; }
-  inline void                   increase_entries() { entries_++; }
-  
-  SelectionOp                   op() const { return op_; }
-
-  void                          add(const C& cut);
-
-  void                          add(const SelectionBase<Cut>& sel);
-
-  inline int                    passed();
-
-  void                          print(size_t ncols=8, 
-				      std::string prepend="",
-				      std::string last="");
-
-  void                          analyze(SelectionBase& result, SelectionOp op);
+  void                         clear();
+  SelectionBase&               operator+= (const SelectionBase& s);
+			       
+  inline const std::string&    name() const { return name_; }
+  inline std::string           getName() const { return name_; }
+  inline void                  setName(std::string name) { name_=name; }
+			       
+  inline const std::string&    object() const { return object_; }
+  inline std::string           getObject() const { return object_; }
+  inline void                  setObject(std::string object) {object_=object;}
+			       
+  inline const std::vector<C>& cuts() const { return cuts_; }
+  inline const C&              cut(size_t i) const { return cuts_[i]; }
+			       
+  inline unsigned int          entries() const { return entries_; }
+  inline void                  increase_entries() { entries_++; }
+  			       
+  unsigned int                 op() const { return op_; }
+			       
+  void                         add(const C& cut);
+			       
+  void                         add(const SelectionBase<Cut>& sel);
+			       
+  inline int                   passed();
+			       
+  void                         print(size_t ncols=8, 
+			             std::string prepend="",
+			             std::string last="");
+			       
+  void                         analyze(SelectionBase& result, unsigned int op);
 
 };
 
@@ -191,11 +193,12 @@ void SelectionBase<C>::add(const C& cut) {
 
 template<> 
 void SelectionBase<Cut>::add(const SelectionBase<Cut>& sel) {
-  if ( op_ != individual || sel.op_ != individual ) {
+  // op_ & multiplicity is not defined, neglect its value
+  if ( (op_ & individual) == 0 || (sel.op_ & individual) ==0 ) {
     std::cout<<"Selection "<<name_<<" : Trying to add columns with wrong"
       "representations\n";
-    assert(op_==individual);
-    assert(sel.op_==individual);
+    assert(op_ & individual);
+    assert(sel.op_ & individual);
   }
 
   if ( entries_!=sel.entries() && (entries_ > 1 || sel.entries_ > 1) ) {
@@ -211,6 +214,7 @@ void SelectionBase<Cut>::add(const SelectionBase<Cut>& sel) {
 
 template<> 
 void SelectionBase<MultiCut>::add(const SelectionBase<Cut>& sel) {
+  // op_ & multiplicity is not allowed for 'individual' selection by definition
   if ( op_ != individual || sel.op_ != SelectionBase<Cut>::individual ) {
     std::cout<<"Selection "<<name_<<" : Trying to add columns with wrong"
       "representations\n";
@@ -260,9 +264,11 @@ template<> int SelectionBase<Cut>::passed() {
   assert(entries_<2);
   assert(cuts_.size()!=0);
 
-  if (op_ == sequential) return (cuts_[cuts_.size()-1].passed()==0) ? 0 : 1;
+  // op_ & multiplicity is not defined, neglect its value
 
-  if (op_ == individual) {
+  if (op_ & sequential) return (cuts_[cuts_.size()-1].passed()==0) ? 0 : 1;
+
+  if (op_ & individual) {
     for (size_t i=0; i<cuts_.size(); i++) if (cuts_[i].passed() == 0) return 0;
     return 1;
   }
@@ -273,7 +279,7 @@ template<> int SelectionBase<Cut>::passed() {
 
 
 template<> int SelectionBase<MultiCut>::passed() {
-  std::cout << "SelectionBase<MulitCut>::passed() : call is ambiguous. \n";
+  std::cerr << "SelectionBase<MulitCut>::passed() : this call is ambiguous.\n";
   assert(0);
   return NOVAL_I;
 }
@@ -323,20 +329,25 @@ void SelectionBase<MultiCut>::print(size_t ncols,
     std::cout<<"\t";
     if (entries_!=0 && i!=0) std::cout<<"\t";
     std::cout<<object_<<"_"<<i;
+    #ifdef DEB_DEBUG
+    if (entries_<2) std::cout<<std::setw(10)<<" ";
+    #endif
   }
   std::cout<<std::endl;
 
+  int width=ceil(log10(entries_));
   for (size_t i=0; i<cuts_.size(); i++) {
     std::cout<<prepend<<std::setw(CUT_NAME_LENGTH);
     std::cout<<cuts_[i].name()<<" :";
     for (size_t j=0; j<cuts_[i].size() && j<ncols; j++) {
-      std::cout << "\t" << cuts_[i].passed(j);
+      std::cout << "\t" << std::setw(width) << cuts_[i].passed(j);
       if (entries_!=0) {
-	std::cout << " (" << std::fixed << std::setprecision(2)
+	std::cout << " (" << std::fixed << std::setprecision(2) << std::setw(6)
 		  << cuts_[i].passed(j)*100./entries_ << ") ";
       }
       #ifdef DEB_DEBUG
-      if (entries_<2) std::cout << " (" << cuts_[i].value_str(j) << ") ";
+      if (entries_<2) std::cout << "(" << std::setw(10) 
+				<< cuts_[i].value_str(j) << ")";
       #endif
       std::cout << " ";
     }
@@ -351,7 +362,7 @@ void SelectionBase<MultiCut>::print(size_t ncols,
 //------------------------------- analyze() -----------------------------------
 
 template<class C> 
-void SelectionBase<C>::analyze(SelectionBase<C>& result, SelectionOp op) {
+void SelectionBase<C>::analyze(SelectionBase<C>& result, unsigned int op) {
 
   if (entries_ > 1) {
     std::cout << "(Multi)Selection::analyze() : cannot analyze a Selection"
@@ -371,27 +382,28 @@ void SelectionBase<C>::analyze(SelectionBase<C>& result, SelectionOp op) {
     return;
   }
 
-  if (op == op_) {
+  if (op == op_ || cuts_[0].size()==0) { 
+    // individual or nothing needs to be done, or multiplicity is zero
     result=*this;
     return;
   }
 
-  if (op == sequential) {
+  if ( op & sequential ) {
     result=*this; // WARNING: result and this may be the same array
     result.op_=op;
     for (size_t j=0; j<cuts_[0].size(); j++) {
       size_t i=0;
       for ( ; i<cuts_.size(); i++) if (cuts_[i].passed_[j]==0) break;
       if (i==cuts_.size()) continue;
+      // The value of the failing selection is not set to invalid on purpose
       for (i++; i<cuts_.size(); i++) {
 	result.cuts_[i].passed_[j]=0;
 	result.cuts_[i].setValueInvalid(j);
       }
     }
-    return;
   }
 
-  if (op == complementary) {
+  else if ( op & complementary ) {
     result=*this; // WARNING: result and this may be the same array
     result.op_=op;
     for (size_t j=0; j<cuts_[0].size(); j++) {
@@ -417,8 +429,44 @@ void SelectionBase<C>::analyze(SelectionBase<C>& result, SelectionOp op) {
 	result.cuts_[i].setValueInvalid(j);
       }
     }
-    return;
   }
+
+  if ( op & multiplicity ) {
+
+    for (size_t i=0; i<result.cuts_.size(); i++) {
+
+      long j_failed = std::numeric_limits<long>::max();
+
+      for (long j=0; j<long(result.cuts_[i].size()); j++) {
+	if (result.cuts_[i].passed_[j]==0) {
+	  if ( j_failed > j ) j_failed = j;
+	  continue;
+	}
+	
+	if ( j_failed > j ) continue;
+	RUNCHECK("Adjusting");
+
+	for (size_t k=i; k<result.cuts_.size(); k++) {
+	  std::vector<int>::iterator it1=result.cuts_[k].passed_.begin();
+	  result.cuts_[k].passed_.erase(it1 + j_failed, it1 + j);
+	  result.cuts_[k].passed_.insert(result.cuts_[k].passed_.end(), 
+					 j-j_failed, 0);
+
+	  std::vector<Cut::ValueType>::iterator it2 = 
+	    result.cuts_[k].value_.begin();
+	  result.cuts_[k].value_.erase(it2 + j_failed, it2 + j);
+	  result.cuts_[k].value_.insert(result.cuts_[k].value_.end(), 
+					j-j_failed, 
+					result.cuts_[k].invalidValue());
+	}
+
+	j-=j_failed;
+	j_failed = std::numeric_limits<long>::max();
+      } // for j
+
+    } // for i
+
+  } // if
 
 }
 

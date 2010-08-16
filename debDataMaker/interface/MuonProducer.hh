@@ -31,7 +31,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: MuonProducer.hh,v 1.6 2009/11/12 14:50:54 aranyi Exp $
+// $Id: MuonProducer.hh,v 1.7 2010/08/09 15:36:08 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -150,7 +150,6 @@ void MuonProducer<pat::Muon>::set_isolation_(const pat::Muon& cmsmuon,
 //----------------------------------- set() -----------------------------------
 
 template<class T> void MuonProducer<T>::set(const edm::Event& iEvent) {
-
   increment_event_counter();
 
   if (!isValid()) return;
@@ -180,8 +179,10 @@ template<class T> void MuonProducer<T>::set(const edm::Event& iEvent) {
   for (unsigned int i=0; i<muons.size(); i++) {
 
     MuonData muon;
-    const T& cmsmuon = *muons[i].second;
+    muon.oid = i;
+    muon.eid = event_counter();
 
+    const T& cmsmuon = *muons[i].second;
 
     // reco::Candidates
     muon.e = cmsmuon.energy();

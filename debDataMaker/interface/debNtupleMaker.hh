@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: debNtupleMaker.hh,v 1.11 2010/07/23 14:10:28 veszpv Exp $
+// $Id: debNtupleMaker.hh,v 1.12 2010/07/27 09:45:42 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -33,8 +33,6 @@
 //#include "DataFormats/METReco/interface/GenMETFwd.h"
 //#include "DataFormats/METReco/interface/CaloMET.h"
 //#include "DataFormats/PatCandidates/interface/Electron.h"
-//#include "DataFormats/PatCandidates/interface/Muon.h"
-//#include "DataFormats/BeamSpot/interface/BeamSpot.h"
 
 //#include "DataFormats/Common/interface/TriggerResults.h"
 //#include "FWCore/Framework/interface/TriggerNames.h"
@@ -63,7 +61,7 @@
 
 // DEB DATA MAKER
 // <exclude modules from debugging here>
-#include "Selection.hh"
+//#include "Selection.hh"
 #define DEB_DEBUG
 // <include modules to debug here>
 // <exclude modules from debugging by including them before DEB_DEBUG>
@@ -73,10 +71,11 @@
 //#define DEB_DEBUG
 
 #include "SusyAnalysis/debDataMaker/interface/JetProducer.hh"
+#include "SusyAnalysis/debDataMaker/interface/BeamspotProducer.hh"
 // #include "SusyAnalysis/debDataMaker/interface/MetProducer.hh"
 // #include "SusyAnalysis/debDataMaker/interface/DeltaR.hh"
 // #include "SusyAnalysis/debDataMaker/interface/ElectronProducer.hh"
-// #include "SusyAnalysis/debDataMaker/interface/MuonProducer.hh"
+#include "SusyAnalysis/debDataMaker/interface/MuonProducer.hh"
 // #include "SusyAnalysis/debDataMaker/interface/McProcessProducer.hh"
 // #include "SusyAnalysis/debDataMaker/interface/McParticleProducer.hh"
 // #include "SusyAnalysis/debDataMaker/interface/EventProducer.hh"
@@ -92,10 +91,17 @@ public:
   explicit debNtupleMaker(const edm::ParameterSet&);
   ~debNtupleMaker();
 
+  JetProducer<reco::Jet> rjet;
   JetProducer<pat::Jet> pjet;
+  BeamspotProducer<reco::BeamSpot> bs;
+  MuonProducer<reco::Muon> rmuon;
+  MuonProducer<pat::Muon> pmuon;
+
   TTree *tree;
+
   MultiSelection* pjet_rep;
-  Plot<TH1>* pjet_plt;
+  MultiSelection* pmuon_rep;
+  //SelectionTree<TFileService>* pjet_plt;
 
 private:
   virtual void beginJob();

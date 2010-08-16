@@ -27,7 +27,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Muon.hh,v 1.25 2009/12/08 13:58:14 aranyi Exp $
+// $Id: Muon.hh,v 1.26 2010/08/09 15:36:08 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -150,7 +150,7 @@ int Muon::passed(std::string selection, size_t i, Selection *sel=NULL) {
     Cut has_trk("has innerTrack", muon(i).has_trk, muon(i).has_trk==1);
         sel->add(has_trk);
 
-    Cut trk_hits("Number of innerTrack hits >= 11", 
+    Cut trk_hits("innerTrack hits >= 11", 
 		 (muon(i).has_trk==1) ? muon(i).hits : 0, muon(i).hits >= 11);
         sel->add(trk_hits);
 
@@ -160,17 +160,17 @@ int Muon::passed(std::string selection, size_t i, Selection *sel=NULL) {
     Cut pt("pt >= 10", muon(i).pt, muon(i).pt>=10.);
         sel->add(pt);
 
-    Cut combined("Combined muon", muon(i).is_combined, muon(i).is_combined==1);
+    Cut combined("combined muon", muon(i).is_combined, muon(i).is_combined==1);
         sel->add(combined);
 
     if (muon(i).is_combined==1) check_noval(muon(i).ndof);
-    Cut chi2_ndof_preq("global Track (combined) exists, ndof != 0", 
+    Cut chi2_ndof_preq("globalTrack fit, ndof != 0", 
 		       (muon(i).is_combined==1) ? muon(i).ndof : 0,
 		       muon(i).is_combined==1 && muon(i).ndof!=0);
     sel->add(chi2_ndof_preq);
 
     if (muon(i).is_combined==1) check_noval(muon(i).chi2);
-    Cut chi2_ndof("global Track fit chi2/ndof < 10",
+    Cut chi2_ndof("globalTrack chi2/ndof < 10",
 		  (chi2_ndof_preq.passed()) ? muon(i).chi2/muon(i).ndof : 0, 
 		  chi2_ndof_preq.passed() && muon(i).chi2/muon(i).ndof<10.);
     sel->add(chi2_ndof);
@@ -241,7 +241,7 @@ int Muon::passed(std::string selection, size_t i, Selection *sel=NULL) {
     Cut has_trk("has innerTrack", muon(i).has_trk, muon(i).has_trk == 1);
     sel->add(has_trk);
 
-    Cut hits("Number of innerTrack hits >= 11",
+    Cut hits("innerTrack hits >= 11",
 	     (muon(i).has_trk==1) ? muon(i).hits : 0, muon(i).hits>=11);
     sel->add(hits);
     
@@ -251,17 +251,17 @@ int Muon::passed(std::string selection, size_t i, Selection *sel=NULL) {
     Cut pt("pt >= 20 GeV", muon(i).pt, muon(i).pt >= 20.);
     sel->add(pt);
 
-    Cut combined("Combined muon", muon(i).is_combined, muon(i).is_combined==1);
+    Cut combined("combined muon", muon(i).is_combined, muon(i).is_combined==1);
     sel->add(combined);
 
     if (muon(i).is_combined==1) check_noval(muon(i).ndof);
-    Cut chi2_ndof_preq("global Track (combined) exists, ndof != 0", 
+    Cut chi2_ndof_preq("globalTrack fit, ndof != 0", 
 		       (muon(i).is_combined==1) ? muon(i).ndof : 0,
 		       muon(i).is_combined==1 && muon(i).ndof!=0);
     sel->add(chi2_ndof_preq);
 
     if (muon(i).is_combined==1) check_noval(muon(i).chi2);
-    Cut chi2_ndof("global Track fit chi2/ndof < 10",
+    Cut chi2_ndof("globalTrack chi2/ndof < 10",
 		  (chi2_ndof_preq.passed()) ? muon(i).chi2/muon(i).ndof : 0, 
 		  chi2_ndof_preq.passed() && muon(i).chi2/muon(i).ndof<10.);
     sel->add(chi2_ndof);

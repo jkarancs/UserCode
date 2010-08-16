@@ -25,7 +25,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: MuonData.hh,v 1.11 2009/11/12 14:23:37 aranyi Exp $
+// $Id: MuonData.hh,v 1.12 2010/08/09 15:36:08 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -33,10 +33,11 @@
 #include <string>
 #include <sstream>
 #include "CONST.hh"
+#include "Data.hh"
 
 namespace deb {
 
-  class MuonData {
+  class MuonData : public Data {
   public:
                          // reco::Candidates :
     float e;             // 
@@ -146,7 +147,8 @@ namespace deb {
 
     std::string list(std::string prefix="") {
       std::ostringstream ss;
-      ss << prefix << "e/F";
+      ss << Data::list(prefix);
+      ss << prefix << ":e/F";
       ss << prefix << ":px/F";
       ss << prefix << ":py/F";
       ss << prefix << ":pz/F";
