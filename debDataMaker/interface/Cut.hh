@@ -20,7 +20,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Jul 18 10:28:26 CET 2010
-// $Id: Cut.hh,v 1.6 2010/08/03 09:15:12 veszpv Exp $
+// $Id: Cut.hh,v 1.7 2010/08/09 15:41:57 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -508,7 +508,7 @@ void MultiCut::add(ValueType value, int passed) {
 MultiCut& MultiCut::operator+= (const MultiCut& c) {
   assert_equal_base(c);
   size_t multi=c.size();
-  
+
   if (c.size() > size()) {
     multi=size(); // Save before passed_ is enlarged!
     for (size_t i=size(); i<c.size(); i++) {
@@ -516,11 +516,14 @@ MultiCut& MultiCut::operator+= (const MultiCut& c) {
       value_.push_back(c.value_[i]);
     }
   }
-  
+
   for (size_t i=0; i<multi; i++) {
     passed_[i]+=c.passed_[i];
     value_[i]=c.value_[i];
   }
+
+  // clear the values that were not overwritten
+  for (size_t i=c.size(); i<size(); i++) value_[i]=invalidValue();
 
   return *this;
 }

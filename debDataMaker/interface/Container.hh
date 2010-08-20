@@ -81,7 +81,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Container.hh,v 1.15 2010/08/09 15:37:18 veszpv Exp $
+// $Id: Container.hh,v 1.16 2010/08/16 13:41:19 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -171,12 +171,6 @@ template <class C, class D, class K=size_t> class Container : public C {
   }
   void              select();
 
-  template<class T>
-  void              report(MultiSelection& event_report, 
-			   SelectionTree<T>* tree=NULL);
-
-//   virtual int       passed(std::string, typename C::const_iterator);
-//   virtual int       passed(std::string, size_t);
   virtual int       passed(std::string, typename C::const_iterator,Selection*);
   virtual int       passed(std::string, size_t, Selection*);
 
@@ -501,98 +495,8 @@ template <class C, class D, class K> void Container<C,D,K>::select() {
 }
 
 
-template <class C, class D, class K>
-template <class T>
-void Container<C,D,K>::report(MultiSelection& event_report,
-			      SelectionTree<T>* tree) {
-
-  stdMesg("Container::report() : Running...");
-  std::ostringstream prepend;
-  prepend<<name_<<"("<<humanTypeId(objVoid_)<<"):: ";
-
-  if (!isValid()) return;
-
-  if (event_report.name()==NOVAL_S) event_report.setName(selectionType_);
-  if (event_report.name()==NOVAL_S) return;
-  if (event_report.object()==NOVAL_S) event_report.setObject(name_);
-
-  MultiSelection rep(event_report.name(), 
-		     MultiSelection::individual,
-		     event_report.object());
-  
-  for (typename C::iterator it=this->begin(); it!=this->end(); it++) {
-    Selection sel(event_report.name(), 
-		  Selection::individual, 
-		  name_+"_"+keyToString(key(it)));
-    Cut cand("Candidate", it-this->begin(), 1);
-    sel.add(cand);
-    int passed_with_cutflow = passed(event_report.name(), it, &sel);
-    int passed_without_cutflow = passed(event_report.name(), it);
-    assert(passed_with_cutflow == passed_without_cutflow);
-    rep.add(sel);
-    #ifdef DEB_DEBUG
-    stdMesg("");
-    stdMesg("Container::report() : SELECTION REPORT:");
-    sel.print(6, prepend.str());
-    #endif
-  }
-  rep.increase_entries();
-  #ifdef DEB_DEBUG
-  stdMesg("");
-  stdMesg("Container::report() : EVENT REPORT:");
-  rep.print(6, prepend.str());
-  #endif
-  
-  if (event_report.op() != MultiSelection::individual) {
-    rep.analyze(rep, event_report.op());
-  }
-
-  #ifdef DEB_DEBUG
-  stdMesg("");
-  stdMesg("Container::report() : ANALYZED (%d) EVENT REPORT:", rep.op());
-  rep.print(6, prepend.str());
-  stdMesg("");
-  stdMesg("Container::report() : SUMMED EVENT REPORT INPUT:");
-  event_report.print(6, prepend.str());
-  #endif
-
-  event_report+=rep;
-
-  #ifdef DEB_DEBUG
-  stdMesg("");
-  stdMesg("Container::report() : SUMMED EVENT REPORT OUTPUT:");
-  event_report.print(6, prepend.str());
-  #endif
-
-  if (tree!=NULL) {
-    #ifdef DEB_DEBUG
-    stdMesg("");
-    stdMesg("Container::report() : filling tree");
-    #endif
-    tree->fill(rep);
-  }
-
-  stdMesg("");
-  stdMesg("Container::report() : Done.\n");
-}
-
-
-
 //--------------------------------- passed() ----------------------------------
 
-// template <class C, class D, class K>
-// int Container<C,D,K>::passed(std::string selection, 
-// 			      typename C::const_iterator it) {
-//   stdErr("passed(): virtual function passed() has not been implemented\n");
-//   return NOVAL_I;
-// }
-
-
-// template <class C, class D, class K>
-// int Container<C,D,K>::passed(std::string selection, size_t i) {
-//   stdErr("passed(): virtual function passed() has not been implemented\n");
-//   return NOVAL_I;
-// }
 
 template <class C, class D, class K>
 int Container<C,D,K>::passed(std::string selection, 
@@ -614,9 +518,7 @@ int Container<C,D,K>::passed(std::string selection, size_t i,
 
 template <class C, class D, class K>
 void Container<C,D,K>::increment_event_counter() {
-  #ifdef DEB_DEBUG
   counter_++;
-  #endif
 }
 
 //-----------------------------------------------------------------------------

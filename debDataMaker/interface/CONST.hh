@@ -34,6 +34,12 @@
     template<> inline long            NOVAL() { return NOVAL_L; }
     template<> inline unsigned long   NOVAL() { return NOVAL_l; }
     template<> inline const char*     NOVAL() { return NOVAL_S; }
+    template<> inline const double          NOVAL() { return NOVAL_D; }
+    template<> inline const float           NOVAL() { return NOVAL_F; }
+    template<> inline const int             NOVAL() { return NOVAL_I; }
+    template<> inline const unsigned int    NOVAL() { return NOVAL_i; }
+    template<> inline const long            NOVAL() { return NOVAL_L; }
+    template<> inline const unsigned long   NOVAL() { return NOVAL_l; }
 
 
     template<class T> inline T      NOVAL(T& t)             { return T();     }
@@ -44,6 +50,24 @@
     template<> inline long          NOVAL(long& t)          { return NOVAL_L; }
     template<> inline unsigned long NOVAL(unsigned long& t) { return NOVAL_l; }
     template<> inline const char*   NOVAL(const char*& t)   { return NOVAL_S; }
+
+
+    template<class T> inline T      NOVAL(const T& t)       { return T();     }
+    template<> 
+    inline double        NOVAL(const double& t)        { return NOVAL_D; }
+    template<> 
+    inline float         NOVAL(const float& t)         { return NOVAL_F; }
+    template<> 
+    inline int           NOVAL(const int& t)           { return NOVAL_I; }
+    template<> 
+    inline unsigned int  NOVAL(const unsigned int& t)  { return NOVAL_i; }
+    template<> 
+    inline long          NOVAL(const long& t)          { return NOVAL_L; }
+    template<> 
+    inline unsigned long NOVAL(const unsigned long& t) { return NOVAL_l; }
+
+
+
 
 
     int const PASS_VALIDITY=0;

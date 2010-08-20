@@ -15,7 +15,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: debNtupleMaker.hh,v 1.12 2010/07/27 09:45:42 veszpv Exp $
+// $Id: debNtupleMaker.hh,v 1.13 2010/08/16 13:41:19 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -61,11 +61,12 @@
 
 // DEB DATA MAKER
 // <exclude modules from debugging here>
-//#include "Selection.hh"
 #define DEB_DEBUG
 // <include modules to debug here>
 // <exclude modules from debugging by including them before DEB_DEBUG>
+#include "Selection.hh"
 #include "Container.hh"
+#include "SusyAnalysis/debDataMaker/interface/ElectronProducer.hh"
 #undef DEB_DEBUG
 
 //#define DEB_DEBUG
@@ -74,7 +75,7 @@
 #include "SusyAnalysis/debDataMaker/interface/BeamspotProducer.hh"
 // #include "SusyAnalysis/debDataMaker/interface/MetProducer.hh"
 // #include "SusyAnalysis/debDataMaker/interface/DeltaR.hh"
-// #include "SusyAnalysis/debDataMaker/interface/ElectronProducer.hh"
+#include "SusyAnalysis/debDataMaker/interface/ElectronProducer.hh"
 #include "SusyAnalysis/debDataMaker/interface/MuonProducer.hh"
 // #include "SusyAnalysis/debDataMaker/interface/McProcessProducer.hh"
 // #include "SusyAnalysis/debDataMaker/interface/McParticleProducer.hh"
@@ -96,12 +97,15 @@ public:
   BeamspotProducer<reco::BeamSpot> bs;
   MuonProducer<reco::Muon> rmuon;
   MuonProducer<pat::Muon> pmuon;
+  ElectronProducer<reco::GsfElectron> rele;
+  ElectronProducer<pat::Electron> pele;
 
   TTree *tree;
 
-  MultiSelection* pjet_rep;
-  MultiSelection* pmuon_rep;
-  //SelectionTree<TFileService>* pjet_plt;
+  MultiSelection* pjet_sel;
+  MultiSelection* pmuon_sel;
+  MultiSelection* pele_sel;
+  SelectionTree<TFileService>* pele_st;
 
 private:
   virtual void beginJob();

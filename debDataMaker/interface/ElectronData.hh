@@ -23,9 +23,9 @@
 
 */
 //
-// Original Author:  Anita KAPUSI
+// Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: ElectronData.hh,v 1.6 2009/06/05 19:36:38 veszpv Exp $
+// $Id$
 //
 //
 //-----------------------------------------------------------------------------
@@ -33,52 +33,45 @@
 #include <string>
 #include <sstream>
 #include "CONST.hh"
+#include "Data.hh"
 
 namespace deb {
 
-  class ElectronData {
+  class ElectronData : public Data {
   public:
-    float e;
-    float px;
-    float py;
-    float pz;
-    float m;
-    float p;
-    float pt;
-    float et;
-    float eta;
-    float phi;
-    float isoR03_trk;       //Tracker Isolation in DeltaR<0.3 cone
-    float isoR03_hcal;      //Hadron Calorimeter Isolation in DeltaR<0.3 cone
-    float isoR03_ecal;      //Electromagn. Calorimeter Isolation 
-                            //in DeltaR<0.3 cone
-    float d0;               //Displacement of the track
-    float phi_trk;          //Phi in the tracker
-    float tight;            //Electron Id e.g.:"eidRobustTight"
-    float loose;            //Electron Id e.g.:"eidRobustLoose"
-    float bc_d0;            //d0 with respect to the primary vertex
-    float reliso;           //Relative isolation 
-                            //(isoR03_ecal+isoR03_hcal)/pt    
-    float combined_reliso;  //Combined Relative isolation 
-                            //(isoR03_ecal+isoR03_hcal+isoR03_trk)/et
-    int pass;
-    int has_trk;
+                         // reco::Candidates :
+    float e;             //
+    float px;            //
+    float py;            //
+    float pz;            //
+    float m;             //
+    float pt;            //
+    float et;            //
+    float eta;           //
+    float phi;           //
 
-    ElectronData() {
-      clear();
-      selectionTypes_["VALID"]=VALID;
-      selectionTypes_["RefAna4JetMetMuon"]=RefAna4JetMetMuon;
-      selectionTypes_["RefAna4JetMetElectron"]=RefAna4JetMetElectron;
-    }
+                         // reco::GsfElectron:: or pat::Electron::gsfTrack()
+    int   has_trk;       // has a GsfTrack
+    float d0;            // displacement of the track
+    float phi_trk;       // phi of the GsfTrack
+
+                         // DeltaR<0.3 cone isolations:
+    float isoR03_ecal;   // ECal isolation with electron hit removed
+    float isoR03_hcal;   // HCal isolation, total sum after electron removed
+    float isoR03_trk;    // tracker isolation with electron removed
+
+                         // For now, only for Pat electrons
+    float loose;         // electron Id e.g.:"eidRobustLoose"
+    float tight;         // electron Id e.g.:"eidRobustTight"
+
+    float d0_bc;         // d0 with respect to the primary vertex
+    float reliso;        // Relative isolation 
+                         // (isoR03_ecal+isoR03_hcal)/pt    
+    float reliso_comb;   // Combined Relative isolation 
+                         // (isoR03_ecal+isoR03_hcal+isoR03_trk)/et
+
+    ElectronData() { clear(); }
     ~ElectronData() { }
-
-    enum ElectronSelectionType {
-      VALID=PASS_VALIDITY,
-      RefAna4JetMetMuon,
-      RefAna4JetMetElectron
-    };
-
-    std::map<std::string, int> selectionTypes_;
 
     void clear() {
       e=NOVAL_F;
@@ -86,49 +79,55 @@ namespace deb {
       py=NOVAL_F;
       pz=NOVAL_F;
       m=NOVAL_F;
-      p=NOVAL_F;
       pt=NOVAL_F;
       et=NOVAL_F;
       eta=NOVAL_F;
       phi=NOVAL_F;
-      isoR03_trk=NOVAL_F;
-      isoR03_hcal=NOVAL_F;
-      isoR03_ecal=NOVAL_F;
+
+      has_trk=NOVAL_I;
       d0=NOVAL_F;
       phi_trk=NOVAL_F;
-      tight=NOVAL_F;
+
+      isoR03_ecal=NOVAL_F;
+      isoR03_hcal=NOVAL_F;
+      isoR03_trk=NOVAL_F;
+
       loose=NOVAL_F;
-      bc_d0=NOVAL_F;
+      tight=NOVAL_F;
+
+      d0_bc=NOVAL_F;
       reliso=NOVAL_F; 
-      combined_reliso=NOVAL_F;    
-      pass=0;
-      has_trk=NOVAL_I;
+      reliso_comb=NOVAL_F;    
     }
 
     std::string list(std::string prefix="") {
       std::ostringstream ss;
-      ss << prefix << "e/F:";
-      ss << prefix << "px/F:";
-      ss << prefix << "py/F:";
-      ss << prefix << "pz/F:";
-      ss << prefix << "m/F:";
-      ss << prefix << "p/F:";
-      ss << prefix << "pt/F:";
-      ss << prefix << "et/F:";
-      ss << prefix << "eta/F:";
-      ss << prefix << "phi/F:";
-      ss << prefix << "isoR03_trk/F:";
-      ss << prefix << "isoR03_hcal/F:";
-      ss << prefix << "isoR03_ecal/F:";
-      ss << prefix << "d0/F:";
-      ss << prefix << "phi_trk/F:";
-      ss << prefix << "tight/F:";
-      ss << prefix << "loose/F:";
-      ss << prefix << "bc_d0/F:";
-      ss << prefix << "reliso/F:";
-      ss << prefix << "combined_reliso/F:";
-      ss << prefix << "pass/I:";
-      ss << prefix << "has_trk/I";
+      ss << Data::list(prefix);
+      ss << prefix <<":e/F";
+      ss << prefix <<":px/F";
+      ss << prefix <<":py/F";
+      ss << prefix <<":pz/F";
+      ss << prefix <<":m/F";
+      ss << prefix <<":pt/F";
+      ss << prefix <<":et/F";
+      ss << prefix <<":eta/F";
+      ss << prefix <<":phi/F";
+
+      ss << prefix <<":has_trk/I";
+      ss << prefix <<":d0/F";
+      ss << prefix <<":phi_trk/F";
+
+      ss << prefix <<":isoR03_ecal/F";
+      ss << prefix <<":isoR03_hcal/F";
+      ss << prefix <<":isoR03_trk/F";
+
+      ss << prefix <<":loose/F";
+      ss << prefix <<":tight/F";
+
+      ss << prefix <<":d0_bc/F";
+      ss << prefix <<":reliso/F";
+      ss << prefix <<":reliso_comb/F";
+
       return ss.str();
     }
 

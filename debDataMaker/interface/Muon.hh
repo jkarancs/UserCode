@@ -27,7 +27,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Muon.hh,v 1.26 2010/08/09 15:36:08 veszpv Exp $
+// $Id: Muon.hh,v 1.27 2010/08/16 13:41:19 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -51,14 +51,15 @@ class Muon : public VContainer<MuonData> {
 
   // Inherited functions to be overloaded
   void calculate (Beamspot *beamspot=NULL);
-  
+
   int passed(std::string, size_t, Selection*);
 
 };
-  
+
+
 //-------------------------------- calculate() --------------------------------
 
-void Muon::calculate (Beamspot *beamspot){ 
+void Muon::calculate (Beamspot *beamspot) { 
 
   if (!isValid()) return;
   
@@ -76,8 +77,7 @@ void Muon::calculate (Beamspot *beamspot){
 	   beamspot->beamspot(0).y!=NOVAL_F&&
 	   muon(i).phi_trk!=NOVAL_F) {
 
-	muon(i).d0_bc = 
-	  muon(i).d0 
+	muon(i).d0_bc = muon(i).d0 
 	  - beamspot->beamspot(0).x*TMath::Sin(muon(i).phi_trk)
 	  + beamspot->beamspot(0).y*TMath::Cos(muon(i).phi_trk);
       } 
@@ -88,7 +88,7 @@ void Muon::calculate (Beamspot *beamspot){
     if ( muon(i).isoR03_ecal!=NOVAL_F&&
 	 muon(i).isoR03_hcal!=NOVAL_F&&
 	 muon(i).isoR03_trk!=NOVAL_F&&
-	 muon(i).pt!=NOVAL_F&&muon(i).pt!=0) {
+	 muon(i).pt!=NOVAL_F && muon(i).pt!=0) {
 
       muon(i).reliso = ( muon(i).isoR03_ecal 
 			 +muon(i).isoR03_hcal
@@ -200,7 +200,9 @@ int Muon::passed(std::string selection, size_t i, Selection *sel=NULL) {
     return 0;
   }
 
+
   // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
 
   if (selection=="RA4_MuonVeto") {
 

@@ -27,7 +27,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $$
+// $Id$
 //
 //
 //-----------------------------------------------------------------------------
@@ -50,232 +50,176 @@ public:
   inline ElectronData& electron(size_t i) { return *(*this)(i); }
 
   // Inherited functions to be overloaded
-  void calculate (Beamspot<reco::BeamSpot>  *beamspot=NULL);
-  int passed(std::string selection, size_t i) {
-    return passed(selection, i, NULL);
-  };
-  int passed(std::string, size_t, std::vector<std::pair<std::string,int> >*);
+  void calculate (Beamspot *beamspot=NULL);
+
+  int passed(std::string, size_t, Selection*);
   
 };
-  
-  
+
+
 //-------------------------------- calculate() --------------------------------
 
-void Electron::calculate(Beamspot<reco::BeamSpot> *beamspot) { 
+void Electron::calculate(Beamspot *beamspot) { 
 
   if (!isValid()) return;
 
-  if(beamspot==NULL){
-    for (unsigned int i=0; i<size(); i++) {
-      electron(i).bc_d0=NOVAL_F;
-      electron(i).reliso=NOVAL_F;
-    }
-    return;
-  }
-  
-  for (unsigned int i=0; i<size(); i++) {
+  for (size_t i=0; i<size(); i++) {
 
-    electron(i).bc_d0=NOVAL_F;
-    electron(i).reliso=NOVAL_F;
+    // Correct d0 for beam-spot
+    //
+    electron(i).d0_bc = NOVAL_F;
+    electron(i).reliso = NOVAL_F;
+    electron(i).reliso_comb = NOVAL_F;
 
-    if(electron(i).d0!=NOVAL_F&&
-       (*beamspot).beamspot(0).beamspotx!=NOVAL_F&&
-       (*beamspot).beamspot(0).beamspoty!=NOVAL_F&&
-       electron(i).phi_trk!=NOVAL_F){
-    electron(i).bc_d0=electron(i).d0
-            -(*beamspot).beamspot(0).beamspotx*TMath::Sin(electron(i).phi_trk)
-            +(*beamspot).beamspot(0).beamspoty*TMath::Cos(electron(i).phi_trk);
+    if (beamspot != NULL) {
+
+      if( electron(i).d0 != NOVAL_F&&
+	  beamspot->beamspot(0).x != NOVAL_F&&
+	  beamspot->beamspot(0).y != NOVAL_F&&
+	  electron(i).phi_trk != NOVAL_F) {
+
+	electron(i).d0_bc = electron(i).d0
+	  - beamspot->beamspot(0).x*TMath::Sin(electron(i).phi_trk)
+	  + beamspot->beamspot(0).y*TMath::Cos(electron(i).phi_trk);
+      }
     }
     
-    if(electron(i).isoR03_ecal!=NOVAL_F&&
-       electron(i).isoR03_hcal!=NOVAL_F&&
-       electron(i).pt!=NOVAL_F&&electron(i).pt!=0){
-       electron(i).reliso=(electron(i).isoR03_ecal+electron(i).isoR03_hcal)
-	                  /electron(i).pt;
+    if( electron(i).isoR03_ecal!=NOVAL_F&&
+	electron(i).isoR03_hcal!=NOVAL_F&&
+	electron(i).pt!=NOVAL_F && electron(i).pt!=0) {
+
+      electron(i).reliso = ( electron(i).isoR03_ecal +
+			     electron(i).isoR03_hcal ) / electron(i).pt;
     }
     
-    if(electron(i).isoR03_ecal!=NOVAL_F&&
-       electron(i).isoR03_hcal!=NOVAL_F&&
-       electron(i).isoR03_trk!=NOVAL_F&&
-       electron(i).et!=NOVAL_F&&electron(i).et!=0){
-       electron(i).combined_reliso=(electron(i).isoR03_ecal+
-                                    electron(i).isoR03_hcal+
-                                    electron(i).isoR03_trk)/electron(i).et;
+    if( electron(i).isoR03_ecal!=NOVAL_F&&
+	electron(i).isoR03_hcal!=NOVAL_F&&
+	electron(i).isoR03_trk!=NOVAL_F&&
+	electron(i).et!=NOVAL_F && electron(i).et!=0) {
+
+      electron(i).reliso_comb = ( electron(i).isoR03_ecal+
+				  electron(i).isoR03_hcal+
+				  electron(i).isoR03_trk ) /electron(i).et;
     }
-  }
+  } // for
   
 }
 
 
-//--------------------------------- passed() ----------------------------------  
 
-int Electron::passed(std::string selection, size_t i, 
-                     std::vector<std::pair<std::string,int> > *cutflow) { 
+//--------------------------------- passed() ----------------------------------
+
+int Electron::passed(std::string selection, size_t i, Selection *sel=NULL) {  
                        
+  #ifdef DEB_DEBUG
+  stdMesg("Electron::passed(%d) : selection '%s'.", i, selection.c_str());
+  #endif
+
   if (!isValid()) return NOVAL_I;
   
-  if (cutflow!=NULL) (*cutflow).clear();
-
-  if(selection=="RefAna4JetMetMuon"){
-    
-    
-    std::pair<std::string,int> 
-        all("Number of Candidates               ",NOVAL_I);
-    all.second=1;
-    if (cutflow!=NULL) (*cutflow).push_back(all);    
-    
-    
-    std::pair<std::string,int> 
-        has_trk("has innerTrack                     ",NOVAL_I);
-    if(electron(i).has_trk!=NOVAL_I) {
-      electron(i).has_trk==1 ? has_trk.second=1 : has_trk.second=0;
-    }
-    if (cutflow!=NULL) (*cutflow).push_back(has_trk);
-    
-    
-    std::pair<std::string,int> 
-        eta("|eta|                     <= 2.5   ",NOVAL_I);
-    if(electron(i).eta!=NOVAL_F) { 
-      TMath::Abs(electron(i).eta)<=2.5 ? eta.second=1 : eta.second=0;
-    }
-    if (cutflow!=NULL) (*cutflow).push_back(eta);
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 
-    std::pair<std::string,int> 
-        pt("pt                        >= 20 GeV",NOVAL_I);
-    if(electron(i).pt!=NOVAL_F) {
-      electron(i).pt>=20.0 ? pt.second=1 : pt.second=0;
-    }
-    if (cutflow!=NULL) (*cutflow).push_back(pt);     
-    
-    
-    std::pair<std::string,int> 
-        bc_d0("d0 (from primary vertex)  <  0.2 cm",NOVAL_I);
-    if(electron(i).bc_d0!=NOVAL_F) {
-      TMath::Abs(electron(i).bc_d0)<=0.2 ? bc_d0.second=1 : bc_d0.second=0;
-    }
-    if (cutflow!=NULL) (*cutflow).push_back(bc_d0);
-    
+  if (selection=="RA4_ElectronVeto") {
 
-    std::pair<std::string,int> 
-        combined_reliso("Combined Relative isol.   <= 0.1   ",NOVAL_I);
-    if(electron(i).combined_reliso!=NOVAL_F) {
-      electron(i).combined_reliso<=0.1 ? 
-          combined_reliso.second=1 : combined_reliso.second=0;
-    }
-    if (cutflow!=NULL) (*cutflow).push_back(combined_reliso);
-            
-    
-    std::pair<std::string,int> 
-        tight("Electron Id e.g.:'eidRobustTight'  ",NOVAL_I);
-    if(electron(i).tight!=NOVAL_F) {
-      electron(i).tight==1.0 ? tight.second=1 : tight.second=0;
-    }
-    if (cutflow!=NULL) (*cutflow).push_back(tight);  
-       
-    
-    if(electron(i).has_trk==NOVAL_I ||
-       electron(i).has_trk==1 && electron(i).bc_d0==NOVAL_F ||
-       electron(i).eta==NOVAL_F ||
-       electron(i).pt==NOVAL_F ||
-       electron(i).tight==NOVAL_F ||
-       electron(i).combined_reliso==NOVAL_F) {
-      stdErr("Electron::passed() : NOVAL value in the cut criteria");     
-      return NOVAL_I;
-    }
-    
-    if( has_trk.second==1 &&
-        eta.second==1 &&
-        pt.second==1 &&
-        tight.second==1 &&
-        bc_d0.second==1 &&
-        combined_reliso.second==1) {
-      return 1;
+    const ElectronData& ele = electron(i);
+
+    if (sel==NULL) {
+
+      check_noval(ele.has_trk);
+      check_noval(ele.eta);
+      check_noval(ele.pt);
+      if (ele.has_trk==1) check_noval(ele.d0_bc);
+      check_noval(ele.reliso_comb);
+      check_noval(ele.tight);
+
+      if ( ele.has_trk == 1 &&
+	   fabs(ele.eta) < 2.5 &&
+	   ele.pt >= 20. &&
+	   fabs(ele.d0_bc) < 0.2 &&
+	   ele.reliso_comb < 0.1 &&
+	   ele.tight == 1.0
+	   ) return 1;
+
+      return 0;
     }
 
+    Cut has_trk("has gsfTrack", ele.has_trk, ele.has_trk == 1);
+    sel->add(has_trk);
+
+    Cut eta("|eta| < 2.5", ele.eta, fabs(ele.eta) < 2.5);
+    sel->add(eta);
+
+    Cut pt("pt >= 20 GeV", ele.pt, ele.pt >= 20.);
+    sel->add(pt);
+
+    if (ele.has_trk==1) check_noval(ele.d0_bc);
+    Cut d0_bc("|d0_bc| < 0.2 cm", (ele.has_trk==1) ? ele.d0_bc : 0, 
+	      fabs(ele.d0_bc) < 0.2);
+    sel->add(d0_bc);
+
+    Cut reliso_comb("Combined Relative Iso < 0.1", 
+		    ele.reliso_comb, ele.reliso_comb < 0.1 );
+    sel->add(reliso_comb);
+
+    Cut ele_id("eidRobustTight", ele.tight, ele.tight == 1.0);
+    sel->add(ele_id);
+
+    if (sel->passed()) return 1;
     return 0;
   }
 
+
+  // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+
+
+  if (selection=="RA4_ElectronID") {
+    
+    const ElectronData& ele = electron(i);
+
+    if (sel==NULL) {
+
+      check_noval(ele.has_trk);
+      check_noval(ele.eta);
+      check_noval(ele.pt);
+      if (ele.has_trk==1) check_noval(ele.d0_bc);
+      check_noval(ele.reliso);
+      check_noval(ele.loose);
+
+      if ( ele.has_trk == 1 &&
+	   ( fabs(ele.eta)<1.47 || 
+	     ( fabs(ele.eta) >= 1.567 && fabs(ele.eta) < 2.5 ) ) &&
+	   ele.pt >= 20. &&
+	   fabs(ele.d0_bc) < 0.2 &&
+	   ele.reliso < 0.1 &&
+	   ele.loose == 1.0
+	   ) return 1;
+
+      return 0;
+    }
+
+    Cut has_trk("has gsfTrack", ele.has_trk, ele.has_trk == 1);
+    sel->add(has_trk);
+    
+    Cut eta("|eta| < 1.47 or 1.567 <= |eta| < 2.5", ele.eta, 
+	    fabs(ele.eta)<1.47 || (fabs(ele.eta)>=1.567 && fabs(ele.eta)<2.5));
+    sel->add(eta);
+
+    Cut pt("pt >= 20 GeV", ele.pt, ele.pt >= 20.);
+    sel->add(pt);
   
+    if (ele.has_trk==1) check_noval(ele.d0_bc);
+    Cut d0_bc("|d0_bc| < 0.2 cm", (ele.has_trk==1) ? ele.d0_bc : 0, 
+	      fabs(ele.d0_bc) < 0.2);
+    sel->add(d0_bc);
+
+    Cut reliso("Relative Iso < 0.1", ele.reliso, ele.reliso < 0.1 );
+    sel->add(reliso);
     
-  if(selection=="RefAna4JetMetElectron"){
-    
-    
-    std::pair<std::string,int> 
-        all("Number of Candidates               ",NOVAL_I);
-    all.second=1;
-    if (cutflow!=NULL) (*cutflow).push_back(all);
-          
-      
-    std::pair<std::string,int> 
-        has_trk("has innerTrack                     ",NOVAL_I);
-    if(electron(i).has_trk!=NOVAL_I) {
-      electron(i).has_trk==1 ? has_trk.second=1 : has_trk.second=0;
-    }
-    if (cutflow!=NULL) (*cutflow).push_back(has_trk);
-    
-                
-    std::pair<std::string,int> 
-        loose("Electron Id e.g.:'eidRobustLoose'  ",NOVAL_I);
-    if(electron(i).loose!=NOVAL_F) {
-      electron(i).loose==1.0 ? loose.second=1 : loose.second=0;
-    }
-    if (cutflow!=NULL) (*cutflow).push_back(loose);
-      
-                                   
-    std::pair<std::string,int> 
-        eta("|eta|                     <= 2.5   ",NOVAL_I);
-    if(electron(i).eta!=NOVAL_F) { 
-      TMath::Abs(electron(i).eta)<=2.5 && 
-      (TMath::Abs(electron(i).eta)<1.47 || TMath::Abs(electron(i).eta)>1.567) ? 
-          eta.second=1 : eta.second=0;
-    }
-    if (cutflow!=NULL) (*cutflow).push_back(eta);
-  
-  
-    std::pair<std::string,int> 
-        pt("pt                        >= 20 GeV",NOVAL_I);
-    if(electron(i).pt!=NOVAL_F) {
-      electron(i).pt>=20.0 ? pt.second=1 : pt.second=0;
-    }
-    if (cutflow!=NULL) (*cutflow).push_back(pt);
-    
-    
-    std::pair<std::string,int> 
-        bc_d0("d0 (from primary vertex)  <  0.2 cm",NOVAL_I);
-    if(electron(i).bc_d0!=NOVAL_F) {
-      TMath::Abs(electron(i).bc_d0)<=0.2 ? bc_d0.second=1 : bc_d0.second=0;
-    }
-    if (cutflow!=NULL) (*cutflow).push_back(bc_d0);
-      
-    
-    std::pair<std::string,int> 
-        reliso("Relative isolation        <= 0.1   ",NOVAL_I);
-    if(electron(i).reliso!=NOVAL_F) {
-      electron(i).reliso<=0.1 ? reliso.second=1 : reliso.second=0;
-    }
-    if (cutflow!=NULL) (*cutflow).push_back(reliso);
-         
-      
-    if(electron(i).has_trk==NOVAL_I ||
-       electron(i).has_trk==1 && electron(i).bc_d0==NOVAL_F ||
-       electron(i).eta==NOVAL_F ||
-       electron(i).pt==NOVAL_F ||
-       electron(i).loose==NOVAL_F ||
-       electron(i).reliso==NOVAL_F) {
-      stdErr("Electron::passed() : NOVAL value in the cut criteria");     
-      return NOVAL_I;
-    }
-      
-    if( has_trk.second==1 &&
-        eta.second==1 &&
-        pt.second==1 &&
-        loose.second==1 &&
-        bc_d0.second==1 &&
-        reliso.second==1) {
-      return 1;
-    }
-  
+    Cut ele_id("eidRobustLoose", ele.loose, ele.loose == 1.0);
+    sel->add(ele_id);
+
+    if (sel->passed()) return 1;
     return 0;
   }  
   

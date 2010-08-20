@@ -10,6 +10,7 @@
  Description: <one line class summary>
 
  Implementation:
+   Works with: reco::Muon and pat::Muon
 
    List of parameters to steer the object with (passed in iConfig):
       int storeNMuons,     : owned by Data<D>, mandatory in constructor
@@ -31,7 +32,7 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: MuonProducer.hh,v 1.7 2010/08/09 15:36:08 veszpv Exp $
+// $Id: MuonProducer.hh,v 1.8 2010/08/16 13:41:19 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
@@ -61,7 +62,6 @@ template<class T> class MuonProducer : public Producer<Muon>{
   void set_isolation_(const T&, MuonData&); // first: input, second: output
 
  public:
-  // Inherited functions to be overloaded
   void set(const edm::Event&);
 
   
@@ -88,6 +88,133 @@ MuonProducer<T>::MuonProducer(const edm::ParameterSet& iConfig)
   stdMesg("  Object is %svalid!\n", (isValid() ? "" : "not "));
 
 }
+
+
+//----------------------------------- set() -----------------------------------
+
+template<class T> void MuonProducer<T>::set(const edm::Event& iEvent) {
+  increment_event_counter();
+
+  if (!isValid()) return;
+
+  edm::Handle<edm::View<T> > muonHandle;
+  iEvent.getByLabel(tag(), muonHandle);
+  if (!muonHandle.isValid()) {
+    stdErr("MuonProducer<%s>::set() : Invalid tag %s\n", 
+	   humanTypeId<T>().data(), tag().label().data());
+    setValid(false);
+    return;
+  }
+  
+  std::vector<std::pair<float, const T*> > muons;  
+
+  for (typename edm::View<T>::const_iterator iMuon=muonHandle->begin();
+       iMuon!=muonHandle->end(); iMuon++) {
+    float pt = iMuon->pt();
+    muons.push_back(std::make_pair(pt, &(*iMuon)));
+  }
+
+  std::sort(muons.begin(), muons.end(),
+	    std::greater<std::pair<float, const T* > >());
+
+  clear();
+
+  for (unsigned int i=0; i<muons.size(); i++) {
+
+    MuonData muon;
+    muon.oid = i;
+    muon.eid = event_counter();
+
+    const T& cmsmuon = *muons[i].second;
+
+    // reco::RecoCandidate (in LeafCandidate)
+    muon.e = cmsmuon.energy();
+    muon.px = cmsmuon.px();
+    muon.py = cmsmuon.py();
+    muon.pz = cmsmuon.pz();
+    muon.m = cmsmuon.mass();
+    muon.pt = cmsmuon.pt();
+    muon.et = cmsmuon.et();
+    muon.eta = cmsmuon.eta();
+    muon.phi = cmsmuon.phi();
+
+
+    // reco::Muon::innerTrack() or pat::Muon::innerTrack() == track()
+    // =---> !!! pat::Muon::innerTrack() may be EMBEDDED !!!
+    if(cmsmuon.innerTrack().isNonnull()) {
+      muon.has_trk = 1;
+      muon.hits = cmsmuon.innerTrack()->numberOfValidHits();
+      muon.d0 = cmsmuon.track()->d0();
+      muon.phi_trk = cmsmuon.track()->phi();
+    } else {
+      muon.has_trk = 0;
+      muon.hits = NOVAL_I;
+      muon.d0 = NOVAL_F;
+      muon.phi_trk = NOVAL_F;
+    }
+
+
+    // reco::Muon::globalTrack() or pat::Muon::globalTrack() == combinedMuon()
+    // =---> !!! pat::Muon::globalTrack() may be EMBEDDED !!!
+    if(cmsmuon.globalTrack().isNonnull()) {
+      muon.is_combined = 1;
+      muon.chi2 = cmsmuon.globalTrack()->chi2();
+      muon.ndof = cmsmuon.globalTrack()->ndof();
+    } else {
+      muon.is_combined = 0;
+      muon.chi2 = NOVAL_F;
+      muon.ndof = NOVAL_F;
+    }
+
+
+    // Isolation information, very different for RECO and PAT
+    //
+    set_isolation_(cmsmuon, muon);
+
+
+    // Careful, we are reading the result of the RECO classification!!!
+    // For PAT should call: pat::Muon::muonID("GlobalMuonPromptTight"):
+    muon.tight  =  
+      muon::isGoodMuon(cmsmuon, muon::GlobalMuonPromptTight);
+
+
+    // Values set by deb::Muon::calculate()
+    muon.d0_bc = NOVAL_F;
+    muon.reliso = NOVAL_F;
+
+    push_back(muon);
+  }
+}
+
+
+//     //
+//     // MUON TIMING, DO WE NEED THIS?
+//     //
+//     if (cmsmuon.isTimeValid()) {
+//       muon.dttimevalid = 1;
+//       muon.dttime = cmsmuon.time().timeAtIpInOut;
+//       muon.dttimeerr = cmsmuon.time().timeAtIpInOutErr;
+//     }
+
+//     muon.ecalenergy = cmsmuon.calEnergy().emMax;
+//     if (cmsmuon.calEnergy().ecal_id.subdetId() == EcalEndcap) {
+//       EEDetId hitId(cmsmuon.calEnergy().ecal_id);
+//       muon.ecalphi = hitId.ix();
+//       muon.ecaltheta = hitId.iy();
+//       muon.ecaldet = hitId.subdet();
+//     } else if (cmsmuon.calEnergy().ecal_id.subdetId() == EcalBarrel) {
+//       EBDetId hitId(cmsmuon.calEnergy().ecal_id);
+//       muon.ecalphi = hitId.iphi();
+//       muon.ecaltheta = atan(exp((hitId.ieta()-0.5*
+// 				   (hitId.ieta()/fabs(hitId.ieta()))
+// 				   )*-1.479/85.
+// 				  ))*2;
+//       muon.ecaldet = hitId.subdet();
+//       muon.ecaltime = cmsmuon.calEnergy().ecal_time-
+// 	                4.77/sin(muon.ecaltheta);
+//       muon.ecaltimeerr = 33./(cmsmuon.calEnergy().emMax/0.3);
+//     }
+
 
 //----------------------------- set_isolation_() ------------------------------
 
@@ -146,128 +273,6 @@ void MuonProducer<pat::Muon>::set_isolation_(const pat::Muon& cmsmuon,
 
 }
 
-
-//----------------------------------- set() -----------------------------------
-
-template<class T> void MuonProducer<T>::set(const edm::Event& iEvent) {
-  increment_event_counter();
-
-  if (!isValid()) return;
-
-  edm::Handle<edm::View<T> > muonHandle;
-  iEvent.getByLabel(tag(), muonHandle);
-  if (!muonHandle.isValid()){
-    stdErr("MuonProducer<%s>::set() : Invalid tag %s\n", 
-	   humanTypeId<T>().data(), tag().label().data());
-    setValid(false);
-    return;
-  }
-  
-  std::vector<std::pair<float, const T*> > muons;  
-
-  for (typename edm::View<T>::const_iterator iMuon=muonHandle->begin();
-       iMuon!=muonHandle->end(); iMuon++) {
-    float pt = iMuon->pt();
-    muons.push_back(std::make_pair(pt, &(*iMuon)));
-  }
-
-  std::sort(muons.begin(), muons.end(),
-	    std::greater<std::pair<float, const T* > >());
-
-  clear();
-
-  for (unsigned int i=0; i<muons.size(); i++) {
-
-    MuonData muon;
-    muon.oid = i;
-    muon.eid = event_counter();
-
-    const T& cmsmuon = *muons[i].second;
-
-    // reco::Candidates
-    muon.e = cmsmuon.energy();
-    muon.px = cmsmuon.px();
-    muon.py = cmsmuon.py();
-    muon.pz = cmsmuon.pz();
-    muon.m = cmsmuon.mass();
-    muon.pt = cmsmuon.pt();
-    muon.et = cmsmuon.et();
-    muon.eta = cmsmuon.eta();
-    muon.phi = cmsmuon.phi();
-
-
-    // reco::Muon::innerTrack() or pat::Muon::innerTrack() == track()
-    // =---> !!! pat::Muon::innerTrack() may be EMBEDDED !!!
-    if(cmsmuon.innerTrack().isNonnull()) {
-      muon.has_trk = 1;
-      muon.hits = cmsmuon.innerTrack()->numberOfValidHits();
-      muon.d0 = cmsmuon.track()->d0();
-      muon.phi_trk = cmsmuon.track()->phi();
-    } else {
-      muon.has_trk = 0;
-      muon.hits = NOVAL_I;
-      muon.d0 = NOVAL_F;
-      muon.phi_trk = NOVAL_F;
-    }
-
-
-    // reco::Muon::globalTrack() or pat::Muon::globalTrack() == combinedMuon()
-    // =---> !!! pat::Muon::globalTrack() may be EMBEDDED !!!
-    if(cmsmuon.globalTrack().isNonnull()) {
-      muon.is_combined = 1;
-      muon.chi2 = cmsmuon.globalTrack()->chi2();
-      muon.ndof = cmsmuon.globalTrack()->ndof();
-    } else {
-      muon.is_combined = 0;
-      muon.chi2 = NOVAL_F;
-      muon.ndof = NOVAL_F;
-    }
-
-    // Isolation information, very different for RECO and PAT
-    //
-    set_isolation_(cmsmuon, muon);
-
-    // Careful, we are reading the result of the RECO classification!!!
-    // For PAT should call: pat::Muon::muonID("GlobalMuonPromptTight"):
-    muon.tight  =  
-      muon::isGoodMuon(cmsmuon, muon::GlobalMuonPromptTight);
-
-    // Values set by deb::Muon::calculate()
-    muon.d0_bc = NOVAL_F;
-    muon.reliso = NOVAL_F;
-
-
-//     //
-//     // MUON TIMING, DO WE NEED THIS?
-//     //
-//     if (cmsmuon.isTimeValid()) {
-//       muon.dttimevalid = 1;
-//       muon.dttime = cmsmuon.time().timeAtIpInOut;
-//       muon.dttimeerr = cmsmuon.time().timeAtIpInOutErr;
-//     }
-
-//     muon.ecalenergy = cmsmuon.calEnergy().emMax;
-//     if (cmsmuon.calEnergy().ecal_id.subdetId() == EcalEndcap) {
-//       EEDetId hitId(cmsmuon.calEnergy().ecal_id);
-//       muon.ecalphi = hitId.ix();
-//       muon.ecaltheta = hitId.iy();
-//       muon.ecaldet = hitId.subdet();
-//     } else if (cmsmuon.calEnergy().ecal_id.subdetId() == EcalBarrel) {
-//       EBDetId hitId(cmsmuon.calEnergy().ecal_id);
-//       muon.ecalphi = hitId.iphi();
-//       muon.ecaltheta = atan(exp((hitId.ieta()-0.5*
-// 				   (hitId.ieta()/fabs(hitId.ieta()))
-// 				   )*-1.479/85.
-// 				  ))*2;
-//       muon.ecaldet = hitId.subdet();
-//       muon.ecaltime = cmsmuon.calEnergy().ecal_time-
-// 	                4.77/sin(muon.ecaltheta);
-//       muon.ecaltimeerr = 33./(cmsmuon.calEnergy().emMax/0.3);
-//     }
-
-    push_back(muon);
-  }
-}
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------

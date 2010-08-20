@@ -15,12 +15,14 @@
 //
 // Original Author:  Viktor VESZPREMI
 //         Created:  Wed Mar 18 10:28:26 CET 2009
-// $Id: Selection.hh,v 1.8 2010/08/09 15:34:35 veszpv Exp $
+// $Id: Selection.hh,v 1.9 2010/08/16 13:41:19 veszpv Exp $
 //
 //
 //-----------------------------------------------------------------------------
 
 #include "SusyAnalysis/debDataMaker/interface/Cut.hh"
+//#include "Container.hh"
+
 #include "TFile.h"
 #include "TTree.h"
 #include <limits>
@@ -29,6 +31,8 @@
 #define CUT_NAME_LENGTH 30
 
 namespace deb {
+
+template <class C, class D, class K> class Container;
 
 template<class C>
 class SelectionBase {
@@ -61,6 +65,7 @@ class SelectionBase {
   unsigned int entries_;
 
   void init();
+  void                         analyze_(SelectionBase&, unsigned int);
 
  public:
   void                         clear();
@@ -91,9 +96,10 @@ class SelectionBase {
   void                         print(size_t ncols=8, 
 			             std::string prepend="",
 			             std::string last="");
-			       
-  void                         analyze(SelectionBase& result, unsigned int op);
 
+  template <class CC, class DD, class KK> 
+  void                         analyze(Container<CC,DD,KK>& cont);
+  
 };
 
 
@@ -150,6 +156,10 @@ SelectionBase<C>& SelectionBase<C>::operator+= (const SelectionBase<C>& s) {
   entries_ += s.entries_;
 
   if (s.cuts_.size()==0) {
+    // clear all the values
+    for (size_t i=0; i<cuts_.size(); i++) {
+      for (size_t j=0; j<cuts_[i].size(); j++) cuts_[i].setValueInvalid(j);
+    }
     return *this;
   } else {
     if (s.entries_==0) ++entries_;
@@ -303,7 +313,7 @@ void SelectionBase<Cut>::print(size_t ncols, std::string prepend,
 		<< cuts_[i].passed()*100./entries_ << ") ";
     }
     #ifdef DEB_DEBUG
-    if (entries_<2) std::cout << " (" << cuts_[i].value_str() << ") ";
+    std::cout << " (" << cuts_[i].value_str() << ") ";
     #endif
     std::cout<<std::endl;
   }
@@ -330,7 +340,7 @@ void SelectionBase<MultiCut>::print(size_t ncols,
     if (entries_!=0 && i!=0) std::cout<<"\t";
     std::cout<<object_<<"_"<<i;
     #ifdef DEB_DEBUG
-    if (entries_<2) std::cout<<std::setw(10)<<" ";
+    std::cout<<std::setw(10)<<" ";
     #endif
   }
   std::cout<<std::endl;
@@ -346,8 +356,7 @@ void SelectionBase<MultiCut>::print(size_t ncols,
 		  << cuts_[i].passed(j)*100./entries_ << ") ";
       }
       #ifdef DEB_DEBUG
-      if (entries_<2) std::cout << "(" << std::setw(10) 
-				<< cuts_[i].value_str(j) << ")";
+      std::cout << "(" << std::setw(10) << cuts_[i].value_str(j) << ")";
       #endif
       std::cout << " ";
     }
@@ -359,10 +368,10 @@ void SelectionBase<MultiCut>::print(size_t ncols,
 
 
 
-//------------------------------- analyze() -----------------------------------
+//------------------------------- analyze_() ----------------------------------
 
 template<class C> 
-void SelectionBase<C>::analyze(SelectionBase<C>& result, unsigned int op) {
+void SelectionBase<C>::analyze_(SelectionBase<C>& result, unsigned int op) {
 
   if (entries_ > 1) {
     std::cout << "(Multi)Selection::analyze() : cannot analyze a Selection"
@@ -471,7 +480,92 @@ void SelectionBase<C>::analyze(SelectionBase<C>& result, unsigned int op) {
 }
 
 
+//------------------------------- analyze() -----------------------------------
 
+template<class C> 
+template<class CC, class DD, class KK>
+void SelectionBase<C>::analyze(Container<CC,DD,KK>& cont) {
+
+  cont.stdMesg("Container::report() : Running...");
+
+  if (!cont.isValid()) return;
+
+  std::ostringstream prepend;
+  prepend<<cont.name()<<"("<<humanTypeId<DD>()<<"):: ";
+
+  if ( name_ == NOVAL_S ) {
+    name_=cont.getSelectionType();
+  } else {
+    assert(name_==cont.getSelectionType());
+  }
+  if (name_==NOVAL_S) return;
+
+  if ( object_ == NOVAL_S ) {
+    object_=cont.name();
+  } else {
+    assert(object_==cont.name());
+  }
+
+  SelectionBase<MultiCut> rep(name_, individual, object_);
+  
+  for (typename CC::iterator it=cont.begin(); it!=cont.end(); it++) {
+    SelectionBase<Cut> sel(object_, individual, 
+			   object_+"_"+keyToString(cont.key(it)));
+    Cut cand("Candidate", it-cont.begin(), 1);
+    sel.add(cand);
+    int passed_with_cutflow = cont.passed(name_, it, &sel);
+    int passed_without_cutflow = cont.passed(name_, it);
+    assert(passed_with_cutflow == passed_without_cutflow);
+    rep.add(sel);
+    #ifdef DEB_DEBUG
+    cont.stdMesg("");
+    cont.stdMesg("Container::report() : SELECTION REPORT:");
+    sel.print(6, prepend.str());
+    #endif
+  }
+  rep.increase_entries();
+  #ifdef DEB_DEBUG
+  cont.stdMesg("");
+  cont.stdMesg("Container::report() : EVENT REPORT:");
+  rep.print(6, prepend.str());
+  #endif
+
+  rep.analyze_(rep, op_);  
+
+  #ifdef DEB_DEBUG
+  cont.stdMesg("");
+  cont.stdMesg("Container::report() : ANALYZED (%d) EVENT REPORT:", op_);
+  rep.print(6, prepend.str());
+  cont.stdMesg("");
+  cont.stdMesg("Container::report() : SUMMED EVENT REPORT INPUT:");
+  print(6, prepend.str());
+  #endif
+
+  if ( op_ & individual ) {
+    if ( op_ != individual ) {
+      cont.stdWarn("Container::report() : individual selection does not "
+		   "allow for any additional options !!!\n");
+    }
+  }
+  (*this)+=rep;
+
+  #ifdef DEB_DEBUG
+  cont.stdMesg("");
+  cont.stdMesg("Container::report() : SUMMED EVENT REPORT OUTPUT:");
+  print(6, prepend.str());
+  #endif
+
+//   if (tree!=NULL) {
+//     #ifdef DEB_DEBUG
+//     cont.stdMesg("");
+//     cont.stdMesg("Container::report() : filling tree");
+//     #endif
+//     tree->fill(rep);
+//   }
+
+  cont.stdMesg("");
+  cont.stdMesg("Container::report() : Done.\n");
+}
 
 
 //-----------------------------------------------------------------------------
